@@ -1,0 +1,1472 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>アジリノ — 不動産物件管理</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-base:       #F5F5F0;
+      --bg-sidebar:    #FFFFFF;
+      --bg-card:       #FFFFFF;
+      --bg-card-hover: #F0F0EB;
+      --bg-input:      #F0F0EB;
+      --border:        #E0E0D8;
+      --accent:        #2a7ae2;
+      --accent-dim:    #deeafc;
+      --text-primary:  #1a1a1a;
+      --text-secondary:#555555;
+      --text-muted:    #999990;
+      --green:         #2e9e68;
+      --yellow:        #d4920a;
+      --red:           #c94040;
+      --purple:        #7b5cc4;
+      --sidebar-w:     220px;
+    }
+
+    body {
+      font-family: 'Noto Sans JP', sans-serif;
+      background: var(--bg-base);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    /* ── サイドバー ── */
+    .sidebar {
+      width: var(--sidebar-w);
+      min-height: 100vh;
+      background: var(--bg-sidebar);
+      border-right: 1px solid var(--border);
+      display: flex;
+      flex-direction: column;
+      position: fixed;
+      top: 0; left: 0;
+      z-index: 100;
+    }
+    .sidebar-logo { padding: 20px 18px 16px; border-bottom: 1px solid var(--border); }
+    .sidebar-logo .company { font-size: 11px; color: var(--text-muted); letter-spacing: .08em; }
+    .sidebar-logo .name    { font-size: 16px; font-weight: 700; color: var(--text-primary); margin-top: 2px; }
+    .sidebar-logo .badge   {
+      display: inline-block; margin-top: 6px;
+      font-size: 10px; font-weight: 500;
+      background: var(--accent-dim); color: var(--accent);
+      padding: 2px 8px; border-radius: 10px;
+    }
+    .sidebar nav { flex: 1; }
+    .nav-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 9px 18px;
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background .15s, color .15s;
+    }
+    .nav-item:hover  { background: var(--bg-card); color: var(--text-primary); }
+    .nav-item.active { background: var(--accent-dim); color: var(--accent); border-right: 2px solid var(--accent); }
+    .nav-item .icon  { font-size: 15px; width: 18px; text-align: center; flex-shrink: 0; }
+    .nav-group-label {
+      padding: 14px 18px 4px;
+      font-size: 10px; font-weight: 700;
+      color: var(--text-muted); letter-spacing: .1em;
+      text-transform: uppercase;
+    }
+    .sidebar-footer {
+      padding: 14px 18px;
+      border-top: 1px solid var(--border);
+      font-size: 11px; color: var(--text-muted);
+    }
+
+    /* ── メイン ── */
+    .main {
+      margin-left: var(--sidebar-w);
+      flex: 1;
+      padding: 28px 32px;
+      min-width: 0;
+    }
+
+    /* ── ヘッダー ── */
+    .page-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 20px;
+      gap: 16px;
+      flex-wrap: wrap;
+    }
+    .page-title {
+      font-size: 20px; font-weight: 700;
+      color: var(--text-primary);
+    }
+    .page-sub { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+
+    /* ── セクション ── */
+    .section {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px 22px;
+    }
+    .section-title {
+      font-size: 13px; font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 14px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .section-title .icon { font-size: 16px; }
+
+    /* ── フィルタタブ ── */
+    .filter-tabs {
+      display: flex; gap: 4px;
+      margin-bottom: 12px;
+    }
+    .filter-tab {
+      padding: 6px 16px;
+      border: 1px solid var(--border);
+      background: var(--bg-card);
+      border-radius: 6px;
+      font-size: 12px; font-weight: 500;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-family: inherit;
+      transition: all .15s;
+    }
+    .filter-tab:hover  { background: var(--bg-card-hover); }
+    .filter-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+
+    /* ── データテーブル ── */
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+    }
+    .data-table th {
+      padding: 8px 12px;
+      background: var(--bg-input);
+      border-bottom: 2px solid var(--border);
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted); letter-spacing: .05em;
+      text-align: left;
+      white-space: nowrap;
+    }
+    .data-table td {
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border);
+      vertical-align: middle;
+    }
+    .data-table tbody tr:last-child td { border-bottom: none; }
+    .data-table tbody tr:hover td { background: var(--bg-card-hover); }
+
+    /* ── 情報テーブル ── */
+    .info-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    .info-table th {
+      padding: 7px 12px;
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted);
+      white-space: nowrap;
+      text-align: left;
+      width: 120px;
+      border-bottom: 1px solid var(--border);
+      background: var(--bg-input);
+    }
+    .info-table td {
+      padding: 7px 12px;
+      border-bottom: 1px solid var(--border);
+      color: var(--text-primary);
+    }
+    .info-table tr:last-child th,
+    .info-table tr:last-child td { border-bottom: none; }
+
+    /* ── 2カラム ── */
+    .two-col {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+    }
+    @media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
+
+    /* ── 写真グリッド ── */
+    .photo-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 10px;
+    }
+    .photo-item {
+      position: relative;
+      aspect-ratio: 4/3;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .photo-item img {
+      width: 100%; height: 100%;
+      object-fit: cover;
+    }
+    .photo-delete {
+      position: absolute; top: 6px; right: 6px;
+      background: rgba(0,0,0,.6); color: #fff;
+      border: none; border-radius: 50%;
+      width: 22px; height: 22px;
+      font-size: 11px; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0;
+      transition: opacity .15s;
+    }
+    .photo-item:hover .photo-delete { opacity: 1; }
+    .photo-add {
+      aspect-ratio: 4/3;
+      border: 2px dashed var(--border);
+      border-radius: 8px;
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all .15s;
+      gap: 4px;
+    }
+    .photo-add:hover { border-color: var(--accent); color: var(--accent); background: var(--accent-dim); }
+
+    /* ── チェックリスト ── */
+    .check-item {
+      display: flex; align-items: center; gap: 10px;
+      padding: 7px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .check-item:last-child { border-bottom: none; }
+
+    /* ── 実施記録 ── */
+    .log-row {
+      display: flex; align-items: flex-start; gap: 12px;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .log-row:last-child { border-bottom: none; }
+
+    /* ── フォーム ── */
+    .form-section {
+      font-size: 11px; font-weight: 700;
+      color: var(--text-muted); letter-spacing: .1em;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      padding-bottom: 6px;
+      border-bottom: 1px solid var(--border);
+    }
+    .form-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    .form-group label {
+      font-size: 11px; font-weight: 600;
+      color: var(--text-muted); letter-spacing: .04em;
+    }
+    .form-group .qs-control,
+    .form-group textarea { width: 100%; }
+    .qs-control {
+      padding: 8px 12px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text-primary);
+      font-size: 13px; font-family: inherit;
+      appearance: none; -webkit-appearance: none;
+    }
+    .qs-control:focus { outline: none; border-color: var(--accent); }
+    textarea.qs-control { resize: vertical; }
+
+    /* ── モーダル ── */
+    .modal-bg {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,.5);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 500;
+      padding: 20px;
+    }
+    .modal-bg.hidden { display: none; }
+    .modal {
+      background: var(--bg-card);
+      border-radius: 12px;
+      width: 100%;
+      max-width: 640px;
+      max-height: 90vh;
+      display: flex; flex-direction: column;
+      box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    }
+    .modal-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 22px;
+      border-bottom: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+    .modal-title { font-size: 15px; font-weight: 700; }
+    .modal-close {
+      background: none; border: none;
+      font-size: 18px; color: var(--text-muted);
+      cursor: pointer; padding: 4px;
+      line-height: 1;
+    }
+    .modal-close:hover { color: var(--text-primary); }
+    .modal-body {
+      padding: 20px 22px;
+      overflow-y: auto;
+      flex: 1;
+    }
+    .modal-footer {
+      display: flex; justify-content: flex-end; gap: 10px;
+      padding: 14px 22px;
+      border-top: 1px solid var(--border);
+      flex-shrink: 0;
+    }
+
+    /* ── ボタン ── */
+    .btn-primary {
+      padding: 8px 18px;
+      background: var(--accent); color: #fff;
+      border: none; border-radius: 6px;
+      font-size: 13px; font-weight: 600; font-family: inherit;
+      cursor: pointer;
+      transition: opacity .15s;
+      white-space: nowrap;
+    }
+    .btn-primary:hover { opacity: .85; }
+    .btn-cancel {
+      padding: 8px 18px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 13px; font-weight: 500; font-family: inherit;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .btn-cancel:hover { background: var(--bg-card-hover); }
+    .btn-danger {
+      padding: 6px 12px;
+      background: #3a1e1e; color: var(--red);
+      border: 1px solid #c94040;
+      border-radius: 6px;
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      cursor: pointer;
+      transition: opacity .15s;
+      white-space: nowrap;
+    }
+    .btn-danger:hover { opacity: .8; }
+    .btn-sm {
+      padding: 4px 10px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      font-size: 11px; font-weight: 600; font-family: inherit;
+      color: var(--text-secondary);
+      cursor: pointer;
+      transition: all .15s;
+      white-space: nowrap;
+    }
+    .btn-sm:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
+    .btn-back {
+      padding: 6px 14px;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      font-size: 12px; font-weight: 600; font-family: inherit;
+      color: var(--text-secondary);
+      cursor: pointer;
+    }
+    .btn-back:hover { background: var(--bg-card-hover); }
+
+    /* ── バッジ ── */
+    .badge-active   { font-size: 10px; background: #1a3a1e; color: var(--green);  padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-inactive { font-size: 10px; background: #2a2d35; color: var(--text-muted); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-sold-s   { font-size: 10px; background: #3a1e1e; color: var(--red);    padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-land     { font-size: 10px; background: #2a3a1a; color: #6abe3a;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-house    { font-size: 10px; background: var(--accent-dim); color: var(--accent); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-done     { font-size: 10px; background: #3a2e10; color: var(--yellow); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+
+    /* ── トースト ── */
+    .toast {
+      position: fixed; bottom: 24px; right: 24px;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 13px; font-weight: 500;
+      z-index: 1000;
+      box-shadow: 0 4px 20px rgba(0,0,0,.2);
+      transition: opacity .3s;
+    }
+    .toast.hidden { display: none; }
+    .toast-success { background: #1a3a1e; color: var(--green); border: 1px solid var(--green); }
+    .toast-error   { background: #3a1e1e; color: var(--red);   border: 1px solid var(--red); }
+    .toast-info    { background: var(--accent-dim); color: var(--accent); border: 1px solid var(--accent); }
+
+    /* ── セットアップ画面 ── */
+    .setup-card {
+      max-width: 520px; margin: 60px auto;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 36px 40px;
+    }
+    .setup-card h2 { font-size: 18px; margin-bottom: 8px; }
+    .setup-card p  { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
+    .setup-card code {
+      display: block;
+      background: var(--bg-input);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 12px 14px;
+      font-size: 12px;
+      font-family: monospace;
+      color: var(--accent);
+      margin-bottom: 16px;
+      word-break: break-all;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ========== サイドバー ========== -->
+<aside class="sidebar">
+  <div class="sidebar-logo">
+    <div class="company">株式会社</div>
+    <div class="name">アジリノ</div>
+    <span class="badge">物件管理システム</span>
+  </div>
+  <nav>
+    <div class="nav-group-label">メニュー</div>
+    <a class="nav-item" id="nav-list" onclick="showList()" href="#">
+      <span class="icon">🏠</span>物件一覧
+    </a>
+    <a class="nav-item" id="nav-logs" onclick="showLogs()" href="#">
+      <span class="icon">📋</span>記録台帳
+    </a>
+  </nav>
+  <div class="sidebar-footer">
+    代表：安部憲人<br>
+    米沢市本町2丁目1-12
+  </div>
+</aside>
+
+<!-- ========== メインコンテンツ ========== -->
+<main class="main" id="content">
+  <div style="padding:60px;text-align:center;color:var(--text-muted);">読み込み中…</div>
+</main>
+
+<!-- ========== モーダル ========== -->
+<div id="modal-bg" class="modal-bg hidden" onclick="closeModalBg(event)">
+  <div class="modal" id="modal"></div>
+</div>
+
+<!-- ========== トースト ========== -->
+<div id="toast" class="toast hidden"></div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+// ⚙️ 設定 — Supabase の接続情報をここに入力してください
+//    Supabase ダッシュボード → Settings → API で確認できます
+// ═══════════════════════════════════════════════════════════
+const SUPABASE_URL  = 'https://YOUR_PROJECT_ID.supabase.co';
+const SUPABASE_ANON = 'YOUR_ANON_KEY_HERE';
+// ═══════════════════════════════════════════════════════════
+
+const { createClient } = supabase;
+
+// 未設定チェック
+if (SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
+  document.getElementById('content').innerHTML = `
+    <div class="setup-card">
+      <h2>⚙️ Supabase 接続設定が必要です</h2>
+      <p>
+        <code>index.html</code> の先頭にある設定欄に<br>
+        SupabaseのURLとAnon Keyを入力してください。
+      </p>
+      <code>const SUPABASE_URL  = 'https://xxxx.supabase.co';<br>const SUPABASE_ANON = 'eyJ...';</code>
+      <p style="font-size:12px;color:var(--text-muted);">
+        Supabase ダッシュボード → Settings → API → Project URL / anon key
+      </p>
+    </div>`;
+  throw new Error('Supabase not configured');
+}
+
+const db = createClient(SUPABASE_URL, SUPABASE_ANON);
+
+// ── アプリ状態 ──────────────────────────────────────────────
+let state = {
+  view:        'list',
+  propId:      null,
+  filterType:  'all',
+  filterSold:  false,
+  checklistItems: [],
+  logsFilter:  '',
+};
+
+// ── 初期化 ─────────────────────────────────────────────────
+(async () => {
+  const { data, error } = await db
+    .from('checklist_items').select('*').order('order_index');
+  if (error) {
+    toast('チェックリスト取得失敗: ' + error.message, 'error');
+  }
+  state.checklistItems = data || [];
+  await showList();
+})();
+
+// ════════════════════════════════════════════════════════════
+// ナビゲーション
+// ════════════════════════════════════════════════════════════
+
+async function showList() {
+  state.view = 'list';
+  setActiveNav('nav-list');
+  await renderList();
+}
+
+async function showDetail(propId) {
+  state.view   = 'detail';
+  state.propId = propId;
+  setActiveNav('');
+  await renderDetail(propId);
+}
+
+async function showLogs(filterPropId) {
+  state.view      = 'logs';
+  state.logsFilter = filterPropId || '';
+  setActiveNav('nav-logs');
+  await renderLogs(state.logsFilter);
+}
+
+function setActiveNav(id) {
+  document.querySelectorAll('.nav-item').forEach(el => {
+    el.classList.toggle('active', el.id === id);
+  });
+}
+
+// ════════════════════════════════════════════════════════════
+// 物件一覧ビュー
+// ════════════════════════════════════════════════════════════
+
+async function renderList() {
+  const el = document.getElementById('content');
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">読み込み中…</div>';
+
+  let q = db.from('properties')
+    .select('*, property_details(*)')
+    .order('created_at', { ascending: false });
+
+  if (!state.filterSold) q = q.eq('is_sold', false);
+  if (state.filterType !== 'all') q = q.eq('type', state.filterType);
+
+  const { data: props, error } = await q;
+  if (error) { toast('データ取得失敗: ' + error.message, 'error'); return; }
+
+  const all   = props || [];
+  const lands  = all.filter(p => p.type === 'land');
+  const houses = all.filter(p => p.type === 'house');
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">🏠 物件一覧</div>
+        <div class="page-sub">土地 ${lands.length}件 ／ 中古住宅 ${houses.length}件</div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
+          <input type="checkbox" ${state.filterSold ? 'checked' : ''}
+            onchange="state.filterSold=this.checked;renderList()" style="width:14px;height:14px;">
+          売買完了を含む
+        </label>
+        <button class="btn-primary" onclick="openAddModal('land')">＋ 土地を追加</button>
+        <button class="btn-primary" onclick="openAddModal('house')">＋ 中古住宅を追加</button>
+      </div>
+    </div>
+
+    <div class="filter-tabs">
+      <button class="filter-tab ${state.filterType==='all'   ?'active':''}" onclick="state.filterType='all';renderList()">全て（${all.length}）</button>
+      <button class="filter-tab ${state.filterType==='land'  ?'active':''}" onclick="state.filterType='land';renderList()">🌐 土地（${lands.length}）</button>
+      <button class="filter-tab ${state.filterType==='house' ?'active':''}" onclick="state.filterType='house';renderList()">🏡 中古住宅（${houses.length}）</button>
+    </div>
+
+    ${all.length === 0
+      ? `<div class="section" style="text-align:center;padding:40px;color:var(--text-muted);">
+           物件が登録されていません。「＋ 土地を追加」「＋ 中古住宅を追加」から登録してください。
+         </div>`
+      : `<div class="section" style="padding:0;overflow:hidden;">
+           <div style="overflow-x:auto;">${buildListTable(all)}</div>
+         </div>`
+    }
+  `;
+}
+
+function buildListTable(props) {
+  const t = state.filterType;
+
+  let heads, rowFn;
+
+  if (t === 'land') {
+    heads = ['掲載','コード','住所','販売価格','面積㎡','坪','用途地域','学区（小）','売買完了',''];
+    rowFn = p => {
+      const d = p.property_details || {};
+      return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
+        <td>${statusBadge(p.status)}</td>
+        <td>${esc(p.code||'')}</td>
+        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
+        <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
+        <td>${d.area_sqm ?? '—'}</td>
+        <td>${d.area_tsubo ?? '—'}</td>
+        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(d.zoning||'—')}</td>
+        <td>${esc(d.school_elementary||'—')}</td>
+        <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
+        <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
+      </tr>`;
+    };
+  } else if (t === 'house') {
+    heads = ['掲載','コード','住所','販売価格','土地㎡','建物㎡','築年月','間取','学区（小）','売買完了',''];
+    rowFn = p => {
+      const d = p.property_details || {};
+      return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
+        <td>${statusBadge(p.status)}</td>
+        <td>${esc(p.code||'')}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
+        <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
+        <td>${d.land_area_sqm ?? '—'}</td>
+        <td>${d.building_area_sqm ?? '—'}</td>
+        <td>${esc(d.built_date||'—')}</td>
+        <td>${esc(d.floor_plan||'—')}</td>
+        <td>${esc(d.school_elementary||'—')}</td>
+        <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
+        <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
+      </tr>`;
+    };
+  } else {
+    heads = ['種別','掲載','コード','住所','販売価格','面積','その他','売買完了',''];
+    rowFn = p => {
+      const d = p.property_details || {};
+      const area  = p.type === 'land'
+        ? (d.area_sqm ? d.area_sqm + '㎡' : '—')
+        : (d.building_area_sqm ? d.building_area_sqm + '㎡' : '—');
+      const extra = p.type === 'land'
+        ? esc(d.zoning || '—')
+        : [d.built_date, d.floor_plan].filter(Boolean).join(' / ') || '—';
+      return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
+        <td>${p.type==='land' ? '<span class="badge-land">土地</span>' : '<span class="badge-house">中古住宅</span>'}</td>
+        <td>${statusBadge(p.status)}</td>
+        <td>${esc(p.code||'')}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
+        <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
+        <td>${area}</td>
+        <td>${extra}</td>
+        <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
+        <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
+      </tr>`;
+    };
+  }
+
+  return `
+    <table class="data-table">
+      <thead><tr>${heads.map(h=>`<th>${h}</th>`).join('')}</tr></thead>
+      <tbody>${props.map(rowFn).join('')}</tbody>
+    </table>
+  `;
+}
+
+// ════════════════════════════════════════════════════════════
+// 物件詳細ビュー
+// ════════════════════════════════════════════════════════════
+
+async function renderDetail(id) {
+  const el = document.getElementById('content');
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">読み込み中…</div>';
+
+  const [propRes, photosRes, checksRes, logsRes] = await Promise.all([
+    db.from('properties').select('*, property_details(*)').eq('id', id).single(),
+    db.from('property_photos').select('*').eq('property_id', id).order('order_index'),
+    db.from('checklist_checks').select('*').eq('property_id', id),
+    db.from('task_logs').select('*').eq('property_id', id).order('performed_date', { ascending: false }),
+  ]);
+
+  if (propRes.error) { toast('物件取得失敗: ' + propRes.error.message, 'error'); return; }
+
+  const prop    = propRes.data;
+  const photos  = photosRes.data  || [];
+  const checks  = checksRes.data  || [];
+  const logs    = logsRes.data    || [];
+  const det     = prop.property_details || {};
+  const isLand  = prop.type === 'land';
+
+  // キャッシュ（edit modal 用）
+  window._curProp = prop;
+  window._curDet  = det;
+
+  // ── 写真 HTML ──
+  const photoHtml = `
+    <div class="photo-grid">
+      ${photos.map(ph => `
+        <div class="photo-item">
+          <img src="${esc(ph.url)}" loading="lazy" alt="物件写真"
+               onclick="window.open('${esc(ph.url)}','_blank')">
+          <button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}','${id}')">✕</button>
+        </div>`).join('')}
+      ${photos.length < 6 ? `
+        <div class="photo-add" onclick="document.getElementById('ph-up').click()">
+          <span style="font-size:22px;">＋</span>
+          <span style="font-size:11px;">写真を追加</span>
+        </div>` : ''}
+    </div>
+    <input type="file" id="ph-up" accept="image/*" multiple style="display:none"
+           onchange="uploadPhotos('${id}',this.files)">
+    <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">
+      最大 6 枚まで（残り ${6 - photos.length} 枚）
+    </div>
+  `;
+
+  // ── 間取り図 HTML（中古住宅のみ） ──
+  const floorHtml = !isLand ? `
+    <div class="section" style="margin-top:16px;">
+      <div class="section-title"><span class="icon">📐</span>間取り図</div>
+      ${det.floor_plan_image
+        ? `<div style="margin-bottom:12px;">
+             <img src="${esc(det.floor_plan_image)}" alt="間取り図"
+                  style="max-width:100%;max-height:400px;border-radius:8px;border:1px solid var(--border);cursor:pointer;"
+                  onclick="window.open('${esc(det.floor_plan_image)}','_blank')">
+             <div style="margin-top:8px;">
+               <button class="btn-sm btn-danger" onclick="deleteFloorPlan('${id}')">削除</button>
+             </div>
+           </div>`
+        : `<div style="font-size:12px;color:var(--text-muted);margin-bottom:12px;">間取り図はまだアップロードされていません</div>`
+      }
+      <input type="file" id="fl-up" accept="image/*" style="display:none"
+             onchange="uploadFloorPlan('${id}',this.files[0])">
+      <button class="btn-sm" onclick="document.getElementById('fl-up').click()">📤 間取り図をアップロード</button>
+    </div>
+  ` : '';
+
+  // ── チェックリスト HTML ──
+  const clItems  = state.checklistItems.filter(i => i.property_type === prop.type || i.property_type === 'both');
+  const seasons  = [
+    { key:'spring', label:'🌸 春' },
+    { key:'summer', label:'☀️ 夏' },
+    { key:'fall',   label:'🍂 秋' },
+    { key:'winter', label:'❄️ 冬' },
+    { key:'all',    label:'📅 通年' },
+  ];
+  const checklistHtml = seasons.map(({ key, label }) => {
+    const items = clItems.filter(i => i.season === key);
+    if (!items.length) return '';
+    return `
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;letter-spacing:.05em;">${label}</div>
+        ${items.map(item => {
+          const chk = checks.find(c => c.item_id === item.id);
+          const checked = chk?.is_checked || false;
+          return `<div class="check-item">
+            <input type="checkbox" ${checked ? 'checked' : ''}
+              onchange="toggleCheck('${id}','${item.id}',this.checked)"
+              style="width:15px;height:15px;cursor:pointer;flex-shrink:0;">
+            <span style="font-size:13px;${checked ? 'color:var(--text-muted);text-decoration:line-through;' : ''}">${esc(item.label)}</span>
+          </div>`;
+        }).join('')}
+      </div>`;
+  }).join('');
+
+  // ── 実施記録 HTML ──
+  const logsHtml = logs.length
+    ? logs.map(log => `
+        <div class="log-row">
+          <div style="flex:1;">
+            <div style="font-size:13px;font-weight:600;">${esc(log.task_type)}</div>
+            <div style="font-size:11px;color:var(--text-muted);">
+              実施：${log.performed_date}
+              ${log.next_scheduled_date ? ` ／ 次回目安：${log.next_scheduled_date}` : ''}
+            </div>
+            ${log.memo ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${esc(log.memo)}</div>` : ''}
+          </div>
+          <button class="btn-sm btn-danger" onclick="deleteLog('${log.id}','${id}')">削除</button>
+        </div>`)
+      .join('')
+    : `<div style="font-size:12px;color:var(--text-muted);">実施記録がありません</div>`;
+
+  el.innerHTML = `
+    <!-- ヘッダー -->
+    <div class="page-header">
+      <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap;">
+        <button class="btn-back" onclick="showList()">← 一覧へ</button>
+        <div>
+          <div class="page-title">
+            ${isLand ? '🌐' : '🏡'}
+            ${esc(prop.address || prop.code || '（住所未入力）')}
+          </div>
+          <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+            ${statusBadge(prop.status)}
+            ${isLand ? '<span class="badge-land">土地</span>' : '<span class="badge-house">中古住宅</span>'}
+            ${prop.is_sold ? '<span class="badge-done">売買完了</span>' : ''}
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-primary" onclick="openEditModal()">✏️ 編集</button>
+        <button class="btn-danger"  onclick="confirmDelete('${id}')">🗑 削除</button>
+      </div>
+    </div>
+
+    <!-- 基本情報 ＋ 詳細情報 -->
+    <div class="two-col" style="margin-bottom:16px;">
+      <div class="section">
+        <div class="section-title"><span class="icon">📋</span>基本情報</div>
+        <table class="info-table">
+          <tr><th>コード</th><td>${esc(prop.code||'—')}</td></tr>
+          <tr><th>物件種別</th><td>${isLand ? '土地' : '中古住宅'}</td></tr>
+          <tr><th>掲載状況</th><td>${statusLabel(prop.status)}</td></tr>
+          <tr><th>販売価格</th><td>${prop.price ? prop.price.toLocaleString()+'万円' : '—'}</td></tr>
+          <tr><th>住所</th><td>${esc(prop.address||'—')}</td></tr>
+          <tr><th>売買完了</th><td>${prop.is_sold ? '✅ 完了' : '—'}</td></tr>
+          ${prop.notes ? `<tr><th>備考</th><td style="white-space:pre-wrap;">${esc(prop.notes)}</td></tr>` : ''}
+        </table>
+      </div>
+
+      <div class="section">
+        <div class="section-title"><span class="icon">📐</span>詳細情報</div>
+        <table class="info-table">
+          ${isLand ? `
+            <tr><th>面積（㎡）</th><td>${det.area_sqm??'—'}</td></tr>
+            <tr><th>面積（坪）</th><td>${det.area_tsubo??'—'}</td></tr>
+            <tr><th>土地状況</th><td>${esc(det.land_condition||'—')}</td></tr>
+            <tr><th>用途地域</th><td>${esc(det.zoning||'—')}</td></tr>
+            <tr><th>他の法令</th><td>${esc(det.other_laws||'—')}</td></tr>
+          ` : `
+            <tr><th>土地面積（㎡）</th><td>${det.land_area_sqm??'—'}</td></tr>
+            <tr><th>土地面積（坪）</th><td>${det.land_area_tsubo??'—'}</td></tr>
+            <tr><th>建物面積（㎡）</th><td>${det.building_area_sqm??'—'}</td></tr>
+            <tr><th>建物面積（坪）</th><td>${det.building_area_tsubo??'—'}</td></tr>
+            <tr><th>築年月</th><td>${esc(det.built_date||'—')}</td></tr>
+            <tr><th>間取</th><td>${esc(det.floor_plan||'—')}</td></tr>
+          `}
+          <tr><th>学区（小）</th><td>${esc(det.school_elementary||'—')}</td></tr>
+          <tr><th>学区（中）</th><td>${esc(det.school_junior||'—')}</td></tr>
+          <tr><th>上水道</th><td>${esc(det.water_supply||'—')}</td></tr>
+          <tr><th>下水道</th><td>${esc(det.sewage||'—')}</td></tr>
+          <tr><th>埋蔵</th><td>${esc(det.buried_artifacts||'—')}</td></tr>
+          <tr><th>取得書類</th><td>${esc(det.documents||'—')}</td></tr>
+        </table>
+      </div>
+    </div>
+
+    <!-- 写真 -->
+    <div class="section" style="margin-bottom:16px;">
+      <div class="section-title"><span class="icon">📷</span>物件写真</div>
+      ${photoHtml}
+    </div>
+
+    <!-- 間取り図（中古住宅のみ） -->
+    ${floorHtml}
+
+    <!-- チェックリスト ＋ 実施記録 -->
+    <div class="two-col" style="margin-top:16px;">
+      <div class="section">
+        <div class="section-title"><span class="icon">✅</span>管理チェックリスト</div>
+        ${checklistHtml || '<div style="font-size:12px;color:var(--text-muted);">項目がありません</div>'}
+      </div>
+
+      <div class="section">
+        <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+          <span><span class="icon">📝</span>実施記録</span>
+          <button class="btn-sm" onclick="openLogModal('${id}')">＋ 記録を追加</button>
+        </div>
+        ${logsHtml}
+      </div>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════════════════════
+// 記録台帳ビュー
+// ════════════════════════════════════════════════════════════
+
+async function renderLogs(filterPropId) {
+  filterPropId = filterPropId || '';
+  state.logsFilter = filterPropId;
+  const el = document.getElementById('content');
+
+  const [propsRes, logsRes] = await Promise.all([
+    db.from('properties').select('id, code, address, type').order('created_at', { ascending: false }),
+    (() => {
+      let q = db.from('task_logs')
+        .select('*, properties(id, code, address, type)')
+        .order('performed_date', { ascending: false });
+      if (filterPropId) q = q.eq('property_id', filterPropId);
+      return q;
+    })(),
+  ]);
+
+  const allProps = propsRes.data  || [];
+  const logs     = logsRes.data   || [];
+
+  const propOpts = allProps.map(p =>
+    `<option value="${p.id}" ${p.id === filterPropId ? 'selected' : ''}>${p.code ? p.code+' ' : ''}${p.address || ''}</option>`
+  ).join('');
+
+  const rowsHtml = logs.length
+    ? logs.map(log => {
+        const p = log.properties || {};
+        return `<tr>
+          <td>${log.performed_date}</td>
+          <td>${p.type === 'land' ? '<span class="badge-land">土地</span>' : '<span class="badge-house">中古住宅</span>'}</td>
+          <td>
+            <a href="#" onclick="showDetail('${p.id}');return false;"
+               style="color:var(--accent);text-decoration:none;font-size:12px;">
+              ${esc((p.code ? p.code+' ' : '') + (p.address||''))}
+            </a>
+          </td>
+          <td>${esc(log.task_type)}</td>
+          <td>${log.next_scheduled_date || '—'}</td>
+          <td style="font-size:11px;color:var(--text-secondary);max-width:200px;">${esc(log.memo||'')}</td>
+          <td><button class="btn-sm btn-danger" onclick="deleteLogFromTable('${log.id}')">削除</button></td>
+        </tr>`;
+      }).join('')
+    : `<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:24px;">記録がありません</td></tr>`;
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div class="page-title">📋 記録台帳</div>
+      <button class="btn-primary" onclick="openLogModal('')">＋ 記録を追加</button>
+    </div>
+
+    <div class="section">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
+        <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">物件で絞り込み：</span>
+        <select class="qs-control" style="max-width:320px;"
+                onchange="renderLogs(this.value)">
+          <option value="">全物件</option>
+          ${propOpts}
+        </select>
+      </div>
+
+      <div style="overflow-x:auto;">
+        <table class="data-table">
+          <thead>
+            <tr>
+              <th>実施日</th>
+              <th>種別</th>
+              <th>物件</th>
+              <th>作業内容</th>
+              <th>次回目安</th>
+              <th>メモ</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>${rowsHtml}</tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ════════════════════════════════════════════════════════════
+// モーダル：物件追加 / 編集
+// ════════════════════════════════════════════════════════════
+
+function openAddModal(type) {
+  window._curProp = null;
+  window._curDet  = null;
+  showPropertyModal(type, null, null);
+}
+
+function openEditModal() {
+  showPropertyModal(window._curProp.type, window._curProp, window._curDet);
+}
+
+function showPropertyModal(type, prop, det) {
+  const isLand = type === 'land';
+  const p = prop || {};
+  const d = det  || {};
+
+  const statusOpts = ['active','inactive','sold'].map(v =>
+    `<option value="${v}" ${(p.status||'active')===v?'selected':''}>${statusLabel(v)}</option>`
+  ).join('');
+  const waterOpts  = ['','公営水道','私設水道','井戸','なし','不明'].map(v =>
+    `<option value="${v}" ${(d.water_supply||'')==v?'selected':''}>${v||'（未選択）'}</option>`).join('');
+  const sewageOpts = ['','公共下水','合併浄化槽','単独浄化槽','なし','不明'].map(v =>
+    `<option value="${v}" ${(d.sewage||'')==v?'selected':''}>${v||'（未選択）'}</option>`).join('');
+  const buriedOpts = ['','あり','なし','不明'].map(v =>
+    `<option value="${v}" ${(d.buried_artifacts||'')==v?'selected':''}>${v||'（未選択）'}</option>`).join('');
+
+  const sqmInput = (idSuffix, sqmVal, tsuboId) =>
+    `<input id="${idSuffix}" type="number" step="0.01" class="qs-control"
+       value="${sqmVal||''}"
+       oninput="const t=document.getElementById('${tsuboId}');if(t)t.value=this.value?(this.value*0.3025).toFixed(2):''">`;
+
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">${prop ? '物件を編集' : (isLand ? '🌐 土地を追加' : '🏡 中古住宅を追加')}</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="f-id"   value="${p.id||''}">
+      <input type="hidden" id="f-type" value="${type}">
+
+      <div class="form-section">基本情報</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>掲載状況</label>
+          <select id="f-status" class="qs-control">${statusOpts}</select>
+        </div>
+        <div class="form-group">
+          <label>コード</label>
+          <input id="f-code" type="text" class="qs-control" value="${esc(p.code||'')}" placeholder="例：Y-001">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>住所</label>
+          <input id="f-address" type="text" class="qs-control" value="${esc(p.address||'')}" placeholder="山形県米沢市…">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>販売価格（万円）</label>
+          <input id="f-price" type="number" class="qs-control" value="${p.price||''}" placeholder="例：1200">
+        </div>
+        <div class="form-group" style="justify-content:flex-end;padding-bottom:4px;">
+          <label style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--text-primary);">
+            <input id="f-sold" type="checkbox" ${p.is_sold?'checked':''} style="width:15px;height:15px;">
+            売買完了
+          </label>
+        </div>
+      </div>
+
+      <div class="form-section" style="margin-top:4px;">詳細情報${isLand ? '（土地）' : '（中古住宅）'}</div>
+
+      ${isLand ? `
+        <div class="form-row">
+          <div class="form-group">
+            <label>面積（㎡）</label>
+            ${sqmInput('f-area-sqm', d.area_sqm, 'f-area-tsubo')}
+          </div>
+          <div class="form-group">
+            <label>面積（坪）</label>
+            <input id="f-area-tsubo" type="number" step="0.01" class="qs-control" value="${d.area_tsubo||''}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="grid-column:span 2;">
+            <label>土地状況</label>
+            <input id="f-land-cond" type="text" class="qs-control" value="${esc(d.land_condition||'')}" placeholder="例：更地、雑種地など">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="grid-column:span 2;">
+            <label>用途地域</label>
+            <input id="f-zoning" type="text" class="qs-control" value="${esc(d.zoning||'')}" placeholder="例：第一種低層住居専用地域">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group" style="grid-column:span 2;">
+            <label>他の法令</label>
+            <input id="f-other-laws" type="text" class="qs-control" value="${esc(d.other_laws||'')}" placeholder="例：農地法、道路法など">
+          </div>
+        </div>
+      ` : `
+        <div class="form-row">
+          <div class="form-group">
+            <label>土地面積（㎡）</label>
+            ${sqmInput('f-land-sqm', d.land_area_sqm, 'f-land-tsubo')}
+          </div>
+          <div class="form-group">
+            <label>土地面積（坪）</label>
+            <input id="f-land-tsubo" type="number" step="0.01" class="qs-control" value="${d.land_area_tsubo||''}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>建物面積（㎡）</label>
+            ${sqmInput('f-bld-sqm', d.building_area_sqm, 'f-bld-tsubo')}
+          </div>
+          <div class="form-group">
+            <label>建物面積（坪）</label>
+            <input id="f-bld-tsubo" type="number" step="0.01" class="qs-control" value="${d.building_area_tsubo||''}">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label>築年月</label>
+            <input id="f-built" type="text" class="qs-control" value="${esc(d.built_date||'')}" placeholder="例：1998年3月">
+          </div>
+          <div class="form-group">
+            <label>間取</label>
+            <input id="f-plan" type="text" class="qs-control" value="${esc(d.floor_plan||'')}" placeholder="例：4LDK">
+          </div>
+        </div>
+      `}
+
+      <div class="form-row">
+        <div class="form-group">
+          <label>学区（小学校）</label>
+          <input id="f-school-el" type="text" class="qs-control" value="${esc(d.school_elementary||'')}" placeholder="例：第一小学校">
+        </div>
+        <div class="form-group">
+          <label>学区（中学校）</label>
+          <input id="f-school-jr" type="text" class="qs-control" value="${esc(d.school_junior||'')}" placeholder="例：第二中学校">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>上水道</label>
+          <select id="f-water"  class="qs-control">${waterOpts}</select>
+        </div>
+        <div class="form-group">
+          <label>下水道</label>
+          <select id="f-sewage" class="qs-control">${sewageOpts}</select>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>埋蔵</label>
+          <select id="f-buried" class="qs-control">${buriedOpts}</select>
+        </div>
+        <div class="form-group">
+          <label>取得書類</label>
+          <input id="f-docs" type="text" class="qs-control" value="${esc(d.documents||'')}" placeholder="例：公図、登記簿謄本">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>備考</label>
+          <textarea id="f-notes" class="qs-control" rows="3" placeholder="特記事項があれば入力">${esc(p.notes||'')}</textarea>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-primary" onclick="saveProperty()">💾 保存</button>
+    </div>
+  `;
+
+  document.getElementById('modal-bg').classList.remove('hidden');
+}
+
+async function saveProperty() {
+  const id     = document.getElementById('f-id').value;
+  const type   = document.getElementById('f-type').value;
+  const isLand = type === 'land';
+
+  const propData = {
+    type,
+    code:    document.getElementById('f-code').value.trim()    || null,
+    status:  document.getElementById('f-status').value,
+    address: document.getElementById('f-address').value.trim() || null,
+    price:   parseFloat(document.getElementById('f-price').value) || null,
+    is_sold: document.getElementById('f-sold').checked,
+    notes:   document.getElementById('f-notes').value.trim()   || null,
+  };
+
+  let propId;
+  if (id) {
+    const { error } = await db.from('properties').update(propData).eq('id', id);
+    if (error) { toast('保存失敗: ' + error.message, 'error'); return; }
+    propId = id;
+  } else {
+    const { data, error } = await db.from('properties').insert(propData).select().single();
+    if (error) { toast('保存失敗: ' + error.message, 'error'); return; }
+    propId = data.id;
+  }
+
+  const detData = {
+    property_id:       propId,
+    school_elementary: document.getElementById('f-school-el').value.trim() || null,
+    school_junior:     document.getElementById('f-school-jr').value.trim() || null,
+    water_supply:      document.getElementById('f-water').value   || null,
+    sewage:            document.getElementById('f-sewage').value  || null,
+    buried_artifacts:  document.getElementById('f-buried').value  || null,
+    documents:         document.getElementById('f-docs').value.trim() || null,
+  };
+
+  if (isLand) {
+    detData.area_sqm       = parseFloat(document.getElementById('f-area-sqm')?.value)    || null;
+    detData.area_tsubo     = parseFloat(document.getElementById('f-area-tsubo')?.value)  || null;
+    detData.land_condition = document.getElementById('f-land-cond')?.value.trim()        || null;
+    detData.zoning         = document.getElementById('f-zoning')?.value.trim()           || null;
+    detData.other_laws     = document.getElementById('f-other-laws')?.value.trim()       || null;
+  } else {
+    detData.land_area_sqm       = parseFloat(document.getElementById('f-land-sqm')?.value)   || null;
+    detData.land_area_tsubo     = parseFloat(document.getElementById('f-land-tsubo')?.value)  || null;
+    detData.building_area_sqm   = parseFloat(document.getElementById('f-bld-sqm')?.value)     || null;
+    detData.building_area_tsubo = parseFloat(document.getElementById('f-bld-tsubo')?.value)   || null;
+    detData.built_date          = document.getElementById('f-built')?.value.trim()            || null;
+    detData.floor_plan          = document.getElementById('f-plan')?.value.trim()             || null;
+  }
+
+  const { error: dErr } = await db.from('property_details')
+    .upsert(detData, { onConflict: 'property_id' });
+  if (dErr) { toast('詳細保存失敗: ' + dErr.message, 'error'); return; }
+
+  toast('保存しました', 'success');
+  closeModal();
+  await showDetail(propId);
+}
+
+// ════════════════════════════════════════════════════════════
+// モーダル：実施記録
+// ════════════════════════════════════════════════════════════
+
+async function openLogModal(propId) {
+  const { data: props } = await db.from('properties')
+    .select('id, code, address').order('created_at', { ascending: false });
+
+  const propOpts = (props||[]).map(p =>
+    `<option value="${p.id}" ${p.id===propId?'selected':''}>${p.code ? p.code+' ' : ''}${p.address||''}</option>`
+  ).join('');
+
+  const today = new Date().toISOString().split('T')[0];
+  const taskTypes = ['草刈り','除雪','清掃','点検','修繕','巡回','その他'];
+
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">📝 実施記録を追加</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>物件 <span style="color:var(--red);">*</span></label>
+        <select id="log-prop" class="qs-control">
+          <option value="">物件を選択…</option>${propOpts}
+        </select>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>作業種別 <span style="color:var(--red);">*</span></label>
+          <select id="log-type" class="qs-control">
+            ${taskTypes.map(t => `<option>${t}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>実施日 <span style="color:var(--red);">*</span></label>
+          <input id="log-date" type="date" class="qs-control" value="${today}">
+        </div>
+      </div>
+      <div class="form-group" style="margin-bottom:12px;">
+        <label>次回目安日</label>
+        <input id="log-next" type="date" class="qs-control">
+      </div>
+      <div class="form-group">
+        <label>メモ</label>
+        <textarea id="log-memo" class="qs-control" rows="3" placeholder="作業内容・気になった点など"></textarea>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-primary" onclick="saveLog()">💾 保存</button>
+    </div>
+  `;
+
+  document.getElementById('modal-bg').classList.remove('hidden');
+}
+
+async function saveLog() {
+  const propId  = document.getElementById('log-prop').value;
+  const logType = document.getElementById('log-type').value;
+  const date    = document.getElementById('log-date').value;
+
+  if (!propId)  { toast('物件を選択してください', 'error'); return; }
+  if (!date)    { toast('実施日を入力してください', 'error'); return; }
+
+  const { error } = await db.from('task_logs').insert({
+    property_id:         propId,
+    task_type:           logType,
+    performed_date:      date,
+    next_scheduled_date: document.getElementById('log-next').value || null,
+    memo:                document.getElementById('log-memo').value.trim() || null,
+  });
+
+  if (error) { toast('保存失敗: ' + error.message, 'error'); return; }
+
+  toast('記録を追加しました', 'success');
+  closeModal();
+
+  if (state.view === 'detail') {
+    await renderDetail(state.propId);
+  } else {
+    await renderLogs(state.logsFilter);
+  }
+}
+
+// ════════════════════════════════════════════════════════════
+// CRUD：写真
+// ════════════════════════════════════════════════════════════
+
+async function uploadPhotos(propId, files) {
+  const { count } = await db.from('property_photos')
+    .select('*', { count: 'exact', head: true }).eq('property_id', propId);
+
+  const remaining = 6 - (count || 0);
+  const toUpload  = Array.from(files).slice(0, remaining);
+
+  if (!toUpload.length) {
+    toast('写真は最大 6 枚です', 'error');
+    return;
+  }
+
+  toast('アップロード中…', 'info');
+
+  for (let i = 0; i < toUpload.length; i++) {
+    const file = toUpload[i];
+    const ext  = file.name.split('.').pop().toLowerCase();
+    const path = `${propId}/${crypto.randomUUID()}.${ext}`;
+
+    const { error: upErr } = await db.storage
+      .from('property-photos').upload(path, file, { upsert: false });
+    if (upErr) { toast('アップロード失敗: ' + upErr.message, 'error'); continue; }
+
+    const { data: urlData } = db.storage.from('property-photos').getPublicUrl(path);
+
+    await db.from('property_photos').insert({
+      property_id:  propId,
+      url:          urlData.publicUrl,
+      storage_path: path,
+      order_index:  (count || 0) + i,
+    });
+  }
+
+  toast(`${toUpload.length} 枚の写真を追加しました`, 'success');
+  await renderDetail(propId);
+}
+
+async function deletePhoto(photoId, storagePath, propId) {
+  if (!confirm('この写真を削除しますか？')) return;
+  await db.storage.from('property-photos').remove([storagePath]);
+  await db.from('property_photos').delete().eq('id', photoId);
+  toast('写真を削除しました', 'success');
+  await renderDetail(propId);
+}
+
+async function uploadFloorPlan(propId, file) {
+  if (!file) return;
+  toast('間取り図をアップロード中…', 'info');
+
+  const ext  = file.name.split('.').pop().toLowerCase();
+  const path = `${propId}/floor_plan.${ext}`;
+
+  const { error } = await db.storage.from('floor-plans').upload(path, file, { upsert: true });
+  if (error) { toast('アップロード失敗: ' + error.message, 'error'); return; }
+
+  const { data: urlData } = db.storage.from('floor-plans').getPublicUrl(path);
+
+  await db.from('property_details').upsert(
+    { property_id: propId, floor_plan_image: urlData.publicUrl },
+    { onConflict: 'property_id' }
+  );
+
+  toast('間取り図を保存しました', 'success');
+  await renderDetail(propId);
+}
+
+async function deleteFloorPlan(propId) {
+  if (!confirm('間取り図を削除しますか？')) return;
+  await db.from('property_details').update({ floor_plan_image: null }).eq('property_id', propId);
+  toast('間取り図を削除しました', 'success');
+  await renderDetail(propId);
+}
+
+// ════════════════════════════════════════════════════════════
+// CRUD：チェックリスト
+// ════════════════════════════════════════════════════════════
+
+async function toggleCheck(propId, itemId, checked) {
+  await db.from('checklist_checks').upsert(
+    {
+      property_id: propId,
+      item_id:     itemId,
+      is_checked:  checked,
+      checked_at:  checked ? new Date().toISOString() : null,
+    },
+    { onConflict: 'property_id,item_id' }
+  );
+}
+
+// ════════════════════════════════════════════════════════════
+// CRUD：実施記録
+// ════════════════════════════════════════════════════════════
+
+async function deleteLog(logId, propId) {
+  if (!confirm('この記録を削除しますか？')) return;
+  await db.from('task_logs').delete().eq('id', logId);
+  toast('記録を削除しました', 'success');
+  await renderDetail(propId);
+}
+
+async function deleteLogFromTable(logId) {
+  if (!confirm('この記録を削除しますか？')) return;
+  await db.from('task_logs').delete().eq('id', logId);
+  toast('記録を削除しました', 'success');
+  await renderLogs(state.logsFilter);
+}
+
+// ════════════════════════════════════════════════════════════
+// CRUD：物件削除
+// ════════════════════════════════════════════════════════════
+
+async function confirmDelete(propId) {
+  if (!confirm('この物件を削除しますか？\n写真・記録・チェック情報もすべて削除されます。')) return;
+
+  // Storage 写真を削除
+  const { data: photos } = await db.from('property_photos')
+    .select('storage_path').eq('property_id', propId);
+  if (photos?.length) {
+    await db.storage.from('property-photos').remove(photos.map(p => p.storage_path));
+  }
+
+  await db.from('properties').delete().eq('id', propId);
+  toast('物件を削除しました', 'success');
+  await showList();
+}
+
+// ════════════════════════════════════════════════════════════
+// モーダル共通
+// ════════════════════════════════════════════════════════════
+
+function closeModal() {
+  document.getElementById('modal-bg').classList.add('hidden');
+}
+
+function closeModalBg(e) {
+  if (e.target.id === 'modal-bg') closeModal();
+}
+
+// ════════════════════════════════════════════════════════════
+// ユーティリティ
+// ════════════════════════════════════════════════════════════
+
+function statusBadge(s) {
+  const map = {
+    active:   '<span class="badge-active">掲載中</span>',
+    inactive: '<span class="badge-inactive">非掲載</span>',
+    sold:     '<span class="badge-sold-s">成約済</span>',
+  };
+  return map[s] || `<span>${esc(s)}</span>`;
+}
+
+function statusLabel(s) {
+  return { active:'掲載中', inactive:'非掲載', sold:'成約済' }[s] || s;
+}
+
+function esc(s) {
+  if (s == null) return '';
+  return String(s)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function toast(msg, type = 'success') {
+  const el = document.getElementById('toast');
+  el.textContent = msg;
+  el.className   = `toast toast-${type}`;
+  clearTimeout(window._toastTimer);
+  window._toastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
+}
+</script>
+</body>
+</html>
