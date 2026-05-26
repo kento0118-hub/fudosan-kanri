@@ -385,6 +385,7 @@
     .badge-owner    { font-size: 10px; background: #2a1a3a; color: var(--purple); padding: 2px 7px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-broker   { font-size: 10px; background: #1e2a3a; color: var(--accent); padding: 2px 7px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-sign     { font-size: 9px;  background: #3a1e0a; color: #f0830a;       padding: 1px 5px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block; }
+    .badge-hp       { font-size: 9px;  background: #1a2a3a; color: #5bc4f0;       padding: 1px 5px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block; }
 
     /* ── マップリンク ── */
     .map-link {
@@ -587,6 +588,7 @@ function buildListTable(props) {
     return `<div style="display:flex;flex-direction:column;gap:3px;">
       ${statusBadge(p.status)}
       ${d.suumo_listed   ? '<span class="badge-suumo">SUUMO掲載</span>' : ''}
+      ${d.hp_listed      ? '<span class="badge-hp">🌐 HP掲載</span>' : ''}
       ${d.for_sale_sign  ? '<span class="badge-sign">🪧 売看板あり</span>' : ''}
     </div>`;
   };
@@ -822,6 +824,7 @@ async function renderDetail(id) {
           <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;align-items:center;">
             ${statusBadge(prop.status)}
             ${det.suumo_listed  ? '<span class="badge-suumo">SUUMO掲載</span>' : ''}
+            ${det.hp_listed     ? '<span class="badge-hp">🌐 HP掲載</span>' : ''}
             ${det.for_sale_sign ? '<span class="badge-sign">🪧 売看板あり</span>' : ''}
             ${isLand ? '<span class="badge-land">土地</span>' : '<span class="badge-house">中古住宅</span>'}
             ${det.transaction_type === 'owner'  ? '<span class="badge-owner">売主</span>'  : ''}
@@ -843,7 +846,7 @@ async function renderDetail(id) {
         <table class="info-table">
           <tr><th>コード</th><td>${esc(prop.code||'—')}</td></tr>
           <tr><th>物件種別</th><td>${isLand ? '土地' : '中古住宅'}</td></tr>
-          <tr><th>掲載状況</th><td>${statusLabel(prop.status)}${det.suumo_listed ? '　<span class="badge-suumo">SUUMO掲載</span>' : ''}${det.for_sale_sign ? '　<span class="badge-sign">🪧 売看板あり</span>' : ''}</td></tr>
+          <tr><th>掲載状況</th><td>${statusLabel(prop.status)}${det.suumo_listed ? '　<span class="badge-suumo">SUUMO掲載</span>' : ''}${det.hp_listed ? '　<span class="badge-hp">🌐 HP掲載</span>' : ''}${det.for_sale_sign ? '　<span class="badge-sign">🪧 売看板あり</span>' : ''}</td></tr>
           <tr><th>情報公開日</th><td>${det.publish_date || '—'}</td></tr>
           <tr><th>取引態様</th><td>${transactionLabel(det.transaction_type)}</td></tr>
           <tr><th>販売価格</th><td>${prop.price ? prop.price.toLocaleString()+'万円' : '—'}</td></tr>
@@ -1089,6 +1092,11 @@ function showPropertyModal(type, prop, det) {
             <input id="f-suumo" type="checkbox" ${d.suumo_listed?'checked':''}
                    onchange="this.closest('.doc-check-label').classList.toggle('checked',this.checked)">
             SUUMO掲載あり
+          </label>
+          <label class="doc-check-label${d.hp_listed?' checked':''}" style="width:fit-content;">
+            <input id="f-hp" type="checkbox" ${d.hp_listed?'checked':''}
+                   onchange="this.closest('.doc-check-label').classList.toggle('checked',this.checked)">
+            🌐 HP掲載あり
           </label>
           <label class="doc-check-label${d.for_sale_sign?' checked':''}" style="width:fit-content;">
             <input id="f-sign" type="checkbox" ${d.for_sale_sign?'checked':''}
@@ -1368,6 +1376,7 @@ async function saveProperty() {
     transaction_type:  document.getElementById('f-trans').value             || null,
     brokerage_fee:     document.getElementById('f-brokerage').value.trim()  || null,
     suumo_listed:      document.getElementById('f-suumo').checked,
+    hp_listed:         document.getElementById('f-hp').checked,
     for_sale_sign:     document.getElementById('f-sign').checked,
     publish_date:      document.getElementById('f-publish-date').value      || null,
   };
