@@ -387,6 +387,7 @@
     .badge-broker   { font-size: 10px; background: #555555; color: #6ab0ff;       padding: 2px 7px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-sign     { font-size: 9px;  background: #3a1e0a; color: #f0830a;       padding: 1px 5px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block; }
     .badge-hp       { font-size: 9px;  background: #4a1a7a; color: #d4a8ff;       padding: 1px 5px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block; }
+    .badge-managed  { font-size: 9px;  background: #1a3a4a; color: #7fd4f0;       padding: 1px 5px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block; }
 
     /* ── マップリンク ── */
     .map-link {
@@ -537,20 +538,32 @@ async function renderList() {
     .order('created_at', { ascending: false });
 
   if (!state.filterSold) q = q.eq('is_sold', false);
-  if (state.filterType !== 'all') q = q.eq('type', state.filterType);
 
-  const { data: props, error } = await q;
+  const { data: allProps, error } = await q;
   if (error) { toast('データ取得失敗: ' + error.message, 'error'); return; }
 
-  const all    = props || [];
-  const lands  = all.filter(p => p.type === 'land');
-  const houses = all.filter(p => p.type === 'house');
+  const all     = allProps || [];
+  const lands   = all.filter(p => p.type === 'land'  && (p.property_details?.transaction_type !== 'managed'));
+  const houses  = all.filter(p => p.type === 'house' && (p.property_details?.transaction_type !== 'managed'));
+  const managed = all.filter(p => p.property_details?.transaction_type === 'managed');
+
+  const ownerFirst = arr => [...arr].sort((a, b) => {
+    const ta = a.property_details?.transaction_type === 'owner' ? 0 : 1;
+    const tb = b.property_details?.transaction_type === 'owner' ? 0 : 1;
+    return ta - tb;
+  });
+
+  let displayed;
+  if      (state.filterType === 'land')    displayed = ownerFirst(lands);
+  else if (state.filterType === 'house')   displayed = ownerFirst(houses);
+  else if (state.filterType === 'managed') displayed = managed;
+  else                                     displayed = all;
 
   el.innerHTML = `
     <div class="page-header">
       <div>
         <div class="page-title">🏠 物件一覧</div>
-        <div class="page-sub">土地 ${lands.length}件 ／ 中古住宅 ${houses.length}件</div>
+        <div class="page-sub">土地 ${lands.length}件 ／ 中古住宅 ${houses.length}件 ／ 管理物件 ${managed.length}件</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
@@ -564,17 +577,18 @@ async function renderList() {
     </div>
 
     <div class="filter-tabs">
-      <button class="filter-tab ${state.filterType==='all'   ?'active':''}" onclick="state.filterType='all';renderList()">全て（${all.length}）</button>
-      <button class="filter-tab ${state.filterType==='land'  ?'active':''}" onclick="state.filterType='land';renderList()">🌐 土地（${lands.length}）</button>
-      <button class="filter-tab ${state.filterType==='house' ?'active':''}" onclick="state.filterType='house';renderList()">🏡 中古住宅（${houses.length}）</button>
+      <button class="filter-tab ${state.filterType==='land'    ?'active':''}" onclick="state.filterType='land';renderList()">🌐 土地（${lands.length}）</button>
+      <button class="filter-tab ${state.filterType==='house'   ?'active':''}" onclick="state.filterType='house';renderList()">🏡 中古住宅（${houses.length}）</button>
+      <button class="filter-tab ${state.filterType==='managed' ?'active':''}" onclick="state.filterType='managed';renderList()">🔧 管理物件（${managed.length}）</button>
+      <button class="filter-tab ${state.filterType==='all'     ?'active':''}" onclick="state.filterType='all';renderList()">全て（${all.length}）</button>
     </div>
 
-    ${all.length === 0
+    ${displayed.length === 0
       ? `<div class="section" style="text-align:center;padding:40px;color:var(--text-muted);">
-           物件が登録されていません。「＋ 土地を追加」「＋ 中古住宅を追加」から登録してください。
+           該当する物件がありません。
          </div>`
       : `<div class="section" style="padding:0;overflow:hidden;">
-           <div style="overflow-x:auto;">${buildListTable(all)}</div>
+           <div style="overflow-x:auto;">${buildListTable(displayed)}</div>
          </div>`
     }
   `;
@@ -595,19 +609,20 @@ function buildListTable(props) {
   };
 
   // 取引態様バッジ
-  const transBadge = (t) => t === 'owner' ? '<span class="badge-owner">売主</span>'
-                           : t === 'broker' ? '<span class="badge-broker">仲介</span>' : '—';
+  const transBadge = (t) => t === 'owner'   ? '<span class="badge-owner">売主</span>'
+                           : t === 'broker'  ? '<span class="badge-broker">仲介</span>'
+                           : t === 'managed' ? '<span class="badge-managed">管理物件</span>' : '—';
 
   let heads, rowFn;
 
   if (t === 'land') {
-    heads = ['掲載 / SUUMO', 'コード', '住所', '販売価格', '面積(坪)', '用途地域', '学区（小）', '学区（中）', '取引態様', '売買完了', ''];
+    heads = ['掲載 / SUUMO', 'コード', '物件名', '販売価格', '面積(坪)', '用途地域', '学区（小）', '学区（中）', '取引態様', '売買完了', ''];
     rowFn = p => {
       const d = p.property_details || {};
       return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
         <td>${statusCell(p)}</td>
         <td>${esc(p.code||'')}</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.property_name||p.address||'')}">${esc(p.property_name||p.address||'—')}</td>
         <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
         <td>${d.area_tsubo ? d.area_tsubo+'坪' : '—'}</td>
         <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(d.zoning||'—')}</td>
@@ -619,13 +634,13 @@ function buildListTable(props) {
       </tr>`;
     };
   } else if (t === 'house') {
-    heads = ['掲載 / SUUMO', 'コード', '住所', '販売価格', '土地(坪)', '建物(坪)', '築年月', '間取', '学区（小）', '学区（中）', '取引態様', '売買完了', ''];
+    heads = ['掲載 / SUUMO', 'コード', '物件名', '販売価格', '土地(坪)', '建物(坪)', '築年月', '間取', '学区（小）', '学区（中）', '取引態様', '売買完了', ''];
     rowFn = p => {
       const d = p.property_details || {};
       return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
         <td>${statusCell(p)}</td>
         <td>${esc(p.code||'')}</td>
-        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.property_name||p.address||'')}">${esc(p.property_name||p.address||'—')}</td>
         <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
         <td>${d.land_area_tsubo ? d.land_area_tsubo+'坪' : '—'}</td>
         <td>${d.building_area_tsubo ? d.building_area_tsubo+'坪' : '—'}</td>
@@ -639,7 +654,7 @@ function buildListTable(props) {
       </tr>`;
     };
   } else {
-    heads = ['種別', '掲載 / SUUMO', 'コード', '住所', '販売価格', '面積(坪)', '取引態様', '学区（小）', '売買完了', ''];
+    heads = ['種別', '掲載 / SUUMO', 'コード', '物件名', '販売価格', '面積(坪)', '取引態様', '学区（小）', '売買完了', ''];
     rowFn = p => {
       const d    = p.property_details || {};
       const tsubo = p.type === 'land'
@@ -649,7 +664,7 @@ function buildListTable(props) {
         <td>${p.type==='land' ? '<span class="badge-land">土地</span>' : '<span class="badge-house">中古住宅</span>'}</td>
         <td>${statusCell(p)}</td>
         <td>${esc(p.code||'')}</td>
-        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.property_name||p.address||'')}">${esc(p.property_name||p.address||'—')}</td>
         <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
         <td>${tsubo}</td>
         <td>${transBadge(d.transaction_type)}</td>
@@ -820,7 +835,7 @@ async function renderDetail(id) {
         <div>
           <div class="page-title">
             ${isLand ? '🌐' : '🏡'}
-            ${esc(prop.address || prop.code || '（住所未入力）')}
+            ${esc(prop.property_name || prop.address || prop.code || '（名称未入力）')}
           </div>
           <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;align-items:center;">
             ${statusBadge(prop.status)}
@@ -828,8 +843,9 @@ async function renderDetail(id) {
             ${det.hp_listed     ? '<span class="badge-hp">🌐 HP掲載</span>' : ''}
             ${det.for_sale_sign ? '<span class="badge-sign">🪧 売看板あり</span>' : ''}
             ${isLand ? '<span class="badge-land">土地</span>' : '<span class="badge-house">中古住宅</span>'}
-            ${det.transaction_type === 'owner'  ? '<span class="badge-owner">売主</span>'  : ''}
-            ${det.transaction_type === 'broker' ? '<span class="badge-broker">仲介</span>' : ''}
+            ${det.transaction_type === 'owner'   ? '<span class="badge-owner">売主</span>'   : ''}
+            ${det.transaction_type === 'broker'  ? '<span class="badge-broker">仲介</span>'  : ''}
+            ${det.transaction_type === 'managed' ? '<span class="badge-managed">管理物件</span>' : ''}
             ${prop.is_sold ? '<span class="badge-done">売買完了</span>' : ''}
           </div>
         </div>
@@ -845,6 +861,7 @@ async function renderDetail(id) {
       <div class="section">
         <div class="section-title"><span class="icon">📋</span>基本情報</div>
         <table class="info-table">
+          ${prop.property_name ? `<tr><th>物件名</th><td>${esc(prop.property_name)}</td></tr>` : ''}
           <tr><th>コード</th><td>${esc(prop.code||'—')}</td></tr>
           <tr><th>物件種別</th><td>${isLand ? '土地' : '中古住宅'}</td></tr>
           <tr><th>掲載状況</th><td>${statusLabel(prop.status)}${det.suumo_listed ? '　<span class="badge-suumo">SUUMO掲載</span>' : ''}${det.hp_listed ? '　<span class="badge-hp">🌐 HP掲載</span>' : ''}${det.for_sale_sign ? '　<span class="badge-sign">🪧 売看板あり</span>' : ''}</td></tr>
@@ -1027,7 +1044,7 @@ function showPropertyModal(type, prop, det) {
   const waterOpts     = [['','（未選択）'],['公営水道','公営水道'],['私設水道','私設水道'],['井戸','井戸'],['なし','なし'],['不明','不明']];
   const sewageOpts    = [['','（未選択）'],['公共下水','公共下水'],['合併浄化槽','合併浄化槽'],['単独浄化槽','単独浄化槽'],['なし','なし'],['不明','不明']];
   const buriedOpts    = [['','（未選択）'],['あり','あり'],['なし','なし'],['不明','不明']];
-  const transOpts     = [['','（未選択）'],['owner','売主'],['broker','仲介']];
+  const transOpts     = [['','（未選択）'],['owner','売主'],['broker','仲介'],['managed','管理物件']];
 
   // 坪自動計算 input
   const sqmInput = (idSuffix, sqmVal, tsuboId) =>
@@ -1073,6 +1090,12 @@ function showPropertyModal(type, prop, det) {
 
       <!-- 管理情報 -->
       <div class="form-section">管理情報</div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>物件名</label>
+          <input id="f-name" type="text" class="qs-control" value="${esc(p.property_name||'')}" placeholder="例：米沢市万世町 土地　など">
+        </div>
+      </div>
       <div class="form-row">
         <div class="form-group">
           <label>掲載状況</label>
@@ -1122,7 +1145,7 @@ function showPropertyModal(type, prop, det) {
           </select>
         </div>
       </div>
-      <div class="form-row" id="brokerage-row" style="${(d.transaction_type||'')==='owner' ? 'display:none;' : ''}">
+      <div class="form-row" id="brokerage-row" style="${['owner','managed'].includes(d.transaction_type||'') ? 'display:none;' : ''}">
         <div class="form-group" style="grid-column:span 2;">
           <label style="display:flex;align-items:center;gap:8px;">
             仲介手数料
@@ -1351,6 +1374,7 @@ async function saveProperty() {
 
   const propData = {
     type,
+    property_name: document.getElementById('f-name').value.trim() || null,
     code:    document.getElementById('f-code').value.trim()    || null,
     status:  document.getElementById('f-status').value,
     address: document.getElementById('f-address').value.trim() || null,
@@ -1837,7 +1861,7 @@ function statusLabel(s) {
 }
 
 function transactionLabel(t) {
-  return { owner:'売主', broker:'仲介' }[t] || '—';
+  return { owner:'売主', broker:'仲介', managed:'管理物件' }[t] || '—';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -1890,7 +1914,7 @@ function onTransChange() {
   const transEl = document.getElementById('f-trans');
   const rowEl   = document.getElementById('brokerage-row');
   if (!transEl || !rowEl) return;
-  if (transEl.value === 'owner') {
+  if (transEl.value === 'owner' || transEl.value === 'managed') {
     rowEl.style.display = 'none';
   } else {
     rowEl.style.display = '';
