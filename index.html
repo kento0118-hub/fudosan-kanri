@@ -101,11 +101,8 @@
       gap: 16px;
       flex-wrap: wrap;
     }
-    .page-title {
-      font-size: 20px; font-weight: 700;
-      color: var(--text-primary);
-    }
-    .page-sub { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
+    .page-title { font-size: 20px; font-weight: 700; color: var(--text-primary); }
+    .page-sub   { font-size: 13px; color: var(--text-secondary); margin-top: 4px; }
 
     /* ── セクション ── */
     .section {
@@ -123,10 +120,7 @@
     .section-title .icon { font-size: 16px; }
 
     /* ── フィルタタブ ── */
-    .filter-tabs {
-      display: flex; gap: 4px;
-      margin-bottom: 12px;
-    }
+    .filter-tabs { display: flex; gap: 4px; margin-bottom: 12px; }
     .filter-tab {
       padding: 6px 16px;
       border: 1px solid var(--border);
@@ -142,22 +136,18 @@
     .filter-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
     /* ── データテーブル ── */
-    .data-table {
-      width: 100%;
-      border-collapse: collapse;
-      font-size: 13px;
-    }
+    .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .data-table th {
-      padding: 8px 12px;
+      padding: 8px 10px;
       background: var(--bg-input);
       border-bottom: 2px solid var(--border);
       font-size: 11px; font-weight: 700;
-      color: var(--text-muted); letter-spacing: .05em;
+      color: var(--text-muted); letter-spacing: .04em;
       text-align: left;
       white-space: nowrap;
     }
     .data-table td {
-      padding: 10px 12px;
+      padding: 9px 10px;
       border-bottom: 1px solid var(--border);
       vertical-align: middle;
     }
@@ -185,19 +175,11 @@
     .info-table tr:last-child td { border-bottom: none; }
 
     /* ── 2カラム ── */
-    .two-col {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 16px;
-    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
     @media (max-width: 960px) { .two-col { grid-template-columns: 1fr; } }
 
     /* ── 写真グリッド ── */
-    .photo-grid {
-      display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 10px;
-    }
+    .photo-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; }
     .photo-item {
       position: relative;
       aspect-ratio: 4/3;
@@ -205,10 +187,7 @@
       overflow: hidden;
       border: 1px solid var(--border);
     }
-    .photo-item img {
-      width: 100%; height: 100%;
-      object-fit: cover;
-    }
+    .photo-item img { width: 100%; height: 100%; object-fit: cover; }
     .photo-delete {
       position: absolute; top: 6px; right: 6px;
       background: rgba(0,0,0,.6); color: #fff;
@@ -254,10 +233,11 @@
       font-size: 11px; font-weight: 700;
       color: var(--text-muted); letter-spacing: .1em;
       text-transform: uppercase;
-      margin-bottom: 12px;
+      margin: 16px 0 10px;
       padding-bottom: 6px;
       border-bottom: 1px solid var(--border);
     }
+    .form-section:first-child { margin-top: 0; }
     .form-row {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -269,8 +249,6 @@
       font-size: 11px; font-weight: 600;
       color: var(--text-muted); letter-spacing: .04em;
     }
-    .form-group .qs-control,
-    .form-group textarea { width: 100%; }
     .qs-control {
       padding: 8px 12px;
       background: var(--bg-input);
@@ -279,9 +257,41 @@
       color: var(--text-primary);
       font-size: 13px; font-family: inherit;
       appearance: none; -webkit-appearance: none;
+      width: 100%;
     }
     .qs-control:focus { outline: none; border-color: var(--accent); }
     textarea.qs-control { resize: vertical; }
+
+    /* ── 取得書類チェックボックス ── */
+    .doc-checkboxes {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 5px;
+    }
+    .doc-check-label {
+      display: flex; align-items: center; gap: 6px;
+      font-size: 12px; cursor: pointer;
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+      border-radius: 5px;
+      background: var(--bg-input);
+      transition: all .15s;
+      user-select: none;
+    }
+    .doc-check-label:hover { background: var(--accent-dim); border-color: var(--accent); }
+    .doc-check-label.checked { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+    .doc-check-label input { width: 14px; height: 14px; cursor: pointer; flex-shrink: 0; }
+
+    /* ── 築年月表示 ── */
+    .built-display {
+      font-size: 12px; color: var(--accent);
+      padding: 6px 12px;
+      background: var(--accent-dim);
+      border-radius: 6px;
+      margin-bottom: 10px;
+      min-height: 30px;
+      display: flex; align-items: center;
+    }
 
     /* ── モーダル ── */
     .modal-bg {
@@ -296,8 +306,8 @@
       background: var(--bg-card);
       border-radius: 12px;
       width: 100%;
-      max-width: 640px;
-      max-height: 90vh;
+      max-width: 680px;
+      max-height: 92vh;
       display: flex; flex-direction: column;
       box-shadow: 0 20px 60px rgba(0,0,0,.3);
     }
@@ -311,15 +321,10 @@
     .modal-close {
       background: none; border: none;
       font-size: 18px; color: var(--text-muted);
-      cursor: pointer; padding: 4px;
-      line-height: 1;
+      cursor: pointer; padding: 4px; line-height: 1;
     }
     .modal-close:hover { color: var(--text-primary); }
-    .modal-body {
-      padding: 20px 22px;
-      overflow-y: auto;
-      flex: 1;
-    }
+    .modal-body { padding: 20px 22px; overflow-y: auto; flex: 1; }
     .modal-footer {
       display: flex; justify-content: flex-end; gap: 10px;
       padding: 14px 22px;
@@ -333,52 +338,36 @@
       background: var(--accent); color: #fff;
       border: none; border-radius: 6px;
       font-size: 13px; font-weight: 600; font-family: inherit;
-      cursor: pointer;
-      transition: opacity .15s;
-      white-space: nowrap;
+      cursor: pointer; transition: opacity .15s; white-space: nowrap;
     }
     .btn-primary:hover { opacity: .85; }
     .btn-cancel {
       padding: 8px 18px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      font-size: 13px; font-weight: 500; font-family: inherit;
-      color: var(--text-secondary);
-      cursor: pointer;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 6px; font-size: 13px; font-weight: 500; font-family: inherit;
+      color: var(--text-secondary); cursor: pointer;
     }
     .btn-cancel:hover { background: var(--bg-card-hover); }
     .btn-danger {
       padding: 6px 12px;
       background: #3a1e1e; color: var(--red);
-      border: 1px solid #c94040;
-      border-radius: 6px;
+      border: 1px solid #c94040; border-radius: 6px;
       font-size: 12px; font-weight: 600; font-family: inherit;
-      cursor: pointer;
-      transition: opacity .15s;
-      white-space: nowrap;
+      cursor: pointer; transition: opacity .15s; white-space: nowrap;
     }
     .btn-danger:hover { opacity: .8; }
     .btn-sm {
       padding: 4px 10px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 5px;
-      font-size: 11px; font-weight: 600; font-family: inherit;
-      color: var(--text-secondary);
-      cursor: pointer;
-      transition: all .15s;
-      white-space: nowrap;
+      background: var(--bg-input); border: 1px solid var(--border);
+      border-radius: 5px; font-size: 11px; font-weight: 600; font-family: inherit;
+      color: var(--text-secondary); cursor: pointer; transition: all .15s; white-space: nowrap;
     }
     .btn-sm:hover { background: var(--accent-dim); color: var(--accent); border-color: var(--accent); }
     .btn-back {
-      padding: 6px 14px;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 6px;
+      padding: 6px 14px; background: var(--bg-input);
+      border: 1px solid var(--border); border-radius: 6px;
       font-size: 12px; font-weight: 600; font-family: inherit;
-      color: var(--text-secondary);
-      cursor: pointer;
+      color: var(--text-secondary); cursor: pointer;
     }
     .btn-back:hover { background: var(--bg-card-hover); }
 
@@ -389,16 +378,23 @@
     .badge-land     { font-size: 10px; background: #2a3a1a; color: #6abe3a;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-house    { font-size: 10px; background: var(--accent-dim); color: var(--accent); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-done     { font-size: 10px; background: #3a2e10; color: var(--yellow); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-suumo    { font-size: 9px;  background: #e8f0fe; color: #1a73e8;       padding: 1px 5px; border-radius: 4px; font-weight: 700; white-space: nowrap; display: inline-block; margin-left: 3px; }
+    .badge-owner    { font-size: 10px; background: #2a1a3a; color: var(--purple); padding: 2px 7px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-broker   { font-size: 10px; background: #1e2a3a; color: var(--accent); padding: 2px 7px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+
+    /* ── マップリンク ── */
+    .map-link {
+      font-size: 11px; color: var(--accent);
+      text-decoration: none; margin-left: 8px;
+    }
+    .map-link:hover { text-decoration: underline; }
 
     /* ── トースト ── */
     .toast {
       position: fixed; bottom: 24px; right: 24px;
-      padding: 12px 20px;
-      border-radius: 8px;
+      padding: 12px 20px; border-radius: 8px;
       font-size: 13px; font-weight: 500;
-      z-index: 1000;
-      box-shadow: 0 4px 20px rgba(0,0,0,.2);
-      transition: opacity .3s;
+      z-index: 1000; box-shadow: 0 4px 20px rgba(0,0,0,.2);
     }
     .toast.hidden { display: none; }
     .toast-success { background: #1a3a1e; color: var(--green); border: 1px solid var(--green); }
@@ -408,24 +404,16 @@
     /* ── セットアップ画面 ── */
     .setup-card {
       max-width: 520px; margin: 60px auto;
-      background: var(--bg-card);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 36px 40px;
+      background: var(--bg-card); border: 1px solid var(--border);
+      border-radius: 12px; padding: 36px 40px;
     }
     .setup-card h2 { font-size: 18px; margin-bottom: 8px; }
     .setup-card p  { font-size: 13px; color: var(--text-secondary); margin-bottom: 20px; }
     .setup-card code {
-      display: block;
-      background: var(--bg-input);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      padding: 12px 14px;
-      font-size: 12px;
-      font-family: monospace;
-      color: var(--accent);
-      margin-bottom: 16px;
-      word-break: break-all;
+      display: block; background: var(--bg-input);
+      border: 1px solid var(--border); border-radius: 6px;
+      padding: 12px 14px; font-size: 12px; font-family: monospace;
+      color: var(--accent); margin-bottom: 16px; word-break: break-all;
     }
   </style>
 </head>
@@ -468,35 +456,19 @@
 
 <script>
 // ═══════════════════════════════════════════════════════════
-// ⚙️ 設定 — Supabase の接続情報をここに入力してください
-//    Supabase ダッシュボード → Settings → API で確認できます
+// ⚙️ Supabase 接続情報
 // ═══════════════════════════════════════════════════════════
 const SUPABASE_URL  = 'https://vgidmwnffcopgnzcfsvp.supabase.co';
 const SUPABASE_ANON = 'sb_publishable_-MWqGL2IDetS_IvuSYOECw_YSFZN57m';
 // ═══════════════════════════════════════════════════════════
 
 const { createClient } = supabase;
-
-// 未設定チェック
-if (SUPABASE_URL.includes('YOUR_PROJECT_ID')) {
-  document.getElementById('content').innerHTML = `
-    <div class="setup-card">
-      <h2>⚙️ Supabase 接続設定が必要です</h2>
-      <p>
-        <code>index.html</code> の先頭にある設定欄に<br>
-        SupabaseのURLとAnon Keyを入力してください。
-      </p>
-      <code>const SUPABASE_URL  = 'https://xxxx.supabase.co';<br>const SUPABASE_ANON = 'eyJ...';</code>
-      <p style="font-size:12px;color:var(--text-muted);">
-        Supabase ダッシュボード → Settings → API → Project URL / anon key
-      </p>
-    </div>`;
-  throw new Error('Supabase not configured');
-}
-
 const db = createClient(SUPABASE_URL, SUPABASE_ANON);
 
-// ── アプリ状態 ──────────────────────────────────────────────
+// ── 取得書類の選択肢 ──
+const DOC_OPTIONS = ['登記','公図','案内図','上水道配管図','下水道配管図','地積測量図','道路台帳写し','固定資産税課税明細'];
+
+// ── アプリ状態 ──
 let state = {
   view:        'list',
   propId:      null,
@@ -506,13 +478,11 @@ let state = {
   logsFilter:  '',
 };
 
-// ── 初期化 ─────────────────────────────────────────────────
+// ── 初期化 ──
 (async () => {
   const { data, error } = await db
     .from('checklist_items').select('*').order('order_index');
-  if (error) {
-    toast('チェックリスト取得失敗: ' + error.message, 'error');
-  }
+  if (error) toast('チェックリスト取得失敗: ' + error.message, 'error');
   state.checklistItems = data || [];
   await showList();
 })();
@@ -535,7 +505,7 @@ async function showDetail(propId) {
 }
 
 async function showLogs(filterPropId) {
-  state.view      = 'logs';
+  state.view       = 'logs';
   state.logsFilter = filterPropId || '';
   setActiveNav('nav-logs');
   await renderLogs(state.logsFilter);
@@ -565,7 +535,7 @@ async function renderList() {
   const { data: props, error } = await q;
   if (error) { toast('データ取得失敗: ' + error.message, 'error'); return; }
 
-  const all   = props || [];
+  const all    = props || [];
   const lands  = all.filter(p => p.type === 'land');
   const houses = all.filter(p => p.type === 'house');
 
@@ -606,61 +576,75 @@ async function renderList() {
 function buildListTable(props) {
   const t = state.filterType;
 
+  // SUUMO + status セル
+  const statusCell = (p) => {
+    const d = p.property_details || {};
+    return `<div style="display:flex;flex-direction:column;gap:3px;">
+      ${statusBadge(p.status)}
+      ${d.suumo_listed ? '<span class="badge-suumo">SUUMO掲載</span>' : ''}
+    </div>`;
+  };
+
+  // 取引態様バッジ
+  const transBadge = (t) => t === 'owner' ? '<span class="badge-owner">売主</span>'
+                           : t === 'broker' ? '<span class="badge-broker">仲介</span>' : '—';
+
   let heads, rowFn;
 
   if (t === 'land') {
-    heads = ['掲載','コード','住所','販売価格','面積㎡','坪','用途地域','学区（小）','売買完了',''];
+    heads = ['掲載 / SUUMO', 'コード', '住所', '販売価格', '面積(坪)', '用途地域', '学区（小）', '学区（中）', '取引態様', '売買完了', ''];
     rowFn = p => {
       const d = p.property_details || {};
       return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
-        <td>${statusBadge(p.status)}</td>
+        <td>${statusCell(p)}</td>
         <td>${esc(p.code||'')}</td>
-        <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
+        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
         <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
-        <td>${d.area_sqm ?? '—'}</td>
-        <td>${d.area_tsubo ?? '—'}</td>
-        <td style="max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(d.zoning||'—')}</td>
+        <td>${d.area_tsubo ? d.area_tsubo+'坪' : '—'}</td>
+        <td style="max-width:120px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">${esc(d.zoning||'—')}</td>
         <td>${esc(d.school_elementary||'—')}</td>
+        <td>${esc(d.school_junior||'—')}</td>
+        <td>${transBadge(d.transaction_type)}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
         <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
       </tr>`;
     };
   } else if (t === 'house') {
-    heads = ['掲載','コード','住所','販売価格','土地㎡','建物㎡','築年月','間取','学区（小）','売買完了',''];
+    heads = ['掲載 / SUUMO', 'コード', '住所', '販売価格', '土地(坪)', '建物(坪)', '築年月', '間取', '学区（小）', '学区（中）', '取引態様', '売買完了', ''];
     rowFn = p => {
       const d = p.property_details || {};
       return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
-        <td>${statusBadge(p.status)}</td>
+        <td>${statusCell(p)}</td>
         <td>${esc(p.code||'')}</td>
-        <td style="max-width:180px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
+        <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
         <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
-        <td>${d.land_area_sqm ?? '—'}</td>
-        <td>${d.building_area_sqm ?? '—'}</td>
+        <td>${d.land_area_tsubo ? d.land_area_tsubo+'坪' : '—'}</td>
+        <td>${d.building_area_tsubo ? d.building_area_tsubo+'坪' : '—'}</td>
         <td>${esc(d.built_date||'—')}</td>
         <td>${esc(d.floor_plan||'—')}</td>
         <td>${esc(d.school_elementary||'—')}</td>
+        <td>${esc(d.school_junior||'—')}</td>
+        <td>${transBadge(d.transaction_type)}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
         <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
       </tr>`;
     };
   } else {
-    heads = ['種別','掲載','コード','住所','販売価格','面積','その他','売買完了',''];
+    heads = ['種別', '掲載 / SUUMO', 'コード', '住所', '販売価格', '面積(坪)', '取引態様', '学区（小）', '売買完了', ''];
     rowFn = p => {
-      const d = p.property_details || {};
-      const area  = p.type === 'land'
-        ? (d.area_sqm ? d.area_sqm + '㎡' : '—')
-        : (d.building_area_sqm ? d.building_area_sqm + '㎡' : '—');
-      const extra = p.type === 'land'
-        ? esc(d.zoning || '—')
-        : [d.built_date, d.floor_plan].filter(Boolean).join(' / ') || '—';
+      const d    = p.property_details || {};
+      const tsubo = p.type === 'land'
+        ? (d.area_tsubo ? d.area_tsubo+'坪' : '—')
+        : (d.building_area_tsubo ? d.building_area_tsubo+'坪' : '—');
       return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
         <td>${p.type==='land' ? '<span class="badge-land">土地</span>' : '<span class="badge-house">中古住宅</span>'}</td>
-        <td>${statusBadge(p.status)}</td>
+        <td>${statusCell(p)}</td>
         <td>${esc(p.code||'')}</td>
         <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.address||'')}">${esc(p.address||'—')}</td>
         <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
-        <td>${area}</td>
-        <td>${extra}</td>
+        <td>${tsubo}</td>
+        <td>${transBadge(d.transaction_type)}</td>
+        <td>${esc(d.school_elementary||'—')}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
         <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
       </tr>`;
@@ -692,16 +676,24 @@ async function renderDetail(id) {
 
   if (propRes.error) { toast('物件取得失敗: ' + propRes.error.message, 'error'); return; }
 
-  const prop    = propRes.data;
-  const photos  = photosRes.data  || [];
-  const checks  = checksRes.data  || [];
-  const logs    = logsRes.data    || [];
-  const det     = prop.property_details || {};
-  const isLand  = prop.type === 'land';
+  const prop   = propRes.data;
+  const photos = photosRes.data || [];
+  const checks = checksRes.data || [];
+  const logs   = logsRes.data   || [];
+  const det    = prop.property_details || {};
+  const isLand = prop.type === 'land';
 
-  // キャッシュ（edit modal 用）
   window._curProp = prop;
   window._curDet  = det;
+
+  // ── Googleマップリンク ──
+  const mapsLink = prop.address
+    ? `<a class="map-link" href="https://www.google.com/maps/search/${encodeURIComponent(prop.address)}" target="_blank" rel="noopener">🗺 マップで見る</a>`
+    : '';
+
+  // ── 取得書類 ──
+  const docs = parseDocuments(det.documents);
+  const docsDisplay = docs.length ? docs.join('　') : '—';
 
   // ── 写真 HTML ──
   const photoHtml = `
@@ -709,7 +701,7 @@ async function renderDetail(id) {
       ${photos.map(ph => `
         <div class="photo-item">
           <img src="${esc(ph.url)}" loading="lazy" alt="物件写真"
-               onclick="window.open('${esc(ph.url)}','_blank')">
+               onclick="window.open('${esc(ph.url)}','_blank')" style="cursor:pointer;">
           <button class="photo-delete" onclick="deletePhoto('${ph.id}','${esc(ph.storage_path)}','${id}')">✕</button>
         </div>`).join('')}
       ${photos.length < 6 ? `
@@ -725,7 +717,7 @@ async function renderDetail(id) {
     </div>
   `;
 
-  // ── 間取り図 HTML（中古住宅のみ） ──
+  // ── 間取り図（中古住宅のみ） ──
   const floorHtml = !isLand ? `
     <div class="section" style="margin-top:16px;">
       <div class="section-title"><span class="icon">📐</span>間取り図</div>
@@ -747,12 +739,10 @@ async function renderDetail(id) {
   ` : '';
 
   // ── チェックリスト HTML ──
-  const clItems  = state.checklistItems.filter(i => i.property_type === prop.type || i.property_type === 'both');
-  const seasons  = [
-    { key:'spring', label:'🌸 春' },
-    { key:'summer', label:'☀️ 夏' },
-    { key:'fall',   label:'🍂 秋' },
-    { key:'winter', label:'❄️ 冬' },
+  const clItems = state.checklistItems.filter(i => i.property_type === prop.type || i.property_type === 'both');
+  const seasons = [
+    { key:'spring', label:'🌸 春' }, { key:'summer', label:'☀️ 夏' },
+    { key:'fall',   label:'🍂 秋' }, { key:'winter', label:'❄️ 冬' },
     { key:'all',    label:'📅 通年' },
   ];
   const checklistHtml = seasons.map(({ key, label }) => {
@@ -760,9 +750,9 @@ async function renderDetail(id) {
     if (!items.length) return '';
     return `
       <div style="margin-bottom:14px;">
-        <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;letter-spacing:.05em;">${label}</div>
+        <div style="font-size:11px;font-weight:700;color:var(--text-muted);margin-bottom:6px;">${label}</div>
         ${items.map(item => {
-          const chk = checks.find(c => c.item_id === item.id);
+          const chk     = checks.find(c => c.item_id === item.id);
           const checked = chk?.is_checked || false;
           return `<div class="check-item">
             <input type="checkbox" ${checked ? 'checked' : ''}
@@ -791,6 +781,9 @@ async function renderDetail(id) {
       .join('')
     : `<div style="font-size:12px;color:var(--text-muted);">実施記録がありません</div>`;
 
+  // ── 築年月表示（中古住宅） ──
+  const builtDisplay = !isLand && det.built_date ? displayBuiltDate(det.built_date) : null;
+
   el.innerHTML = `
     <!-- ヘッダー -->
     <div class="page-header">
@@ -801,9 +794,12 @@ async function renderDetail(id) {
             ${isLand ? '🌐' : '🏡'}
             ${esc(prop.address || prop.code || '（住所未入力）')}
           </div>
-          <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;">
+          <div style="display:flex;gap:6px;margin-top:4px;flex-wrap:wrap;align-items:center;">
             ${statusBadge(prop.status)}
+            ${det.suumo_listed ? '<span class="badge-suumo">SUUMO掲載</span>' : ''}
             ${isLand ? '<span class="badge-land">土地</span>' : '<span class="badge-house">中古住宅</span>'}
+            ${det.transaction_type === 'owner'  ? '<span class="badge-owner">売主</span>'  : ''}
+            ${det.transaction_type === 'broker' ? '<span class="badge-broker">仲介</span>' : ''}
             ${prop.is_sold ? '<span class="badge-done">売買完了</span>' : ''}
           </div>
         </div>
@@ -821,9 +817,13 @@ async function renderDetail(id) {
         <table class="info-table">
           <tr><th>コード</th><td>${esc(prop.code||'—')}</td></tr>
           <tr><th>物件種別</th><td>${isLand ? '土地' : '中古住宅'}</td></tr>
-          <tr><th>掲載状況</th><td>${statusLabel(prop.status)}</td></tr>
+          <tr><th>掲載状況</th><td>${statusLabel(prop.status)}${det.suumo_listed ? '　<span class="badge-suumo">SUUMO掲載</span>' : ''}</td></tr>
+          <tr><th>情報公開日</th><td>${det.publish_date || '—'}</td></tr>
+          <tr><th>取引態様</th><td>${transactionLabel(det.transaction_type)}</td></tr>
           <tr><th>販売価格</th><td>${prop.price ? prop.price.toLocaleString()+'万円' : '—'}</td></tr>
-          <tr><th>住所</th><td>${esc(prop.address||'—')}</td></tr>
+          ${det.brokerage_fee ? `<tr><th>仲介手数料</th><td>${esc(det.brokerage_fee)}</td></tr>` : ''}
+          <tr><th>住所</th><td>${esc(prop.address||'—')}${mapsLink}</td></tr>
+          <tr><th>権利</th><td>${esc(det.rights||'—')}</td></tr>
           <tr><th>売買完了</th><td>${prop.is_sold ? '✅ 完了' : '—'}</td></tr>
           ${prop.notes ? `<tr><th>備考</th><td style="white-space:pre-wrap;">${esc(prop.notes)}</td></tr>` : ''}
         </table>
@@ -837,21 +837,30 @@ async function renderDetail(id) {
             <tr><th>面積（坪）</th><td>${det.area_tsubo??'—'}</td></tr>
             <tr><th>土地状況</th><td>${esc(det.land_condition||'—')}</td></tr>
             <tr><th>用途地域</th><td>${esc(det.zoning||'—')}</td></tr>
+            <tr><th>建ぺい率</th><td>${det.building_coverage_ratio!=null ? det.building_coverage_ratio+'%' : '—'}</td></tr>
+            <tr><th>容積率</th><td>${det.floor_area_ratio!=null ? det.floor_area_ratio+'%' : '—'}</td></tr>
             <tr><th>他の法令</th><td>${esc(det.other_laws||'—')}</td></tr>
           ` : `
             <tr><th>土地面積（㎡）</th><td>${det.land_area_sqm??'—'}</td></tr>
             <tr><th>土地面積（坪）</th><td>${det.land_area_tsubo??'—'}</td></tr>
             <tr><th>建物面積（㎡）</th><td>${det.building_area_sqm??'—'}</td></tr>
             <tr><th>建物面積（坪）</th><td>${det.building_area_tsubo??'—'}</td></tr>
-            <tr><th>築年月</th><td>${esc(det.built_date||'—')}</td></tr>
+            <tr><th>築年月</th><td>${builtDisplay || '—'}</td></tr>
             <tr><th>間取</th><td>${esc(det.floor_plan||'—')}</td></tr>
+            <tr><th>増築・リフォーム歴</th><td style="white-space:pre-wrap;">${esc(det.renovation_history||'—')}</td></tr>
+            <tr><th>用途地域</th><td>${esc(det.zoning||'—')}</td></tr>
+            <tr><th>建ぺい率</th><td>${det.building_coverage_ratio!=null ? det.building_coverage_ratio+'%' : '—'}</td></tr>
+            <tr><th>容積率</th><td>${det.floor_area_ratio!=null ? det.floor_area_ratio+'%' : '—'}</td></tr>
+            <tr><th>他の法令</th><td>${esc(det.other_laws||'—')}</td></tr>
           `}
+          <tr><th>道路幅員</th><td>${esc(det.road_width||'—')}</td></tr>
+          <tr><th>間口</th><td>${esc(det.frontage||'—')}</td></tr>
           <tr><th>学区（小）</th><td>${esc(det.school_elementary||'—')}</td></tr>
           <tr><th>学区（中）</th><td>${esc(det.school_junior||'—')}</td></tr>
           <tr><th>上水道</th><td>${esc(det.water_supply||'—')}</td></tr>
           <tr><th>下水道</th><td>${esc(det.sewage||'—')}</td></tr>
           <tr><th>埋蔵</th><td>${esc(det.buried_artifacts||'—')}</td></tr>
-          <tr><th>取得書類</th><td>${esc(det.documents||'—')}</td></tr>
+          <tr><th>取得書類</th><td>${docsDisplay}</td></tr>
         </table>
       </div>
     </div>
@@ -871,9 +880,8 @@ async function renderDetail(id) {
         <div class="section-title"><span class="icon">✅</span>管理チェックリスト</div>
         ${checklistHtml || '<div style="font-size:12px;color:var(--text-muted);">項目がありません</div>'}
       </div>
-
       <div class="section">
-        <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <div class="section-title" style="justify-content:space-between;">
           <span><span class="icon">📝</span>実施記録</span>
           <button class="btn-sm" onclick="openLogModal('${id}')">＋ 記録を追加</button>
         </div>
@@ -888,9 +896,9 @@ async function renderDetail(id) {
 // ════════════════════════════════════════════════════════════
 
 async function renderLogs(filterPropId) {
-  filterPropId = filterPropId || '';
+  filterPropId     = filterPropId || '';
   state.logsFilter = filterPropId;
-  const el = document.getElementById('content');
+  const el         = document.getElementById('content');
 
   const [propsRes, logsRes] = await Promise.all([
     db.from('properties').select('id, code, address, type').order('created_at', { ascending: false }),
@@ -903,8 +911,8 @@ async function renderLogs(filterPropId) {
     })(),
   ]);
 
-  const allProps = propsRes.data  || [];
-  const logs     = logsRes.data   || [];
+  const allProps = propsRes.data || [];
+  const logs     = logsRes.data  || [];
 
   const propOpts = allProps.map(p =>
     `<option value="${p.id}" ${p.id === filterPropId ? 'selected' : ''}>${p.code ? p.code+' ' : ''}${p.address || ''}</option>`
@@ -935,28 +943,19 @@ async function renderLogs(filterPropId) {
       <div class="page-title">📋 記録台帳</div>
       <button class="btn-primary" onclick="openLogModal('')">＋ 記録を追加</button>
     </div>
-
     <div class="section">
       <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;flex-wrap:wrap;">
         <span style="font-size:12px;color:var(--text-muted);white-space:nowrap;">物件で絞り込み：</span>
-        <select class="qs-control" style="max-width:320px;"
-                onchange="renderLogs(this.value)">
-          <option value="">全物件</option>
-          ${propOpts}
+        <select class="qs-control" style="max-width:320px;" onchange="renderLogs(this.value)">
+          <option value="">全物件</option>${propOpts}
         </select>
       </div>
-
       <div style="overflow-x:auto;">
         <table class="data-table">
           <thead>
             <tr>
-              <th>実施日</th>
-              <th>種別</th>
-              <th>物件</th>
-              <th>作業内容</th>
-              <th>次回目安</th>
-              <th>メモ</th>
-              <th></th>
+              <th>実施日</th><th>種別</th><th>物件</th>
+              <th>作業内容</th><th>次回目安</th><th>メモ</th><th></th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
@@ -985,20 +984,48 @@ function showPropertyModal(type, prop, det) {
   const p = prop || {};
   const d = det  || {};
 
-  const statusOpts = ['active','inactive','sold'].map(v =>
-    `<option value="${v}" ${(p.status||'active')===v?'selected':''}>${statusLabel(v)}</option>`
-  ).join('');
-  const waterOpts  = ['','公営水道','私設水道','井戸','なし','不明'].map(v =>
-    `<option value="${v}" ${(d.water_supply||'')==v?'selected':''}>${v||'（未選択）'}</option>`).join('');
-  const sewageOpts = ['','公共下水','合併浄化槽','単独浄化槽','なし','不明'].map(v =>
-    `<option value="${v}" ${(d.sewage||'')==v?'selected':''}>${v||'（未選択）'}</option>`).join('');
-  const buriedOpts = ['','あり','なし','不明'].map(v =>
-    `<option value="${v}" ${(d.buried_artifacts||'')==v?'selected':''}>${v||'（未選択）'}</option>`).join('');
+  const sel = (id, val, opts) =>
+    `<select id="${id}" class="qs-control">${opts.map(([v,l]) =>
+      `<option value="${v}" ${(val||'')==v?'selected':''}>${l}</option>`).join('')}</select>`;
 
+  const statusOpts    = [['active','掲載中'],['inactive','非掲載'],['sold','成約済']];
+  const waterOpts     = [['','（未選択）'],['公営水道','公営水道'],['私設水道','私設水道'],['井戸','井戸'],['なし','なし'],['不明','不明']];
+  const sewageOpts    = [['','（未選択）'],['公共下水','公共下水'],['合併浄化槽','合併浄化槽'],['単独浄化槽','単独浄化槽'],['なし','なし'],['不明','不明']];
+  const buriedOpts    = [['','（未選択）'],['あり','あり'],['なし','なし'],['不明','不明']];
+  const transOpts     = [['','（未選択）'],['owner','売主'],['broker','仲介']];
+
+  // 坪自動計算 input
   const sqmInput = (idSuffix, sqmVal, tsuboId) =>
     `<input id="${idSuffix}" type="number" step="0.01" class="qs-control"
        value="${sqmVal||''}"
        oninput="const t=document.getElementById('${tsuboId}');if(t)t.value=this.value?(this.value*0.3025).toFixed(2):''">`;
+
+  // 取得書類チェックボックス
+  const checkedDocs = parseDocuments(d.documents);
+  const docsHtml = `<div class="doc-checkboxes">
+    ${DOC_OPTIONS.map((opt, i) => `
+      <label class="doc-check-label${checkedDocs.includes(opt)?' checked':''}">
+        <input type="checkbox" id="f-doc-${i}" value="${opt}"
+               ${checkedDocs.includes(opt)?'checked':''}
+               onchange="this.closest('.doc-check-label').classList.toggle('checked',this.checked)">
+        ${opt}
+      </label>`).join('')}
+  </div>`;
+
+  // 築年月 解析（中古住宅編集時）
+  let builtYear = '', builtMonth = '';
+  if (!isLand && d.built_date) {
+    const ym = d.built_date.match(/(\d{4})/);
+    const mm = d.built_date.match(/(\d{1,2})月/);
+    if (ym) builtYear  = ym[1];
+    if (mm) builtMonth = mm[1];
+  }
+
+  const monthSel = `<select id="f-built-month" class="qs-control" onchange="updateBuiltDisplay()">
+    <option value="">月を選択</option>
+    ${[1,2,3,4,5,6,7,8,9,10,11,12].map(m =>
+      `<option value="${m}" ${String(builtMonth)===String(m)?'selected':''}>${m}月</option>`).join('')}
+  </select>`;
 
   document.getElementById('modal').innerHTML = `
     <div class="modal-header">
@@ -1009,11 +1036,12 @@ function showPropertyModal(type, prop, det) {
       <input type="hidden" id="f-id"   value="${p.id||''}">
       <input type="hidden" id="f-type" value="${type}">
 
-      <div class="form-section">基本情報</div>
+      <!-- 管理情報 -->
+      <div class="form-section">管理情報</div>
       <div class="form-row">
         <div class="form-group">
           <label>掲載状況</label>
-          <select id="f-status" class="qs-control">${statusOpts}</select>
+          ${sel('f-status', p.status||'active', statusOpts)}
         </div>
         <div class="form-group">
           <label>コード</label>
@@ -1021,88 +1049,209 @@ function showPropertyModal(type, prop, det) {
         </div>
       </div>
       <div class="form-row">
-        <div class="form-group" style="grid-column:span 2;">
-          <label>住所</label>
-          <input id="f-address" type="text" class="qs-control" value="${esc(p.address||'')}" placeholder="山形県米沢市…">
+        <div class="form-group">
+          <label>情報公開日</label>
+          <input id="f-publish-date" type="date" class="qs-control" value="${d.publish_date||''}">
+        </div>
+        <div class="form-group" style="justify-content:flex-end;padding-top:18px;">
+          <label class="doc-check-label${d.suumo_listed?' checked':''}" style="width:fit-content;">
+            <input id="f-suumo" type="checkbox" ${d.suumo_listed?'checked':''}
+                   onchange="this.closest('.doc-check-label').classList.toggle('checked',this.checked)">
+            SUUMO掲載あり
+          </label>
         </div>
       </div>
+
+      <!-- 価格・取引 -->
+      <div class="form-section">価格・取引</div>
       <div class="form-row">
         <div class="form-group">
           <label>販売価格（万円）</label>
           <input id="f-price" type="number" class="qs-control" value="${p.price||''}" placeholder="例：1200">
         </div>
-        <div class="form-group" style="justify-content:flex-end;padding-bottom:4px;">
-          <label style="cursor:pointer;display:flex;align-items:center;gap:8px;font-size:13px;font-weight:400;color:var(--text-primary);">
+        <div class="form-group">
+          <label>取引態様</label>
+          ${sel('f-trans', d.transaction_type||'', transOpts)}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>仲介手数料</label>
+          <input id="f-brokerage" type="text" class="qs-control" value="${esc(d.brokerage_fee||'')}" placeholder="例：売買価格×3%+6万円+税">
+        </div>
+        <div class="form-group" style="justify-content:flex-end;padding-top:18px;">
+          <label style="display:flex;align-items:center;gap:8px;font-size:13px;cursor:pointer;">
             <input id="f-sold" type="checkbox" ${p.is_sold?'checked':''} style="width:15px;height:15px;">
             売買完了
           </label>
         </div>
       </div>
 
-      <div class="form-section" style="margin-top:4px;">詳細情報${isLand ? '（土地）' : '（中古住宅）'}</div>
+      <!-- 所在地 -->
+      <div class="form-section">所在地</div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>住所</label>
+          <input id="f-address" type="text" class="qs-control" value="${esc(p.address||'')}" placeholder="山形県米沢市…">
+        </div>
+      </div>
 
       ${isLand ? `
-        <div class="form-row">
-          <div class="form-group">
-            <label>面積（㎡）</label>
-            ${sqmInput('f-area-sqm', d.area_sqm, 'f-area-tsubo')}
-          </div>
-          <div class="form-group">
-            <label>面積（坪）</label>
-            <input id="f-area-tsubo" type="number" step="0.01" class="qs-control" value="${d.area_tsubo||''}">
-          </div>
+      <!-- 土地詳細 -->
+      <div class="form-section">土地詳細</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>面積（㎡）</label>
+          ${sqmInput('f-area-sqm', d.area_sqm, 'f-area-tsubo')}
         </div>
-        <div class="form-row">
-          <div class="form-group" style="grid-column:span 2;">
-            <label>土地状況</label>
-            <input id="f-land-cond" type="text" class="qs-control" value="${esc(d.land_condition||'')}" placeholder="例：更地、雑種地など">
-          </div>
+        <div class="form-group">
+          <label>面積（坪）</label>
+          <input id="f-area-tsubo" type="number" step="0.01" class="qs-control" value="${d.area_tsubo||''}">
         </div>
-        <div class="form-row">
-          <div class="form-group" style="grid-column:span 2;">
-            <label>用途地域</label>
-            <input id="f-zoning" type="text" class="qs-control" value="${esc(d.zoning||'')}" placeholder="例：第一種低層住居専用地域">
-          </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>土地状況</label>
+          <input id="f-land-cond" type="text" class="qs-control" value="${esc(d.land_condition||'')}" placeholder="例：更地、雑種地など">
         </div>
-        <div class="form-row">
-          <div class="form-group" style="grid-column:span 2;">
-            <label>他の法令</label>
-            <input id="f-other-laws" type="text" class="qs-control" value="${esc(d.other_laws||'')}" placeholder="例：農地法、道路法など">
-          </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>用途地域</label>
+          <input id="f-zoning" type="text" class="qs-control" value="${esc(d.zoning||'')}" placeholder="例：第一種低層住居専用地域">
         </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>建ぺい率（%）</label>
+          <input id="f-bcr" type="number" step="0.1" class="qs-control" value="${d.building_coverage_ratio||''}" placeholder="例：60">
+        </div>
+        <div class="form-group">
+          <label>容積率（%）</label>
+          <input id="f-far" type="number" step="0.1" class="qs-control" value="${d.floor_area_ratio||''}" placeholder="例：200">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>他の法令</label>
+          <input id="f-other-laws" type="text" class="qs-control" value="${esc(d.other_laws||'')}" placeholder="例：農地法、道路法など">
+        </div>
+      </div>
       ` : `
-        <div class="form-row">
-          <div class="form-group">
-            <label>土地面積（㎡）</label>
-            ${sqmInput('f-land-sqm', d.land_area_sqm, 'f-land-tsubo')}
-          </div>
-          <div class="form-group">
-            <label>土地面積（坪）</label>
-            <input id="f-land-tsubo" type="number" step="0.01" class="qs-control" value="${d.land_area_tsubo||''}">
-          </div>
+      <!-- 土地情報 -->
+      <div class="form-section">土地情報</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>土地面積（㎡）</label>
+          ${sqmInput('f-land-sqm', d.land_area_sqm, 'f-land-tsubo')}
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>建物面積（㎡）</label>
-            ${sqmInput('f-bld-sqm', d.building_area_sqm, 'f-bld-tsubo')}
-          </div>
-          <div class="form-group">
-            <label>建物面積（坪）</label>
-            <input id="f-bld-tsubo" type="number" step="0.01" class="qs-control" value="${d.building_area_tsubo||''}">
-          </div>
+        <div class="form-group">
+          <label>土地面積（坪）</label>
+          <input id="f-land-tsubo" type="number" step="0.01" class="qs-control" value="${d.land_area_tsubo||''}">
         </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label>築年月</label>
-            <input id="f-built" type="text" class="qs-control" value="${esc(d.built_date||'')}" placeholder="例：1998年3月">
-          </div>
-          <div class="form-group">
-            <label>間取</label>
-            <input id="f-plan" type="text" class="qs-control" value="${esc(d.floor_plan||'')}" placeholder="例：4LDK">
-          </div>
+      </div>
+
+      <!-- 建物情報 -->
+      <div class="form-section">建物情報</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>建物面積（㎡）</label>
+          ${sqmInput('f-bld-sqm', d.building_area_sqm, 'f-bld-tsubo')}
         </div>
+        <div class="form-group">
+          <label>建物面積（坪）</label>
+          <input id="f-bld-tsubo" type="number" step="0.01" class="qs-control" value="${d.building_area_tsubo||''}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>築年（西暦）</label>
+          <input id="f-built-year" type="number" min="1900" max="2026" class="qs-control"
+                 value="${builtYear}" placeholder="例：1998" oninput="updateBuiltDisplay()">
+        </div>
+        <div class="form-group">
+          <label>築月</label>
+          ${monthSel}
+        </div>
+      </div>
+      <div class="built-display" id="built-display"></div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>間取</label>
+          <input id="f-plan" type="text" class="qs-control" value="${esc(d.floor_plan||'')}" placeholder="例：4LDK">
+        </div>
+        <div class="form-group">
+          <label>増築・リフォーム歴</label>
+          <input id="f-renovation" type="text" class="qs-control" value="${esc(d.renovation_history||'')}" placeholder="例：2010年 外壁塗装済">
+        </div>
+      </div>
+
+      <!-- 建築規制 -->
+      <div class="form-section">建築規制</div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>用途地域</label>
+          <input id="f-zoning" type="text" class="qs-control" value="${esc(d.zoning||'')}" placeholder="例：第一種低層住居専用地域">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>建ぺい率（%）</label>
+          <input id="f-bcr" type="number" step="0.1" class="qs-control" value="${d.building_coverage_ratio||''}" placeholder="例：60">
+        </div>
+        <div class="form-group">
+          <label>容積率（%）</label>
+          <input id="f-far" type="number" step="0.1" class="qs-control" value="${d.floor_area_ratio||''}" placeholder="例：200">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>他の法令</label>
+          <input id="f-other-laws" type="text" class="qs-control" value="${esc(d.other_laws||'')}" placeholder="例：農地法など">
+        </div>
+      </div>
       `}
 
+      <!-- 接道 -->
+      <div class="form-section">接道</div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>道路幅員</label>
+          <input id="f-road-width" type="text" class="qs-control" value="${esc(d.road_width||'')}" placeholder="例：4m">
+        </div>
+        <div class="form-group">
+          <label>間口</label>
+          <input id="f-frontage" type="text" class="qs-control" value="${esc(d.frontage||'')}" placeholder="例：10m">
+        </div>
+      </div>
+
+      <!-- 権利・インフラ -->
+      <div class="form-section">権利・インフラ</div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>権利</label>
+          <input id="f-rights" type="text" class="qs-control" value="${esc(d.rights||'')}" placeholder="例：所有権、借地権など">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>上水道</label>
+          ${sel('f-water', d.water_supply||'', waterOpts)}
+        </div>
+        <div class="form-group">
+          <label>下水道</label>
+          ${sel('f-sewage', d.sewage||'', sewageOpts)}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>埋蔵</label>
+          ${sel('f-buried', d.buried_artifacts||'', buriedOpts)}
+        </div>
+      </div>
+
+      <!-- 学区 -->
+      <div class="form-section">学区</div>
       <div class="form-row">
         <div class="form-group">
           <label>学区（小学校）</label>
@@ -1113,31 +1262,15 @@ function showPropertyModal(type, prop, det) {
           <input id="f-school-jr" type="text" class="qs-control" value="${esc(d.school_junior||'')}" placeholder="例：第二中学校">
         </div>
       </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>上水道</label>
-          <select id="f-water"  class="qs-control">${waterOpts}</select>
-        </div>
-        <div class="form-group">
-          <label>下水道</label>
-          <select id="f-sewage" class="qs-control">${sewageOpts}</select>
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group">
-          <label>埋蔵</label>
-          <select id="f-buried" class="qs-control">${buriedOpts}</select>
-        </div>
-        <div class="form-group">
-          <label>取得書類</label>
-          <input id="f-docs" type="text" class="qs-control" value="${esc(d.documents||'')}" placeholder="例：公図、登記簿謄本">
-        </div>
-      </div>
-      <div class="form-row">
-        <div class="form-group" style="grid-column:span 2;">
-          <label>備考</label>
-          <textarea id="f-notes" class="qs-control" rows="3" placeholder="特記事項があれば入力">${esc(p.notes||'')}</textarea>
-        </div>
+
+      <!-- 取得書類 -->
+      <div class="form-section">取得書類</div>
+      <div style="margin-bottom:14px;">${docsHtml}</div>
+
+      <!-- 備考 -->
+      <div class="form-section">備考</div>
+      <div class="form-group" style="margin-bottom:4px;">
+        <textarea id="f-notes" class="qs-control" rows="3" placeholder="特記事項があれば入力">${esc(p.notes||'')}</textarea>
       </div>
     </div>
     <div class="modal-footer">
@@ -1147,6 +1280,9 @@ function showPropertyModal(type, prop, det) {
   `;
 
   document.getElementById('modal-bg').classList.remove('hidden');
+
+  // 編集時に築年月表示を初期化
+  if (!isLand) setTimeout(updateBuiltDisplay, 50);
 }
 
 async function saveProperty() {
@@ -1175,29 +1311,49 @@ async function saveProperty() {
     propId = data.id;
   }
 
+  // 取得書類
+  const selectedDocs = DOC_OPTIONS.filter((_, i) => document.getElementById(`f-doc-${i}`)?.checked);
+
   const detData = {
     property_id:       propId,
-    school_elementary: document.getElementById('f-school-el').value.trim() || null,
-    school_junior:     document.getElementById('f-school-jr').value.trim() || null,
-    water_supply:      document.getElementById('f-water').value   || null,
-    sewage:            document.getElementById('f-sewage').value  || null,
-    buried_artifacts:  document.getElementById('f-buried').value  || null,
-    documents:         document.getElementById('f-docs').value.trim() || null,
+    school_elementary: document.getElementById('f-school-el').value.trim()  || null,
+    school_junior:     document.getElementById('f-school-jr').value.trim()  || null,
+    water_supply:      document.getElementById('f-water').value             || null,
+    sewage:            document.getElementById('f-sewage').value            || null,
+    buried_artifacts:  document.getElementById('f-buried').value            || null,
+    documents:         selectedDocs.length ? JSON.stringify(selectedDocs)   : null,
+    zoning:            document.getElementById('f-zoning')?.value.trim()    || null,
+    other_laws:        document.getElementById('f-other-laws')?.value.trim()|| null,
+    building_coverage_ratio: parseFloat(document.getElementById('f-bcr')?.value) || null,
+    floor_area_ratio:        parseFloat(document.getElementById('f-far')?.value) || null,
+    road_width:        document.getElementById('f-road-width').value.trim() || null,
+    frontage:          document.getElementById('f-frontage').value.trim()   || null,
+    rights:            document.getElementById('f-rights').value.trim()     || null,
+    transaction_type:  document.getElementById('f-trans').value             || null,
+    brokerage_fee:     document.getElementById('f-brokerage').value.trim()  || null,
+    suumo_listed:      document.getElementById('f-suumo').checked,
+    publish_date:      document.getElementById('f-publish-date').value      || null,
   };
 
   if (isLand) {
     detData.area_sqm       = parseFloat(document.getElementById('f-area-sqm')?.value)    || null;
     detData.area_tsubo     = parseFloat(document.getElementById('f-area-tsubo')?.value)  || null;
     detData.land_condition = document.getElementById('f-land-cond')?.value.trim()        || null;
-    detData.zoning         = document.getElementById('f-zoning')?.value.trim()           || null;
-    detData.other_laws     = document.getElementById('f-other-laws')?.value.trim()       || null;
   } else {
     detData.land_area_sqm       = parseFloat(document.getElementById('f-land-sqm')?.value)   || null;
     detData.land_area_tsubo     = parseFloat(document.getElementById('f-land-tsubo')?.value)  || null;
     detData.building_area_sqm   = parseFloat(document.getElementById('f-bld-sqm')?.value)     || null;
     detData.building_area_tsubo = parseFloat(document.getElementById('f-bld-tsubo')?.value)   || null;
-    detData.built_date          = document.getElementById('f-built')?.value.trim()            || null;
     detData.floor_plan          = document.getElementById('f-plan')?.value.trim()             || null;
+    detData.renovation_history  = document.getElementById('f-renovation')?.value.trim()       || null;
+
+    const builtYear  = document.getElementById('f-built-year')?.value;
+    const builtMonth = document.getElementById('f-built-month')?.value;
+    if (builtYear) {
+      detData.built_date = `${builtYear}年${builtMonth ? builtMonth+'月' : ''}`;
+    } else {
+      detData.built_date = null;
+    }
   }
 
   const { error: dErr } = await db.from('property_details')
@@ -1221,7 +1377,7 @@ async function openLogModal(propId) {
     `<option value="${p.id}" ${p.id===propId?'selected':''}>${p.code ? p.code+' ' : ''}${p.address||''}</option>`
   ).join('');
 
-  const today = new Date().toISOString().split('T')[0];
+  const today     = new Date().toISOString().split('T')[0];
   const taskTypes = ['草刈り','除雪','清掃','点検','修繕','巡回','その他'];
 
   document.getElementById('modal').innerHTML = `
@@ -1271,8 +1427,8 @@ async function saveLog() {
   const logType = document.getElementById('log-type').value;
   const date    = document.getElementById('log-date').value;
 
-  if (!propId)  { toast('物件を選択してください', 'error'); return; }
-  if (!date)    { toast('実施日を入力してください', 'error'); return; }
+  if (!propId) { toast('物件を選択してください', 'error'); return; }
+  if (!date)   { toast('実施日を入力してください', 'error'); return; }
 
   const { error } = await db.from('task_logs').insert({
     property_id:         propId,
@@ -1286,52 +1442,83 @@ async function saveLog() {
 
   toast('記録を追加しました', 'success');
   closeModal();
-
-  if (state.view === 'detail') {
-    await renderDetail(state.propId);
-  } else {
-    await renderLogs(state.logsFilter);
-  }
+  if (state.view === 'detail') await renderDetail(state.propId);
+  else await renderLogs(state.logsFilter);
 }
 
 // ════════════════════════════════════════════════════════════
-// CRUD：写真
+// CRUD：写真（バグ修正済み）
 // ════════════════════════════════════════════════════════════
 
 async function uploadPhotos(propId, files) {
-  const { count } = await db.from('property_photos')
-    .select('*', { count: 'exact', head: true }).eq('property_id', propId);
+  if (!files || files.length === 0) return;
 
-  const remaining = 6 - (count || 0);
-  const toUpload  = Array.from(files).slice(0, remaining);
+  // 現在の枚数を取得
+  const { count, error: cntErr } = await db
+    .from('property_photos')
+    .select('*', { count: 'exact', head: true })
+    .eq('property_id', propId);
 
-  if (!toUpload.length) {
+  if (cntErr) { toast('写真数の確認に失敗しました: ' + cntErr.message, 'error'); return; }
+
+  const currentCount = count || 0;
+  const remaining    = 6 - currentCount;
+
+  if (remaining <= 0) {
     toast('写真は最大 6 枚です', 'error');
     return;
   }
 
-  toast('アップロード中…', 'info');
+  const toUpload = Array.from(files).slice(0, remaining);
+  toast(`${toUpload.length} 枚をアップロード中…`, 'info');
+
+  let successCount = 0;
 
   for (let i = 0; i < toUpload.length; i++) {
     const file = toUpload[i];
-    const ext  = file.name.split('.').pop().toLowerCase();
-    const path = `${propId}/${crypto.randomUUID()}.${ext}`;
+    const ext  = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+    const path = `${propId}/${Date.now()}_${i}.${ext}`;
 
+    // ① Storage にアップロード
     const { error: upErr } = await db.storage
-      .from('property-photos').upload(path, file, { upsert: false });
-    if (upErr) { toast('アップロード失敗: ' + upErr.message, 'error'); continue; }
+      .from('property-photos')
+      .upload(path, file, { upsert: true, contentType: file.type });
 
+    if (upErr) {
+      toast(`写真${i+1}のアップロード失敗: ${upErr.message}`, 'error');
+      continue;
+    }
+
+    // ② 公開URLを取得
     const { data: urlData } = db.storage.from('property-photos').getPublicUrl(path);
+    const publicUrl = urlData?.publicUrl;
 
-    await db.from('property_photos').insert({
+    if (!publicUrl) {
+      toast(`写真${i+1}のURL取得失敗`, 'error');
+      continue;
+    }
+
+    // ③ DBに登録
+    const { error: insErr } = await db.from('property_photos').insert({
       property_id:  propId,
-      url:          urlData.publicUrl,
+      url:          publicUrl,
       storage_path: path,
-      order_index:  (count || 0) + i,
+      order_index:  currentCount + i,
     });
+
+    if (insErr) {
+      toast(`写真${i+1}のDB登録失敗: ${insErr.message}`, 'error');
+      // Storageから削除してロールバック
+      await db.storage.from('property-photos').remove([path]);
+      continue;
+    }
+
+    successCount++;
   }
 
-  toast(`${toUpload.length} 枚の写真を追加しました`, 'success');
+  if (successCount > 0) {
+    toast(`${successCount} 枚の写真を追加しました`, 'success');
+  }
   await renderDetail(propId);
 }
 
@@ -1347,18 +1534,20 @@ async function uploadFloorPlan(propId, file) {
   if (!file) return;
   toast('間取り図をアップロード中…', 'info');
 
-  const ext  = file.name.split('.').pop().toLowerCase();
+  const ext  = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
   const path = `${propId}/floor_plan.${ext}`;
 
-  const { error } = await db.storage.from('floor-plans').upload(path, file, { upsert: true });
+  const { error } = await db.storage
+    .from('floor-plans').upload(path, file, { upsert: true, contentType: file.type });
   if (error) { toast('アップロード失敗: ' + error.message, 'error'); return; }
 
   const { data: urlData } = db.storage.from('floor-plans').getPublicUrl(path);
 
-  await db.from('property_details').upsert(
-    { property_id: propId, floor_plan_image: urlData.publicUrl },
+  const { error: dbErr } = await db.from('property_details').upsert(
+    { property_id: propId, floor_plan_image: urlData?.publicUrl },
     { onConflict: 'property_id' }
   );
+  if (dbErr) { toast('DB登録失敗: ' + dbErr.message, 'error'); return; }
 
   toast('間取り図を保存しました', 'success');
   await renderDetail(propId);
@@ -1377,12 +1566,8 @@ async function deleteFloorPlan(propId) {
 
 async function toggleCheck(propId, itemId, checked) {
   await db.from('checklist_checks').upsert(
-    {
-      property_id: propId,
-      item_id:     itemId,
-      is_checked:  checked,
-      checked_at:  checked ? new Date().toISOString() : null,
-    },
+    { property_id: propId, item_id: itemId, is_checked: checked,
+      checked_at: checked ? new Date().toISOString() : null },
     { onConflict: 'property_id,item_id' }
   );
 }
@@ -1412,7 +1597,6 @@ async function deleteLogFromTable(logId) {
 async function confirmDelete(propId) {
   if (!confirm('この物件を削除しますか？\n写真・記録・チェック情報もすべて削除されます。')) return;
 
-  // Storage 写真を削除
   const { data: photos } = await db.from('property_photos')
     .select('storage_path').eq('property_id', propId);
   if (photos?.length) {
@@ -1437,7 +1621,62 @@ function closeModalBg(e) {
 }
 
 // ════════════════════════════════════════════════════════════
-// ユーティリティ
+// ヘルパー：築年月
+// ════════════════════════════════════════════════════════════
+
+function toWareki(year, month) {
+  if (!year) return '';
+  year  = parseInt(year);
+  month = parseInt(month) || 0;
+  let era, base;
+  if (year > 2019 || (year === 2019 && month >= 5)) { era = '令和'; base = 2018; }
+  else if (year > 1989 || (year === 1989 && month >= 1)) { era = '平成'; base = 1988; }
+  else if (year >= 1926) { era = '昭和'; base = 1925; }
+  else if (year >= 1912) { era = '大正'; base = 1911; }
+  else return `${year}年`;
+  const n = year - base;
+  return era + (n === 1 ? '元' : n) + '年';
+}
+
+function updateBuiltDisplay() {
+  const yearEl  = document.getElementById('f-built-year');
+  const monthEl = document.getElementById('f-built-month');
+  const dispEl  = document.getElementById('built-display');
+  if (!dispEl) return;
+  const year  = yearEl?.value;
+  const month = monthEl?.value;
+  if (!year) { dispEl.textContent = ''; return; }
+  const wareki  = toWareki(year, month);
+  const age     = new Date().getFullYear() - parseInt(year);
+  const monthStr = month ? `${month}月` : '';
+  dispEl.textContent = `${year}年${monthStr}　→　${wareki}${monthStr}　（築${age >= 0 ? age : '?'}年）`;
+}
+
+function displayBuiltDate(builtDate) {
+  if (!builtDate) return '—';
+  const ym  = builtDate.match(/(\d{4})/);
+  const mm  = builtDate.match(/(\d{1,2})月/);
+  if (!ym) return esc(builtDate);
+  const year  = parseInt(ym[1]);
+  const month = mm ? parseInt(mm[1]) : 0;
+  const age   = new Date().getFullYear() - year;
+  const wareki = toWareki(year, month);
+  const mStr   = month ? `${month}月` : '';
+  return `${esc(builtDate)}　<span style="color:var(--accent);font-size:12px;">${wareki}${mStr}　築${age}年</span>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// ヘルパー：取得書類
+// ════════════════════════════════════════════════════════════
+
+function parseDocuments(docs) {
+  if (!docs) return [];
+  try { return JSON.parse(docs); }
+  catch { return docs.split(/[,、・\s]/).map(s => s.trim()).filter(Boolean); }
+}
+
+// ════════════════════════════════════════════════════════════
+// ヘルパー：表示
 // ════════════════════════════════════════════════════════════
 
 function statusBadge(s) {
@@ -1451,6 +1690,10 @@ function statusBadge(s) {
 
 function statusLabel(s) {
   return { active:'掲載中', inactive:'非掲載', sold:'成約済' }[s] || s;
+}
+
+function transactionLabel(t) {
+  return { owner:'売主', broker:'仲介' }[t] || '—';
 }
 
 function esc(s) {
