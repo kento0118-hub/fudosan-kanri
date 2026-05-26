@@ -227,6 +227,9 @@
       border-bottom: 1px solid var(--border);
     }
     .log-row:last-child { border-bottom: none; }
+    .log-thumbs { display:flex; gap:5px; flex-wrap:wrap; margin-top:6px; }
+    .log-thumb  { width:52px; height:52px; object-fit:cover; border-radius:4px; border:1px solid var(--border); cursor:pointer; transition:opacity .15s; }
+    .log-thumb:hover { opacity:.8; }
 
     /* ── フォーム ── */
     .form-section {
@@ -775,6 +778,7 @@ async function renderDetail(id) {
               ${log.next_scheduled_date ? ` ／ 次回目安：${log.next_scheduled_date}` : ''}
             </div>
             ${log.memo ? `<div style="font-size:11px;color:var(--text-secondary);margin-top:2px;">${esc(log.memo)}</div>` : ''}
+            ${renderLogPhotos(log.photo_urls)}
           </div>
           <button class="btn-sm btn-danger" onclick="deleteLog('${log.id}','${id}')">削除</button>
         </div>`)
@@ -933,6 +937,7 @@ async function renderLogs(filterPropId) {
           <td>${esc(log.task_type)}</td>
           <td>${log.next_scheduled_date || '—'}</td>
           <td style="font-size:11px;color:var(--text-secondary);max-width:200px;">${esc(log.memo||'')}</td>
+          <td>${renderLogPhotos(log.photo_urls)}</td>
           <td><button class="btn-sm btn-danger" onclick="deleteLogFromTable('${log.id}')">削除</button></td>
         </tr>`;
       }).join('')
@@ -955,7 +960,7 @@ async function renderLogs(filterPropId) {
           <thead>
             <tr>
               <th>実施日</th><th>種別</th><th>物件</th>
-              <th>作業内容</th><th>次回目安</th><th>メモ</th><th></th>
+              <th>作業内容</th><th>次回目安</th><th>メモ</th><th>写真</th><th></th>
             </tr>
           </thead>
           <tbody>${rowsHtml}</tbody>
@@ -1408,9 +1413,23 @@ async function openLogModal(propId) {
         <label>次回目安日</label>
         <input id="log-next" type="date" class="qs-control">
       </div>
-      <div class="form-group">
+      <div class="form-group" style="margin-bottom:12px;">
         <label>メモ</label>
         <textarea id="log-memo" class="qs-control" rows="3" placeholder="作業内容・気になった点など"></textarea>
+      </div>
+      <div class="form-group">
+        <label>写真（最大3枚）</label>
+        <div id="log-photo-preview" style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;"></div>
+        <label style="display:inline-flex;align-items:center;gap:8px;padding:8px 14px;
+               background:var(--bg-input);border:1px dashed var(--border);border-radius:6px;
+               cursor:pointer;font-size:12px;color:var(--text-secondary);transition:all .15s;"
+               onmouseover="this.style.borderColor='var(--accent)';this.style.color='var(--accent)'"
+               onmouseout="this.style.borderColor='var(--border)';this.style.color='var(--text-secondary)'">
+          📷 写真を選択
+          <input id="log-photo-input" type="file" accept="image/*" multiple style="display:none;"
+                 onchange="previewLogPhotos(this.files)">
+        </label>
+        <div style="font-size:10px;color:var(--text-muted);margin-top:4px;">JPEG・PNG・HEIC対応 / 最大3枚</div>
       </div>
     </div>
     <div class="modal-footer">
@@ -1430,15 +1449,45 @@ async function saveLog() {
   if (!propId) { toast('物件を選択してください', 'error'); return; }
   if (!date)   { toast('実施日を入力してください', 'error'); return; }
 
-  const { error } = await db.from('task_logs').insert({
+  // ① ログを保存してIDを取得
+  const { data: newLog, error } = await db.from('task_logs').insert({
     property_id:         propId,
     task_type:           logType,
     performed_date:      date,
     next_scheduled_date: document.getElementById('log-next').value || null,
     memo:                document.getElementById('log-memo').value.trim() || null,
-  });
+  }).select().single();
 
   if (error) { toast('保存失敗: ' + error.message, 'error'); return; }
+
+  // ② 写真アップロード
+  const fileInput = document.getElementById('log-photo-input');
+  const files     = fileInput?.files ? Array.from(fileInput.files).slice(0, 3) : [];
+  const photoUrls = [];
+
+  if (files.length > 0) {
+    toast('写真をアップロード中…', 'info');
+    for (let i = 0; i < files.length; i++) {
+      const file = files[i];
+      const ext  = file.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g, '') || 'jpg';
+      const path = `task-logs/${newLog.id}/${Date.now()}_${i}.${ext}`;
+
+      const { error: upErr } = await db.storage
+        .from('property-photos')
+        .upload(path, file, { upsert: true, contentType: file.type });
+
+      if (upErr) { toast(`写真${i+1}のアップロード失敗: ${upErr.message}`, 'error'); continue; }
+
+      const { data: urlData } = db.storage.from('property-photos').getPublicUrl(path);
+      if (urlData?.publicUrl) photoUrls.push(urlData.publicUrl);
+    }
+
+    if (photoUrls.length > 0) {
+      await db.from('task_logs')
+        .update({ photo_urls: JSON.stringify(photoUrls) })
+        .eq('id', newLog.id);
+    }
+  }
 
   toast('記録を追加しました', 'success');
   closeModal();
@@ -1663,6 +1712,38 @@ function displayBuiltDate(builtDate) {
   const wareki = toWareki(year, month);
   const mStr   = month ? `${month}月` : '';
   return `${esc(builtDate)}　<span style="color:var(--accent);font-size:12px;">${wareki}${mStr}　築${age}年</span>`;
+}
+
+// ════════════════════════════════════════════════════════════
+// ヘルパー：実施記録写真
+// ════════════════════════════════════════════════════════════
+
+function parsePhotoUrls(json) {
+  if (!json) return [];
+  try { return JSON.parse(json); } catch { return []; }
+}
+
+function renderLogPhotos(photoUrlsJson) {
+  const urls = parsePhotoUrls(photoUrlsJson);
+  if (!urls.length) return '';
+  return `<div class="log-thumbs">
+    ${urls.map(url => `<img class="log-thumb" src="${esc(url)}" loading="lazy"
+      onclick="window.open('${esc(url)}','_blank')" title="クリックで拡大">`).join('')}
+  </div>`;
+}
+
+function previewLogPhotos(files) {
+  const preview = document.getElementById('log-photo-preview');
+  if (!preview) return;
+  preview.innerHTML = '';
+  Array.from(files).slice(0, 3).forEach(file => {
+    const img        = document.createElement('img');
+    img.style.cssText = 'width:60px;height:60px;object-fit:cover;border-radius:5px;border:1px solid var(--border);';
+    const reader      = new FileReader();
+    reader.onload     = e => { img.src = e.target.result; };
+    reader.readAsDataURL(file);
+    preview.appendChild(img);
+  });
 }
 
 // ════════════════════════════════════════════════════════════
