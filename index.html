@@ -1045,8 +1045,8 @@ function showPropertyModal(type, prop, det) {
   const p = prop || {};
   const d = det  || {};
 
-  const sel = (id, val, opts) =>
-    `<select id="${id}" class="qs-control">${opts.map(([v,l]) =>
+  const sel = (id, val, opts, extra) =>
+    `<select id="${id}" class="qs-control" ${extra||''}>${opts.map(([v,l]) =>
       `<option value="${v}" ${(val||'')==v?'selected':''}>${l}</option>`).join('')}</select>`;
 
   const statusOpts    = [['active','掲載中'],['preparing','販売準備中'],['inactive','非掲載'],['sold','成約済']];
@@ -1108,7 +1108,7 @@ function showPropertyModal(type, prop, det) {
       <div class="form-row">
         <div class="form-group">
           <label>掲載状況</label>
-          ${sel('f-status', p.status||'active', statusOpts)}
+          ${sel('f-status', p.status||'active', statusOpts, 'onchange="onStatusChange()"')}
         </div>
         <div class="form-group">
           <label>コード</label>
@@ -1373,6 +1373,7 @@ function showPropertyModal(type, prop, det) {
   setTimeout(() => {
     if (!isLand) updateBuiltDisplay();
     calcBrokerageFee();
+    onStatusChange();
   }, 50);
 }
 
@@ -1917,6 +1918,26 @@ function applyCalcFee() {
   if (input && window._calcFeeStr) {
     input.value = window._calcFeeStr;
   }
+}
+
+function onStatusChange() {
+  const status = document.getElementById('f-status')?.value;
+  const active = status === 'active';
+  ['f-suumo', 'f-hp', 'f-sign'].forEach(id => {
+    const inp = document.getElementById(id);
+    if (!inp) return;
+    const lbl = inp.closest('.doc-check-label');
+    inp.disabled = !active;
+    if (!active) {
+      inp.checked = false;
+      lbl?.classList.remove('checked');
+    }
+    if (lbl) {
+      lbl.style.opacity       = active ? '' : '0.4';
+      lbl.style.pointerEvents = active ? '' : 'none';
+      lbl.style.cursor        = active ? '' : 'not-allowed';
+    }
+  });
 }
 
 function onTransChange() {
