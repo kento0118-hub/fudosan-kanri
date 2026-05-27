@@ -1954,10 +1954,48 @@ function toast(msg, type = 'success') {
 // ════════════════════════════════════════════════════════════
 
 async function showCost(propId) {
+  if (!sessionStorage.getItem('costAuth')) {
+    document.getElementById('modal').innerHTML = `
+      <div class="modal-header">
+        <div class="modal-title">🔐 原価管理 — パスワード確認</div>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>パスワード</label>
+          <input id="cost-pw-input" type="password" class="qs-control"
+            placeholder="パスワードを入力"
+            onkeydown="if(event.key==='Enter')verifyCostPw('${propId}')">
+          <div id="cost-pw-err" style="color:var(--red);font-size:12px;margin-top:6px;"></div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+        <button class="btn-primary" onclick="verifyCostPw('${propId}')">確認</button>
+      </div>
+    `;
+    document.getElementById('modal-bg').classList.remove('hidden');
+    setTimeout(() => document.getElementById('cost-pw-input')?.focus(), 50);
+    return;
+  }
   state.view = 'cost';
   state.propId = propId;
   setActiveNav('nav-list');
   await renderCost(propId);
+}
+
+function verifyCostPw(propId) {
+  const pw = document.getElementById('cost-pw-input')?.value || '';
+  if (pw === 'ajiro2775') {
+    sessionStorage.setItem('costAuth', '1');
+    closeModal();
+    showCost(propId);
+  } else {
+    const errEl = document.getElementById('cost-pw-err');
+    if (errEl) errEl.textContent = 'パスワードが違います';
+    const inp = document.getElementById('cost-pw-input');
+    if (inp) { inp.value = ''; inp.focus(); }
+  }
 }
 
 function costMonthsElapsed(dateStr) {
