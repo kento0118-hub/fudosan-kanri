@@ -388,7 +388,7 @@
     /* ── バッジ ── */
     .badge-active   { font-size: 10px; background: #1a3a1e; color: var(--green);  padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-inactive { font-size: 10px; background: #2a2d35; color: var(--text-muted); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
-    .badge-sold-s   { font-size: 10px; background: #3a1e1e; color: var(--red);    padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-sold-s   { font-size: 10px; background: #cc0000; color: #ffffff;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-preparing{ font-size: 10px; background: #2a2010; color: #f0c040;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-land     { font-size: 10px; background: #1a5c2a; color: #90ee90;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-house    { font-size: 10px; background: var(--accent-dim); color: var(--accent); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
@@ -548,15 +548,17 @@ async function renderList() {
     .select('*, property_details(*)')
     .order('created_at', { ascending: false });
 
-  if (!state.filterSold) q = q.eq('is_sold', false);
 
   const { data: allProps, error } = await q;
   if (error) { toast('データ取得失敗: ' + error.message, 'error'); return; }
 
-  const all     = allProps || [];
-  const lands   = all.filter(p => p.type === 'land'  && (p.property_details?.transaction_type !== 'managed'));
-  const houses  = all.filter(p => p.type === 'house' && (p.property_details?.transaction_type !== 'managed'));
-  const managed = all.filter(p => p.property_details?.transaction_type === 'managed');
+  const all       = allProps || [];
+  const notSold   = p => !p.is_sold;
+  const showSold  = state.filterSold || state.filterType === 'sold';
+  const lands     = all.filter(p => p.type === 'land'  && p.property_details?.transaction_type !== 'managed' && (showSold ? true : notSold(p)));
+  const houses    = all.filter(p => p.type === 'house' && p.property_details?.transaction_type !== 'managed' && (showSold ? true : notSold(p)));
+  const managed   = all.filter(p => p.property_details?.transaction_type === 'managed' && (showSold ? true : notSold(p)));
+  const soldProps = all.filter(p => p.is_sold);
 
   const ownerFirst = arr => [...arr].sort((a, b) => {
     const ta = a.property_details?.transaction_type === 'owner' ? 0 : 1;
@@ -568,13 +570,14 @@ async function renderList() {
   if      (state.filterType === 'land')    displayed = ownerFirst(lands);
   else if (state.filterType === 'house')   displayed = ownerFirst(houses);
   else if (state.filterType === 'managed') displayed = managed;
-  else                                     displayed = all;
+  else if (state.filterType === 'sold')    displayed = soldProps;
+  else                                     displayed = all.filter(p => showSold ? true : notSold(p));
 
   el.innerHTML = `
     <div class="page-header">
       <div>
         <div class="page-title">🏠 物件一覧</div>
-        <div class="page-sub">土地 ${lands.length}件 ／ 中古住宅 ${houses.length}件 ／ 管理物件 ${managed.length}件</div>
+        <div class="page-sub">土地 ${lands.length}件 ／ 中古住宅 ${houses.length}件 ／ 管理物件 ${managed.length}件 ／ 成約済み ${soldProps.length}件</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
@@ -591,6 +594,7 @@ async function renderList() {
       <button class="filter-tab ${state.filterType==='land'    ?'active':''}" onclick="state.filterType='land';renderList()">🌐 土地（${lands.length}）</button>
       <button class="filter-tab ${state.filterType==='house'   ?'active':''}" onclick="state.filterType='house';renderList()">🏡 中古住宅（${houses.length}）</button>
       <button class="filter-tab ${state.filterType==='managed' ?'active':''}" onclick="state.filterType='managed';renderList()">🔧 管理物件（${managed.length}）</button>
+      <button class="filter-tab ${state.filterType==='sold'    ?'active':''}" onclick="state.filterType='sold';renderList()" style="${state.filterType==='sold' ? '' : 'color:#cc0000;'}">🔴 成約済み（${soldProps.length}）</button>
       <button class="filter-tab ${state.filterType==='all'     ?'active':''}" onclick="state.filterType='all';renderList()">全て（${all.length}）</button>
     </div>
 
