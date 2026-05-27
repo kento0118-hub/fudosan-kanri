@@ -4,7 +4,326 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>網代建設 — 不動産物件管理</title>
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+// ════════════════════════════════════════════════════════════
+// 原価管理ビュー
+// ════════════════════════════════════════════════════════════
+
+async function showCost(propId) {
+  state.view = 'cost';
+  state.propId = propId;
+  setActiveNav('nav-list');
+  await renderCost(propId);
+}
+
+function costMonthsElapsed(dateStr) {
+  if (!dateStr) return 0;
+  const acq = new Date(dateStr);
+  const now = new Date();
+  return Math.max(0, (now.getFullYear() - acq.getFullYear()) * 12 + now.getMonth() - acq.getMonth());
+}
+
+function costDaysElapsed(dateStr) {
+  if (!dateStr) return 0;
+  const acq = new Date(dateStr);
+  const now = new Date();
+  return Math.max(0, Math.floor((now - acq) / 86400000));
+}
+
+function costVal(id) {
+  const el = document.getElementById(id);
+  return el ? (parseFloat(el.value) || 0) : 0;
+}
+
+function calcCostSummary() {
+  const acqDate = document.getElementById('c-acq-date')?.value || '';
+  const months  = costMonthsElapsed(acqDate);
+  const days    = costDaysElapsed(acqDate);
+
+  const sub1 = costVal('c-acq-cost') + costVal('c-broker-fee') + costVal('c-acq-tax')
+             + costVal('c-transfer-reg') + costVal('c-stamp-tax') + costVal('c-survey-purchase')
+             + costVal('c-demolition') + costVal('c-mortgage-release') + costVal('c-other-purchase');
+
+  const sub2 = costVal('c-land-prep') + costVal('c-construction') + costVal('c-design')
+             + costVal('c-performance-cert') + costVal('c-other-construction');
+
+  const sub3 = costVal('c-reg-survey') + costVal('c-farmland') + costVal('c-dev-permit')
+             + costVal('c-other-reg');
+
+  const sub4a = costVal('c-planning') + costVal('c-advertising') + costVal('c-site-maint')
+              + costVal('c-hoa') + costVal('c-furniture') + costVal('c-handover-finish')
+              + costVal('c-sales-broker') + costVal('c-sales-office') + costVal('c-ground-warranty')
+              + costVal('c-survey-sales') + costVal('c-handover-docs') + costVal('c-consumption-tax')
+              + costVal('c-personnel') + costVal('c-other-sales');
+
+  const propTaxAccum   = days > 0 ? (costVal('c-prop-tax-annual') * days / 365) : 0;
+  const utilitiesAccum = costVal('c-utilities-monthly') * months;
+  const fireAccum      = costVal('c-fire-monthly') * months;
+  const defectLump     = costVal('c-defect-lump');
+  const sub4b          = propTaxAccum + utilitiesAccum + fireAccum + defectLump;
+  const sub4           = sub4a + sub4b;
+  const total          = sub1 + sub2 + sub3 + sub4;
+
+  const priceEl = document.getElementById('c-prop-price');
+  const price   = priceEl ? (parseFloat(priceEl.dataset.price) || 0) : 0;
+  const grossProfit = price - total;
+  const grossMargin = price > 0 ? (grossProfit / price * 100) : 0;
+
+  const fmt2 = v => (Math.round(v * 100) / 100).toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+
+  const setSub = (id, v) => {
+    const e = document.getElementById(id);
+    if (e) e.textContent = fmt2(v) + ' 万円';
+  };
+  setSub('sub1', sub1); setSub('sub2', sub2); setSub('sub3', sub3); setSub('sub4', sub4);
+
+  const summaryEl = document.getElementById('cost-summary');
+  if (!summaryEl) return;
+
+  const srow = (label, val, style = '') =>
+    `<tr>
+      <th style="padding:6px 10px 6px 0;text-align:left;font-weight:500;color:var(--text-secondary);font-size:12px;white-space:nowrap;border-bottom:1px solid var(--border);">${label}</th>
+      <td style="padding:6px 0 6px 10px;text-align:right;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);${style}">${fmt2(val)} 万円</td>
+    </tr>`;
+
+  summaryEl.innerHTML = `
+    <table style="width:100%;border-collapse:collapse;">
+      <tbody>
+        ${srow('仕入関連', sub1)}
+        ${srow('施工関連', sub2)}
+        ${srow('登記・行政', sub3)}
+        ${srow('販売費', sub4)}
+        ${srow('総原価', total, 'color:var(--red);font-size:14px;')}
+        ${srow('販売価格', price)}
+        ${srow('粗利', grossProfit, grossProfit >= 0 ? 'color:var(--green);font-size:14px;' : 'color:var(--red);font-size:14px;')}
+        <tr>
+          <th style="padding:8px 10px 4px 0;text-align:left;font-weight:500;color:var(--text-secondary);font-size:12px;">粗利率</th>
+          <td style="padding:8px 0 4px 10px;text-align:right;font-size:18px;font-weight:700;${grossMargin >= 0 ? 'color:var(--green)' : 'color:var(--red)'}">${grossMargin.toFixed(1)}%</td>
+        </tr>
+      </tbody>
+    </table>
+    ${acqDate ? `<div style="font-size:11px;color:var(--text-muted);margin-top:10px;text-align:center;padding-top:8px;border-top:1px solid var(--border);">取得から ${months}ヶ月 / ${days}日 経過</div>` : ''}
+  `;
+}
+
+function calcPurchaseBrokerFee() {
+  const acqEl = document.getElementById('c-acq-cost');
+  const feeEl = document.getElementById('c-broker-fee');
+  if (!acqEl || !feeEl) return;
+  const acqCost = parseFloat(acqEl.value) || 0;
+  if (acqCost <= 0) return;
+  const fee = Math.round((acqCost * 10000 * 0.03 + 60000) * 1.1) / 10000;
+  feeEl.value = Math.round(fee * 100) / 100;
+  calcCostSummary();
+}
+
+async function saveCost(propId) {
+  const btn = document.getElementById('save-cost-btn');
+  if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
+
+  const acqDateVal = document.getElementById('c-acq-date')?.value || null;
+  const toNum = id => { const v = costVal(id); return v > 0 ? v : null; };
+
+  const data = {
+    property_id:        propId,
+    acquisition_date:   acqDateVal,
+    acquisition_cost:   toNum('c-acq-cost'),
+    broker_fee:         toNum('c-broker-fee'),
+    acquisition_tax:    toNum('c-acq-tax'),
+    transfer_reg:       toNum('c-transfer-reg'),
+    stamp_tax:          toNum('c-stamp-tax'),
+    survey_purchase:    toNum('c-survey-purchase'),
+    demolition:         toNum('c-demolition'),
+    mortgage_release:   toNum('c-mortgage-release'),
+    other_purchase:     toNum('c-other-purchase'),
+    land_prep:          toNum('c-land-prep'),
+    construction:       toNum('c-construction'),
+    design_supervision: toNum('c-design'),
+    performance_cert:   toNum('c-performance-cert'),
+    other_construction: toNum('c-other-construction'),
+    reg_survey:         toNum('c-reg-survey'),
+    farmland:           toNum('c-farmland'),
+    dev_permit:         toNum('c-dev-permit'),
+    other_reg:          toNum('c-other-reg'),
+    planning:           toNum('c-planning'),
+    advertising:        toNum('c-advertising'),
+    site_maint:         toNum('c-site-maint'),
+    hoa_fee:            toNum('c-hoa'),
+    furniture:          toNum('c-furniture'),
+    handover_finish:    toNum('c-handover-finish'),
+    sales_broker_fee:   toNum('c-sales-broker'),
+    sales_office:       toNum('c-sales-office'),
+    ground_warranty:    toNum('c-ground-warranty'),
+    survey_sales:       toNum('c-survey-sales'),
+    handover_docs:      toNum('c-handover-docs'),
+    consumption_tax:    toNum('c-consumption-tax'),
+    personnel:          toNum('c-personnel'),
+    other_sales:        toNum('c-other-sales'),
+    prop_tax_annual:    toNum('c-prop-tax-annual'),
+    utilities_monthly:  toNum('c-utilities-monthly'),
+    fire_monthly:       toNum('c-fire-monthly'),
+    defect_lump:        toNum('c-defect-lump'),
+    updated_at:         new Date().toISOString(),
+  };
+
+  const { error } = await db.from('cost_management').upsert(data, { onConflict: 'property_id' });
+  if (error) {
+    toast('保存失敗: ' + error.message, 'error');
+  } else {
+    toast('原価管理データを保存しました', 'success');
+  }
+  if (btn) { btn.disabled = false; btn.textContent = '💾 保存'; }
+}
+
+async function renderCost(propId) {
+  const el = document.getElementById('content');
+  el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">読み込み中…</div>';
+
+  const [propRes, costRes] = await Promise.all([
+    db.from('properties').select('*, property_details(*)').eq('id', propId).single(),
+    db.from('cost_management').select('*').eq('property_id', propId).maybeSingle()
+  ]);
+
+  if (propRes.error) { toast('物件取得失敗: ' + propRes.error.message, 'error'); return; }
+
+  const prop  = propRes.data;
+  const c     = costRes.data || {};
+  const price = prop.price || 0;
+  const label = esc(prop.property_name || prop.address || prop.code || '（名称未入力）');
+
+  const autoBroker = price > 0 ? Math.round((price * 10000 * 0.03 + 60000) * 1.1) / 10000 : '';
+  const brokerFee  = c.broker_fee != null ? c.broker_fee : autoBroker;
+
+  const v = (key) => c[key] != null ? c[key] : '';
+
+  const ni = (id, val, extra) =>
+    `<input id="${id}" type="number" step="0.01" class="qs-control"
+      value="${val !== '' && val != null ? val : ''}"
+      oninput="calcCostSummary()" placeholder="0"
+      style="width:130px;text-align:right;padding:4px 8px;" ${extra || ''}>`;
+
+  const row = (id, label, val, unit, extra) =>
+    `<tr>
+      <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);white-space:nowrap;width:60%;">${label}</td>
+      <td style="padding:5px 0;white-space:nowrap;">${ni(id, val, extra)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">${unit || '万円'}</span></td>
+    </tr>`;
+
+  const subRow = (subId) =>
+    `<tr style="background:var(--bg-input);">
+      <td style="padding:4px 10px 4px 0;font-size:12px;font-weight:600;color:var(--text-secondary);">小計</td>
+      <td id="${subId}" style="padding:4px 0;font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap;text-align:right;padding-right:32px;">—</td>
+    </tr>`;
+
+  const sec = (title, icon, subId, rows) =>
+    `<div class="section" style="margin-bottom:16px;">
+      <div class="section-title"><span class="icon">${icon}</span>${title}</div>
+      <table style="width:100%;border-collapse:collapse;">${rows}${subRow(subId)}</table>
+    </div>`;
+
+  const sec1 = sec('仕入関連', '🏷️', 'sub1',
+    `<tr>
+      <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">物件取得日</td>
+      <td style="padding:5px 0;"><input id="c-acq-date" type="date" class="qs-control"
+        value="${v('acquisition_date')}" oninput="calcCostSummary()"
+        style="width:160px;padding:4px 8px;"></td>
+    </tr>` +
+    row('c-acq-cost',       '物件取得費',           v('acquisition_cost'), '万円',
+      'oninput="calcCostSummary()"') +
+    `<tr>
+      <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">不動産仲介手数料
+        <button type="button" onclick="calcPurchaseBrokerFee()"
+          style="margin-left:6px;font-size:10px;color:var(--accent);background:var(--accent-dim);
+            border:none;border-radius:4px;padding:1px 6px;cursor:pointer;vertical-align:middle;">自動計算</button>
+      </td>
+      <td style="padding:5px 0;white-space:nowrap;">${ni('c-broker-fee', brokerFee)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">万円</span></td>
+    </tr>` +
+    row('c-acq-tax',        '不動産取得税',         v('acquisition_tax')) +
+    row('c-transfer-reg',   '所有権移転登記費用',   v('transfer_reg')) +
+    row('c-stamp-tax',      '印紙税（売買契約）',   v('stamp_tax')) +
+    row('c-survey-purchase','測量費',               v('survey_purchase')) +
+    row('c-demolition',     '建物解体費',           v('demolition')) +
+    row('c-mortgage-release','抵当権抹消費用',      v('mortgage_release')) +
+    row('c-other-purchase', 'その他（仕入）',       v('other_purchase'))
+  );
+
+  const sec2 = sec('施工関連', '🏗️', 'sub2',
+    row('c-land-prep',         '造成工事費',       v('land_prep')) +
+    row('c-construction',      '建築本体工事費',   v('construction')) +
+    row('c-design',            '設計・監理費',     v('design_supervision')) +
+    row('c-performance-cert',  '性能評価・認定費用', v('performance_cert')) +
+    row('c-other-construction','その他（施工）',   v('other_construction'))
+  );
+
+  const sec3 = sec('登記・行政関連', '📋', 'sub3',
+    row('c-reg-survey', '表示登記・分筆合筆費用', v('reg_survey')) +
+    row('c-farmland',   '農地転用費用',           v('farmland')) +
+    row('c-dev-permit', '開発許可申請費用',        v('dev_permit')) +
+    row('c-other-reg',  'その他（登記）',          v('other_reg'))
+  );
+
+  const sec4 = sec('販売費', '📣', 'sub4',
+    row('c-planning',       '企画費',                   v('planning')) +
+    row('c-advertising',    '宣伝費',                   v('advertising')) +
+    row('c-site-maint',     '敷地内整備費',             v('site_maint')) +
+    row('c-hoa',            '町内会費',                 v('hoa_fee')) +
+    row('c-furniture',      '展示家具購入費',           v('furniture')) +
+    row('c-handover-finish','引渡し仕上費',             v('handover_finish')) +
+    row('c-sales-broker',   '販売仲介手数料',           v('sales_broker_fee')) +
+    row('c-sales-office',   '現地案内所設置費',         v('sales_office')) +
+    row('c-ground-warranty','地盤保証料',               v('ground_warranty')) +
+    row('c-survey-sales',   '測量・境界確認費（販売時）', v('survey_sales')) +
+    row('c-handover-docs',  '引渡し書類作成費',         v('handover_docs')) +
+    row('c-consumption-tax','消費税',                   v('consumption_tax')) +
+    row('c-personnel',      '人件費（販売管理）',       v('personnel')) +
+    row('c-other-sales',    'その他（販売）',           v('other_sales')) +
+    `<tr><td colspan="2" style="padding:8px 0 4px;font-size:12px;font-weight:600;color:var(--text-secondary);border-top:1px solid var(--border);">▼ 月次・年次積み上げ項目</td></tr>` +
+    row('c-prop-tax-annual',  '固定資産税・都市計画税', v('prop_tax_annual'),  '万円/年（日割り累計）') +
+    row('c-utilities-monthly','水道光熱費',             v('utilities_monthly'),'万円/月（月数累計）') +
+    row('c-fire-monthly',     '火災保険料',             v('fire_monthly'),     '万円/月（月数累計）') +
+    row('c-defect-lump',      '瑕疵保険料',             v('defect_lump'),      '万円（一括）')
+  );
+
+  el.innerHTML = `
+    <div class="page-header">
+      <div>
+        <div class="page-title">📊 原価管理</div>
+        <div class="page-sub">${label}</div>
+      </div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-cancel" onclick="showDetail('${propId}')">← 物件詳細に戻る</button>
+        <button id="save-cost-btn" class="btn-primary" onclick="saveCost('${propId}')">💾 保存</button>
+      </div>
+    </div>
+
+    <div style="display:flex;gap:16px;align-items:flex-start;">
+
+      <!-- 左：入力フォーム -->
+      <div style="flex:1;min-width:0;">
+        ${sec1}${sec2}${sec3}${sec4}
+      </div>
+
+      <!-- 右：集計サマリー（sticky） -->
+      <div style="width:260px;flex-shrink:0;">
+        <div class="section" style="position:sticky;top:16px;">
+          <div class="section-title"><span class="icon">📈</span>収支サマリー</div>
+          <span id="c-prop-price" data-price="${price}"
+            style="display:block;font-size:12px;color:var(--text-muted);margin-bottom:8px;">
+            販売価格：${price ? price.toLocaleString() + ' 万円' : '未設定'}
+          </span>
+          <div id="cost-summary" style="font-size:13px;">—</div>
+          <div style="margin-top:12px;">
+            <button id="save-cost-btn2" class="btn-primary" style="width:100%;" onclick="saveCost('${propId}')">💾 保存</button>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  `;
+
+  calcCostSummary();
+}
+
+</script>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -351,6 +670,17 @@
       color: var(--text-secondary); cursor: pointer;
     }
     .btn-cancel:hover { background: var(--bg-card-hover); }
+    .btn-secondary {
+      padding: 8px 18px;
+      background: #e8f4ee;
+      color: var(--green);
+      border: 1px solid #b8dfc8;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .btn-secondary:hover { opacity: .85; }
     .btn-danger {
       padding: 6px 12px;
       background: #3a1e1e; color: var(--red);
@@ -851,6 +1181,7 @@ async function renderDetail(id) {
         </div>
       </div>
       <div style="display:flex;gap:8px;">
+        <button class="btn-secondary" onclick="showCost('${id}')">📊 原価管理</button>
         <button class="btn-primary" onclick="openEditModal()">✏️ 編集</button>
         <button class="btn-danger"  onclick="confirmDelete('${id}')">🗑 削除</button>
       </div>
