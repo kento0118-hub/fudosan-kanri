@@ -553,11 +553,9 @@ async function renderList() {
   if (error) { toast('データ取得失敗: ' + error.message, 'error'); return; }
 
   const all       = allProps || [];
-  const notSold   = p => !p.is_sold;
-  const showSold  = state.filterSold || state.filterType === 'sold';
-  const lands     = all.filter(p => p.type === 'land'  && p.property_details?.transaction_type !== 'managed' && (showSold ? true : notSold(p)));
-  const houses    = all.filter(p => p.type === 'house' && p.property_details?.transaction_type !== 'managed' && (showSold ? true : notSold(p)));
-  const managed   = all.filter(p => p.property_details?.transaction_type === 'managed' && (showSold ? true : notSold(p)));
+  const lands     = all.filter(p => p.type === 'land'  && p.property_details?.transaction_type !== 'managed' && !p.is_sold);
+  const houses    = all.filter(p => p.type === 'house' && p.property_details?.transaction_type !== 'managed' && !p.is_sold);
+  const managed   = all.filter(p => p.property_details?.transaction_type === 'managed' && !p.is_sold);
   const soldProps = all.filter(p => p.is_sold);
 
   const ownerFirst = arr => [...arr].sort((a, b) => {
@@ -571,7 +569,7 @@ async function renderList() {
   else if (state.filterType === 'house')   displayed = ownerFirst(houses);
   else if (state.filterType === 'managed') displayed = managed;
   else if (state.filterType === 'sold')    displayed = soldProps;
-  else                                     displayed = all.filter(p => showSold ? true : notSold(p));
+  else                                     displayed = all;
 
   el.innerHTML = `
     <div class="page-header">
@@ -580,11 +578,6 @@ async function renderList() {
         <div class="page-sub">土地 ${lands.length}件 ／ 中古住宅 ${houses.length}件 ／ 管理物件 ${managed.length}件 ／ 成約済み ${soldProps.length}件</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
-        <label style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text-secondary);cursor:pointer;white-space:nowrap;">
-          <input type="checkbox" ${state.filterSold ? 'checked' : ''}
-            onchange="state.filterSold=this.checked;renderList()" style="width:14px;height:14px;">
-          売買完了を含む
-        </label>
         <button class="btn-primary" onclick="openAddModal('land')">＋ 土地を追加</button>
         <button class="btn-primary" onclick="openAddModal('house')">＋ 中古住宅を追加</button>
       </div>
