@@ -624,7 +624,7 @@ function buildListTable(props) {
   let heads, rowFn;
 
   if (t === 'land') {
-    heads = ['掲載 / SUUMO', 'コード', '物件名', '販売価格', '面積(坪)', '用途地域', '学区（小）', '学区（中）', '取引態様', '売買完了', ''];
+    heads = ['掲載 / SUUMO', 'コード', '物件名', '販売価格', '面積(坪)', '用途地域', '学区（小）', '学区（中）', '取引態様', '販売形態', '売買完了', ''];
     rowFn = p => {
       const d = p.property_details || {};
       return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
@@ -637,12 +637,13 @@ function buildListTable(props) {
         <td>${esc(d.school_elementary||'—')}</td>
         <td>${esc(d.school_junior||'—')}</td>
         <td>${transBadge(d.transaction_type)}</td>
+        <td style="font-size:12px;white-space:nowrap;">${saleTypeLabel(d.sale_type)}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
         <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
       </tr>`;
     };
   } else if (t === 'house') {
-    heads = ['掲載 / SUUMO', 'コード', '物件名', '販売価格', '土地(坪)', '建物(坪)', '築年月', '間取', '学区（小）', '学区（中）', '取引態様', '売買完了', ''];
+    heads = ['掲載 / SUUMO', 'コード', '物件名', '販売価格', '土地(坪)', '建物(坪)', '築年月', '間取', '学区（小）', '学区（中）', '取引態様', '販売形態', '売買完了', ''];
     rowFn = p => {
       const d = p.property_details || {};
       return `<tr onclick="showDetail('${p.id}')" style="cursor:pointer;">
@@ -657,12 +658,13 @@ function buildListTable(props) {
         <td>${esc(d.school_elementary||'—')}</td>
         <td>${esc(d.school_junior||'—')}</td>
         <td>${transBadge(d.transaction_type)}</td>
+        <td style="font-size:12px;white-space:nowrap;">${saleTypeLabel(d.sale_type)}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
         <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
       </tr>`;
     };
   } else {
-    heads = ['種別', '掲載 / SUUMO', 'コード', '物件名', '販売価格', '面積(坪)', '取引態様', '学区（小）', '売買完了', ''];
+    heads = ['種別', '掲載 / SUUMO', 'コード', '物件名', '販売価格', '面積(坪)', '取引態様', '販売形態', '学区（小）', '売買完了', ''];
     rowFn = p => {
       const d    = p.property_details || {};
       const tsubo = p.type === 'land'
@@ -676,6 +678,7 @@ function buildListTable(props) {
         <td style="white-space:nowrap;">${p.price ? p.price.toLocaleString()+'万円' : '—'}</td>
         <td>${tsubo}</td>
         <td>${transBadge(d.transaction_type)}</td>
+        <td style="font-size:12px;white-space:nowrap;">${saleTypeLabel(d.sale_type)}</td>
         <td>${esc(d.school_elementary||'—')}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
         <td onclick="event.stopPropagation()"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button></td>
@@ -876,6 +879,7 @@ async function renderDetail(id) {
           <tr><th>掲載状況</th><td>${statusLabel(prop.status)}${det.suumo_listed ? '　<span class="badge-suumo">SUUMO掲載</span>' : ''}${det.hp_listed ? '　<span class="badge-hp">🌐 HP掲載</span>' : ''}${det.for_sale_sign ? '　<span class="badge-sign">🪧 売看板あり</span>' : ''}</td></tr>
           <tr><th>情報公開日</th><td>${det.publish_date || '—'}</td></tr>
           <tr><th>取引態様</th><td>${transactionLabel(det.transaction_type)}</td></tr>
+          <tr><th>販売形態</th><td>${saleTypeLabel(det.sale_type)}</td></tr>
           <tr><th>販売価格</th><td>${prop.price ? prop.price.toLocaleString()+'万円' : '—'}</td></tr>
           ${det.brokerage_fee ? `<tr><th>仲介手数料</th><td>${esc(det.brokerage_fee)}</td></tr>` : ''}
           <tr><th>住所</th><td>${esc(prop.address||'—')}${mapsLink}</td></tr>
@@ -1053,7 +1057,8 @@ function showPropertyModal(type, prop, det) {
   const waterOpts     = [['','（未選択）'],['公営水道','公営水道'],['私設水道','私設水道'],['井戸','井戸'],['なし','なし'],['不明','不明']];
   const sewageOpts    = [['','（未選択）'],['公共下水','公共下水'],['合併浄化槽','合併浄化槽'],['単独浄化槽','単独浄化槽'],['なし','なし'],['不明','不明']];
   const buriedOpts    = [['','（未選択）'],['あり','あり'],['なし','なし'],['不明','不明']];
-  const transOpts     = [['','（未選択）'],['owner','売主'],['broker','仲介'],['managed','管理物件']];
+  const transOpts    = [['','（未選択）'],['owner','売主'],['broker','仲介'],['managed','管理物件']];
+  const saleTypeOpts = [['','（未選択）'],['none','建築条件なし'],['conditional','建築条件あり']];
 
   // 坪自動計算 input
   const sqmInput = (idSuffix, sqmVal, tsuboId) =>
@@ -1151,6 +1156,12 @@ function showPropertyModal(type, prop, det) {
           <label>取引態様</label>
           <select id="f-trans" class="qs-control" onchange="onTransChange()">
             ${transOpts.map(([v,l]) => `<option value="${v}" ${(d.transaction_type||'')==v?'selected':''}>${l}</option>`).join('')}
+          </select>
+        </div>
+        <div class="form-group">
+          <label>販売形態</label>
+          <select id="f-sale-type" class="qs-control">
+            ${saleTypeOpts.map(([v,l]) => `<option value="${v}" ${(d.sale_type||'')==v?'selected':''}>${l}</option>`).join('')}
           </select>
         </div>
       </div>
@@ -1423,6 +1434,7 @@ async function saveProperty() {
     frontage:          document.getElementById('f-frontage').value.trim()   || null,
     rights:            document.getElementById('f-rights').value.trim()     || null,
     transaction_type:  document.getElementById('f-trans').value             || null,
+    sale_type:         document.getElementById('f-sale-type')?.value         || null,
     brokerage_fee:     document.getElementById('f-brokerage').value.trim()  || null,
     suumo_listed:      document.getElementById('f-suumo').checked,
     hp_listed:         document.getElementById('f-hp').checked,
@@ -1874,6 +1886,10 @@ function transactionLabel(t) {
   return { owner:'売主', broker:'仲介', managed:'管理物件' }[t] || '—';
 }
 
+function saleTypeLabel(t) {
+  return { none:'建築条件なし', conditional:'建築条件あり' }[t] || '—';
+}
+
 // ════════════════════════════════════════════════════════════
 // 仲介手数料 自動計算
 // ════════════════════════════════════════════════════════════
@@ -1967,8 +1983,9 @@ function toast(msg, type = 'success') {
   window._toastTimer = setTimeout(() => el.classList.add('hidden'), 3500);
 }
 
+
 // ════════════════════════════════════════════════════════════
-// 原価管理ビュー
+// 原価管理ビュー v2
 // ════════════════════════════════════════════════════════════
 
 async function showCost(propId) {
@@ -2016,74 +2033,72 @@ function verifyCostPw(propId) {
   }
 }
 
-function costMonthsElapsed(dateStr) {
-  if (!dateStr) return 0;
-  const acq = new Date(dateStr);
-  const now = new Date();
-  return Math.max(0, (now.getFullYear() - acq.getFullYear()) * 12 + now.getMonth() - acq.getMonth());
-}
-
-function costDaysElapsed(dateStr) {
-  if (!dateStr) return 0;
-  const acq = new Date(dateStr);
-  const now = new Date();
-  return Math.max(0, Math.floor((now - acq) / 86400000));
-}
-
 function costVal(id) {
   const el = document.getElementById(id);
   return el ? (parseFloat(el.value) || 0) : 0;
 }
 
-function calcCostSummary() {
-  const acqDate = document.getElementById('c-acq-date')?.value || '';
-  const months  = costMonthsElapsed(acqDate);
-  const days    = costDaysElapsed(acqDate);
+function periodicTotal(cat) {
+  return (window._periodicTotals || {})[cat] || 0;
+}
 
-  const sub1 = costVal('c-acq-cost') + costVal('c-broker-fee') + costVal('c-acq-tax')
+function calcCostSummary() {
+  const isHouse = document.getElementById('c-land-acq-cost') !== null;
+
+  // ── 1. 仕入関連 ──────────────────────────────────────────
+  let acqCost;
+  if (isHouse) {
+    const bldInc = costVal('c-bld-acq-cost');
+    const bldExcl = bldInc > 0 ? bldInc / 1.1 : 0;
+    acqCost = costVal('c-land-acq-cost') + bldExcl;
+  } else {
+    acqCost = costVal('c-acq-cost');
+  }
+  const sub1 = acqCost + costVal('c-broker-fee') + costVal('c-acq-tax')
              + costVal('c-transfer-reg') + costVal('c-stamp-tax') + costVal('c-survey-purchase')
              + costVal('c-demolition') + costVal('c-mortgage-release') + costVal('c-other-purchase');
 
+  // ── 2. 施工関連（移動項目含む）──────────────────────────
   const sub2 = costVal('c-land-prep') + costVal('c-construction') + costVal('c-design')
-             + costVal('c-performance-cert') + costVal('c-other-construction');
+             + costVal('c-performance-cert') + costVal('c-ground-warranty')
+             + costVal('c-survey-sales') + costVal('c-furniture')
+             + costVal('c-other-construction');
 
+  // ── 3. 登記・行政 ─────────────────────────────────────
   const sub3 = costVal('c-reg-survey') + costVal('c-farmland') + costVal('c-dev-permit')
              + costVal('c-other-reg');
 
-  const sub4a = costVal('c-planning') + costVal('c-advertising') + costVal('c-site-maint')
-              + costVal('c-hoa') + costVal('c-furniture') + costVal('c-handover-finish')
-              + costVal('c-sales-broker') + costVal('c-sales-office') + costVal('c-ground-warranty')
-              + costVal('c-survey-sales') + costVal('c-handover-docs') + costVal('c-consumption-tax')
-              + costVal('c-personnel') + costVal('c-other-sales');
+  // ── 4. 販売費（一括） ──────────────────────────────────
+  const sub4 = costVal('c-planning') + costVal('c-handover-finish')
+             + costVal('c-sales-broker') + costVal('c-sales-office')
+             + costVal('c-handover-docs') + costVal('c-other-sales');
 
-  const propTaxAccum   = days > 0 ? (costVal('c-prop-tax-annual') * days / 365) : 0;
-  const utilitiesAccum = costVal('c-utilities-monthly') * months;
-  const fireAccum      = costVal('c-fire-monthly') * months;
-  const defectLump     = costVal('c-defect-lump');
-  const sub4b          = propTaxAccum + utilitiesAccum + fireAccum + defectLump;
-  const sub4           = sub4a + sub4b;
-  const total          = sub1 + sub2 + sub3 + sub4;
+  // ── 5. 積み上げ（年毎・月毎・不定期） ────────────────────
+  const sub5 = periodicTotal('hoa_annual') + periodicTotal('tax_annual')
+             + periodicTotal('fire_annual') + periodicTotal('utilities_monthly')
+             + periodicTotal('irregular_ad') + periodicTotal('irregular_maint')
+             + periodicTotal('irregular_labor') + periodicTotal('irregular_other');
+
+  const total = sub1 + sub2 + sub3 + sub4 + sub5;
 
   const priceEl = document.getElementById('c-prop-price');
   const price   = priceEl ? (parseFloat(priceEl.dataset.price) || 0) : 0;
   const grossProfit = price - total;
   const grossMargin = price > 0 ? (grossProfit / price * 100) : 0;
 
-  const fmt2 = v => (Math.round(v * 100) / 100).toLocaleString('ja-JP', { minimumFractionDigits: 0, maximumFractionDigits: 2 });
+  const fmt = v => (Math.round(v * 100) / 100).toLocaleString('ja-JP', { maximumFractionDigits: 2 });
 
-  const setSub = (id, v) => {
-    const e = document.getElementById(id);
-    if (e) e.textContent = fmt2(v) + ' 万円';
-  };
-  setSub('sub1', sub1); setSub('sub2', sub2); setSub('sub3', sub3); setSub('sub4', sub4);
+  const setSub = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = fmt(v) + ' 万円'; };
+  setSub('sub1', sub1); setSub('sub2', sub2); setSub('sub3', sub3);
+  setSub('sub4', sub4); setSub('sub5', sub5);
 
   const summaryEl = document.getElementById('cost-summary');
   if (!summaryEl) return;
 
-  const srow = (label, val, style = '') =>
+  const srow = (label, val, style) =>
     `<tr>
       <th style="padding:6px 10px 6px 0;text-align:left;font-weight:500;color:var(--text-secondary);font-size:12px;white-space:nowrap;border-bottom:1px solid var(--border);">${label}</th>
-      <td style="padding:6px 0 6px 10px;text-align:right;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);${style}">${fmt2(val)} 万円</td>
+      <td style="padding:6px 0 6px 10px;text-align:right;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);${style||''}">${fmt(val)} 万円</td>
     </tr>`;
 
   summaryEl.innerHTML = `
@@ -2093,6 +2108,7 @@ function calcCostSummary() {
         ${srow('施工関連', sub2)}
         ${srow('登記・行政', sub3)}
         ${srow('販売費', sub4)}
+        ${srow('積み上げ', sub5)}
         ${srow('総原価', total, 'color:var(--red);font-size:14px;')}
         ${srow('販売価格', price)}
         ${srow('粗利', grossProfit, grossProfit >= 0 ? 'color:var(--green);font-size:14px;' : 'color:var(--red);font-size:14px;')}
@@ -2102,76 +2118,105 @@ function calcCostSummary() {
         </tr>
       </tbody>
     </table>
-    ${acqDate ? `<div style="font-size:11px;color:var(--text-muted);margin-top:10px;text-align:center;padding-top:8px;border-top:1px solid var(--border);">取得から ${months}ヶ月 / ${days}日 経過</div>` : ''}
   `;
 }
 
-function calcPurchaseBrokerFee() {
-  const acqEl = document.getElementById('c-acq-cost');
-  const feeEl = document.getElementById('c-broker-fee');
-  if (!acqEl || !feeEl) return;
-  const acqCost = parseFloat(acqEl.value) || 0;
-  if (acqCost <= 0) return;
-  const fee = Math.round((acqCost * 10000 * 0.03 + 60000) * 1.1) / 10000;
-  feeEl.value = Math.round(fee * 100) / 100;
+function calcBldExcl() {
+  const inc  = parseFloat(document.getElementById('c-bld-acq-cost')?.value) || 0;
+  const excl = inc > 0 ? Math.round(inc / 1.1 * 100) / 100 : 0;
+  const el   = document.getElementById('c-bld-excl-disp');
+  if (el) el.textContent = inc > 0 ? `税別: ${excl.toLocaleString('ja-JP', {maximumFractionDigits:2})} 万円` : '';
   calcCostSummary();
+}
+
+function calcPurchaseBrokerFee() {
+  const isHouse = document.getElementById('c-land-acq-cost') !== null;
+  const baseVal = isHouse
+    ? (parseFloat(document.getElementById('c-land-acq-cost')?.value) || 0)
+    : (parseFloat(document.getElementById('c-acq-cost')?.value) || 0);
+  if (baseVal <= 0) return;
+  const fee = Math.round((baseVal * 10000 * 0.03 + 60000) * 1.1) / 10000;
+  const feeEl = document.getElementById('c-broker-fee');
+  if (feeEl) { feeEl.value = Math.round(fee * 100) / 100; calcCostSummary(); }
+}
+
+async function addPeriodicRecord(propId, category, inputType) {
+  let year = null, month = null, date = null, memo = null;
+  const amount = parseFloat(document.getElementById(`p-amt-${category}`)?.value);
+  if (!amount || amount <= 0) { toast('金額を入力してください', 'error'); return; }
+
+  if (inputType === 'annual') {
+    year = parseInt(document.getElementById(`p-year-${category}`)?.value) || new Date().getFullYear();
+  } else if (inputType === 'monthly') {
+    year  = parseInt(document.getElementById(`p-year-${category}`)?.value)  || new Date().getFullYear();
+    month = parseInt(document.getElementById(`p-month-${category}`)?.value) || 1;
+  } else {
+    date = document.getElementById(`p-date-${category}`)?.value || null;
+    memo = document.getElementById(`p-memo-${category}`)?.value?.trim() || null;
+    if (!date) { toast('日付を入力してください', 'error'); return; }
+  }
+
+  const rec = { property_id: propId, category, amount };
+  if (year  != null) rec.record_year  = year;
+  if (month != null) rec.record_month = month;
+  if (date  != null) rec.record_date  = date;
+  if (memo  != null) rec.memo         = memo;
+
+  const { error } = await db.from('cost_periodic_records').insert(rec);
+  if (error) { toast('追加失敗: ' + error.message, 'error'); return; }
+  await renderCost(propId);
+}
+
+async function deletePeriodicRecord(id, propId) {
+  const { error } = await db.from('cost_periodic_records').delete().eq('id', id);
+  if (error) { toast('削除失敗: ' + error.message, 'error'); return; }
+  await renderCost(propId);
 }
 
 async function saveCost(propId) {
   const btn = document.getElementById('save-cost-btn');
   if (btn) { btn.disabled = true; btn.textContent = '保存中…'; }
-
-  const acqDateVal = document.getElementById('c-acq-date')?.value || null;
   const toNum = id => { const v = costVal(id); return v > 0 ? v : null; };
+  const isHouse = document.getElementById('c-land-acq-cost') !== null;
 
   const data = {
-    property_id:        propId,
-    acquisition_date:   acqDateVal,
-    acquisition_cost:   toNum('c-acq-cost'),
-    broker_fee:         toNum('c-broker-fee'),
-    acquisition_tax:    toNum('c-acq-tax'),
-    transfer_reg:       toNum('c-transfer-reg'),
-    stamp_tax:          toNum('c-stamp-tax'),
-    survey_purchase:    toNum('c-survey-purchase'),
-    demolition:         toNum('c-demolition'),
-    mortgage_release:   toNum('c-mortgage-release'),
-    other_purchase:     toNum('c-other-purchase'),
-    land_prep:          toNum('c-land-prep'),
-    construction:       toNum('c-construction'),
-    design_supervision: toNum('c-design'),
-    performance_cert:   toNum('c-performance-cert'),
-    other_construction: toNum('c-other-construction'),
-    reg_survey:         toNum('c-reg-survey'),
-    farmland:           toNum('c-farmland'),
-    dev_permit:         toNum('c-dev-permit'),
-    other_reg:          toNum('c-other-reg'),
-    planning:           toNum('c-planning'),
-    advertising:        toNum('c-advertising'),
-    site_maint:         toNum('c-site-maint'),
-    hoa_fee:            toNum('c-hoa'),
-    furniture:          toNum('c-furniture'),
-    handover_finish:    toNum('c-handover-finish'),
-    sales_broker_fee:   toNum('c-sales-broker'),
-    sales_office:       toNum('c-sales-office'),
-    ground_warranty:    toNum('c-ground-warranty'),
-    survey_sales:       toNum('c-survey-sales'),
-    handover_docs:      toNum('c-handover-docs'),
-    consumption_tax:    toNum('c-consumption-tax'),
-    personnel:          toNum('c-personnel'),
-    other_sales:        toNum('c-other-sales'),
-    prop_tax_annual:    toNum('c-prop-tax-annual'),
-    utilities_monthly:  toNum('c-utilities-monthly'),
-    fire_monthly:       toNum('c-fire-monthly'),
-    defect_lump:        toNum('c-defect-lump'),
-    updated_at:         new Date().toISOString(),
+    property_id:           propId,
+    acquisition_date:      document.getElementById('c-acq-date')?.value  || null,
+    acquisition_cost:      isHouse ? null : toNum('c-acq-cost'),
+    land_acquisition_cost: isHouse ? toNum('c-land-acq-cost') : null,
+    building_acquisition_cost: isHouse ? toNum('c-bld-acq-cost') : null,
+    broker_fee:            toNum('c-broker-fee'),
+    acquisition_tax:       toNum('c-acq-tax'),
+    transfer_reg:          toNum('c-transfer-reg'),
+    stamp_tax:             toNum('c-stamp-tax'),
+    survey_purchase:       toNum('c-survey-purchase'),
+    demolition:            toNum('c-demolition'),
+    mortgage_release:      toNum('c-mortgage-release'),
+    other_purchase:        toNum('c-other-purchase'),
+    land_prep:             toNum('c-land-prep'),
+    construction:          toNum('c-construction'),
+    design_supervision:    toNum('c-design'),
+    performance_cert:      toNum('c-performance-cert'),
+    ground_warranty:       toNum('c-ground-warranty'),
+    survey_sales:          toNum('c-survey-sales'),
+    furniture:             toNum('c-furniture'),
+    other_construction:    toNum('c-other-construction'),
+    reg_survey:            toNum('c-reg-survey'),
+    farmland:              toNum('c-farmland'),
+    dev_permit:            toNum('c-dev-permit'),
+    other_reg:             toNum('c-other-reg'),
+    planning:              toNum('c-planning'),
+    handover_finish:       toNum('c-handover-finish'),
+    sales_broker_fee:      toNum('c-sales-broker'),
+    sales_office:          toNum('c-sales-office'),
+    handover_docs:         toNum('c-handover-docs'),
+    other_sales:           toNum('c-other-sales'),
+    updated_at:            new Date().toISOString(),
   };
 
   const { error } = await db.from('cost_management').upsert(data, { onConflict: 'property_id' });
-  if (error) {
-    toast('保存失敗: ' + error.message, 'error');
-  } else {
-    toast('原価管理データを保存しました', 'success');
-  }
+  if (error) toast('保存失敗: ' + error.message, 'error');
+  else toast('原価管理データを保存しました', 'success');
   if (btn) { btn.disabled = false; btn.textContent = '💾 保存'; }
 }
 
@@ -2179,39 +2224,53 @@ async function renderCost(propId) {
   const el = document.getElementById('content');
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">読み込み中…</div>';
 
-  const [propRes, costRes] = await Promise.all([
+  const [propRes, costRes, periodicRes] = await Promise.all([
     db.from('properties').select('*, property_details(*)').eq('id', propId).single(),
-    db.from('cost_management').select('*').eq('property_id', propId).maybeSingle()
+    db.from('cost_management').select('*').eq('property_id', propId).maybeSingle(),
+    db.from('cost_periodic_records').select('*').eq('property_id', propId).order('created_at', { ascending: false })
   ]);
 
   if (propRes.error) { toast('物件取得失敗: ' + propRes.error.message, 'error'); return; }
 
-  const prop  = propRes.data;
-  const c     = costRes.data || {};
-  const price = prop.price || 0;
-  const label = esc(prop.property_name || prop.address || prop.code || '（名称未入力）');
+  const prop     = propRes.data;
+  const c        = costRes.data || {};
+  const allRecs  = periodicRes.data || [];
+  const isHouse  = prop.type === 'house';
+  const price    = prop.price || 0;
+  const label    = esc(prop.property_name || prop.address || prop.code || '（名称未入力）');
+
+  // ── 積み上げ合計を window._periodicTotals に保存 ──────────────────────────
+  const cats = ['hoa_annual','tax_annual','fire_annual','utilities_monthly',
+                'irregular_ad','irregular_maint','irregular_labor','irregular_other'];
+  window._periodicTotals = {};
+  cats.forEach(cat => {
+    window._periodicTotals[cat] = allRecs
+      .filter(r => r.category === cat)
+      .reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+  });
 
   const autoBroker = price > 0 ? Math.round((price * 10000 * 0.03 + 60000) * 1.1) / 10000 : '';
   const brokerFee  = c.broker_fee != null ? c.broker_fee : autoBroker;
 
-  const v = (key) => c[key] != null ? c[key] : '';
+  const v   = key => c[key] != null ? c[key] : '';
+  const fmt = val => (Math.round(val * 100) / 100).toLocaleString('ja-JP', { maximumFractionDigits: 2 });
 
-  const ni = (id, val, extra) =>
+  const ni = (id, val, oninput, extra) =>
     `<input id="${id}" type="number" step="0.01" class="qs-control"
       value="${val !== '' && val != null ? val : ''}"
-      oninput="calcCostSummary()" placeholder="0"
+      oninput="${oninput || 'calcCostSummary()'}" placeholder="0"
       style="width:130px;text-align:right;padding:4px 8px;" ${extra || ''}>`;
 
-  const row = (id, label, val, unit, extra) =>
+  const row = (id, lbl, val, unit, oninput) =>
     `<tr>
-      <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);white-space:nowrap;width:60%;">${label}</td>
-      <td style="padding:5px 0;white-space:nowrap;">${ni(id, val, extra)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">${unit || '万円'}</span></td>
+      <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);white-space:nowrap;width:55%;">${lbl}</td>
+      <td style="padding:5px 0;white-space:nowrap;">${ni(id, val, oninput)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">${unit || '万円'}</span></td>
     </tr>`;
 
   const subRow = (subId) =>
     `<tr style="background:var(--bg-input);">
       <td style="padding:4px 10px 4px 0;font-size:12px;font-weight:600;color:var(--text-secondary);">小計</td>
-      <td id="${subId}" style="padding:4px 0;font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap;text-align:right;padding-right:32px;">—</td>
+      <td id="${subId}" style="padding:4px 0;font-size:12px;font-weight:700;color:var(--accent);white-space:nowrap;text-align:right;padding-right:28px;">—</td>
     </tr>`;
 
   const sec = (title, icon, subId, rows) =>
@@ -2220,15 +2279,36 @@ async function renderCost(propId) {
       <table style="width:100%;border-collapse:collapse;">${rows}${subRow(subId)}</table>
     </div>`;
 
+  // ── 1. 仕入関連 ───────────────────────────────────────────────────────────
+  const bldAcqCost = v('building_acquisition_cost');
+  const bldExclVal = bldAcqCost > 0 ? Math.round(bldAcqCost / 1.1 * 100) / 100 : '';
+
+  const acqRows = isHouse
+    ? `<tr>
+        <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">物件取得日</td>
+        <td style="padding:5px 0;"><input id="c-acq-date" type="date" class="qs-control"
+          value="${v('acquisition_date')}" oninput="calcCostSummary()" style="width:160px;padding:4px 8px;"></td>
+       </tr>` +
+       row('c-land-acq-cost', '土地取得費', v('land_acquisition_cost')) +
+       `<tr>
+         <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">
+           建物取得費（税込入力）
+         </td>
+         <td style="padding:5px 0;white-space:nowrap;">
+           ${ni('c-bld-acq-cost', bldAcqCost, 'calcBldExcl()')}
+           <span style="margin-left:5px;font-size:12px;color:var(--text-muted);">万円</span>
+           <span id="c-bld-excl-disp" style="margin-left:8px;font-size:11px;color:var(--accent);">${bldExclVal ? '税別: ' + fmt(bldExclVal) + ' 万円' : ''}</span>
+         </td>
+       </tr>`
+    : `<tr>
+        <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">物件取得日</td>
+        <td style="padding:5px 0;"><input id="c-acq-date" type="date" class="qs-control"
+          value="${v('acquisition_date')}" oninput="calcCostSummary()" style="width:160px;padding:4px 8px;"></td>
+       </tr>` +
+       row('c-acq-cost', '物件取得費', v('acquisition_cost'));
+
   const sec1 = sec('仕入関連', '🏷️', 'sub1',
-    `<tr>
-      <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">物件取得日</td>
-      <td style="padding:5px 0;"><input id="c-acq-date" type="date" class="qs-control"
-        value="${v('acquisition_date')}" oninput="calcCostSummary()"
-        style="width:160px;padding:4px 8px;"></td>
-    </tr>` +
-    row('c-acq-cost',       '物件取得費',           v('acquisition_cost'), '万円',
-      'oninput="calcCostSummary()"') +
+    acqRows +
     `<tr>
       <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">不動産仲介手数料
         <button type="button" onclick="calcPurchaseBrokerFee()"
@@ -2237,23 +2317,28 @@ async function renderCost(propId) {
       </td>
       <td style="padding:5px 0;white-space:nowrap;">${ni('c-broker-fee', brokerFee)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">万円</span></td>
     </tr>` +
-    row('c-acq-tax',        '不動産取得税',         v('acquisition_tax')) +
-    row('c-transfer-reg',   '所有権移転登記費用',   v('transfer_reg')) +
-    row('c-stamp-tax',      '印紙税（売買契約）',   v('stamp_tax')) +
-    row('c-survey-purchase','測量費',               v('survey_purchase')) +
-    row('c-demolition',     '建物解体費',           v('demolition')) +
-    row('c-mortgage-release','抵当権抹消費用',      v('mortgage_release')) +
-    row('c-other-purchase', 'その他（仕入）',       v('other_purchase'))
+    row('c-acq-tax',        '不動産取得税',       v('acquisition_tax')) +
+    row('c-transfer-reg',   '所有権移転登記費用', v('transfer_reg')) +
+    row('c-stamp-tax',      '印紙税（売買契約）', v('stamp_tax')) +
+    row('c-survey-purchase','測量費',             v('survey_purchase')) +
+    row('c-demolition',     '建物解体費',         v('demolition')) +
+    row('c-mortgage-release','抵当権抹消費用',    v('mortgage_release')) +
+    row('c-other-purchase', 'その他（仕入）',     v('other_purchase'))
   );
 
+  // ── 2. 施工関連（地盤保証料・測量境界・展示家具 移動後）──────────────────
   const sec2 = sec('施工関連', '🏗️', 'sub2',
-    row('c-land-prep',         '造成工事費',       v('land_prep')) +
-    row('c-construction',      '建築本体工事費',   v('construction')) +
-    row('c-design',            '設計・監理費',     v('design_supervision')) +
-    row('c-performance-cert',  '性能評価・認定費用', v('performance_cert')) +
-    row('c-other-construction','その他（施工）',   v('other_construction'))
+    row('c-land-prep',         '造成工事費',                   v('land_prep')) +
+    row('c-construction',      '建築本体工事費',               v('construction')) +
+    row('c-design',            '設計・監理費',                 v('design_supervision')) +
+    row('c-performance-cert',  '性能評価・認定費用',           v('performance_cert')) +
+    row('c-ground-warranty',   '地盤保証料',                   v('ground_warranty')) +
+    row('c-survey-sales',      '測量・境界確認費（販売時）',   v('survey_sales')) +
+    row('c-furniture',         '展示家具購入費',               v('furniture')) +
+    row('c-other-construction','その他（施工）',               v('other_construction'))
   );
 
+  // ── 3. 登記・行政 ──────────────────────────────────────────────────────────
   const sec3 = sec('登記・行政関連', '📋', 'sub3',
     row('c-reg-survey', '表示登記・分筆合筆費用', v('reg_survey')) +
     row('c-farmland',   '農地転用費用',           v('farmland')) +
@@ -2261,28 +2346,139 @@ async function renderCost(propId) {
     row('c-other-reg',  'その他（登記）',          v('other_reg'))
   );
 
-  const sec4 = sec('販売費', '📣', 'sub4',
-    row('c-planning',       '企画費',                   v('planning')) +
-    row('c-advertising',    '宣伝費',                   v('advertising')) +
-    row('c-site-maint',     '敷地内整備費',             v('site_maint')) +
-    row('c-hoa',            '町内会費',                 v('hoa_fee')) +
-    row('c-furniture',      '展示家具購入費',           v('furniture')) +
-    row('c-handover-finish','引渡し仕上費',             v('handover_finish')) +
-    row('c-sales-broker',   '販売仲介手数料',           v('sales_broker_fee')) +
-    row('c-sales-office',   '現地案内所設置費',         v('sales_office')) +
-    row('c-ground-warranty','地盤保証料',               v('ground_warranty')) +
-    row('c-survey-sales',   '測量・境界確認費（販売時）', v('survey_sales')) +
-    row('c-handover-docs',  '引渡し書類作成費',         v('handover_docs')) +
-    row('c-consumption-tax','消費税',                   v('consumption_tax')) +
-    row('c-personnel',      '人件費（販売管理）',       v('personnel')) +
-    row('c-other-sales',    'その他（販売）',           v('other_sales')) +
-    `<tr><td colspan="2" style="padding:8px 0 4px;font-size:12px;font-weight:600;color:var(--text-secondary);border-top:1px solid var(--border);">▼ 月次・年次積み上げ項目</td></tr>` +
-    row('c-prop-tax-annual',  '固定資産税・都市計画税', v('prop_tax_annual'),  '万円/年（日割り累計）') +
-    row('c-utilities-monthly','水道光熱費',             v('utilities_monthly'),'万円/月（月数累計）') +
-    row('c-fire-monthly',     '火災保険料',             v('fire_monthly'),     '万円/月（月数累計）') +
-    row('c-defect-lump',      '瑕疵保険料',             v('defect_lump'),      '万円（一括）')
+  // ── 4. 販売費（一括） ─────────────────────────────────────────────────────
+  const sec4 = sec('販売費（一括）', '📣', 'sub4',
+    row('c-planning',       '企画費',           v('planning')) +
+    row('c-handover-finish','引渡し仕上費',     v('handover_finish')) +
+    row('c-sales-broker',   '販売仲介手数料',   v('sales_broker_fee')) +
+    row('c-sales-office',   '現地案内所設置費', v('sales_office')) +
+    row('c-handover-docs',  '引渡し書類作成費', v('handover_docs')) +
+    row('c-other-sales',    'その他（販売）',   v('other_sales'))
   );
 
+  // ── 5. 積み上げ（年毎・月毎・不定期） ──────────────────────────────────────
+  const thisYear = new Date().getFullYear();
+  const months12 = [1,2,3,4,5,6,7,8,9,10,11,12];
+
+  const annualSec = (category, catLabel) => {
+    const items = allRecs.filter(r => r.category === category)
+                         .sort((a,b) => b.record_year - a.record_year);
+    const total = window._periodicTotals[category] || 0;
+    const rows  = items.map(r =>
+      `<tr>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);">${r.record_year}年</td>
+        <td style="padding:3px 8px;font-size:12px;text-align:right;">${fmt(r.amount)}</td>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">万円</td>
+        <td style="padding:3px 8px;font-size:11px;color:var(--text-muted);">${r.memo ? esc(r.memo) : ''}</td>
+        <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
+          style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
+      </tr>`).join('');
+    return `
+      <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:500;">${catLabel}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 万円</span>
+        </div>
+        ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input id="p-year-${category}" type="number" class="qs-control" value="${thisYear}" style="width:76px;padding:4px 6px;" placeholder="年">
+          <span style="font-size:12px;color:var(--text-muted);">年</span>
+          <input id="p-amt-${category}" type="number" step="0.01" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
+          <span style="font-size:12px;color:var(--text-muted);">万円/年</span>
+          <button onclick="addPeriodicRecord('${propId}','${category}','annual')"
+            style="font-size:11px;color:var(--accent);background:var(--accent-dim);border:none;border-radius:4px;padding:4px 10px;cursor:pointer;">＋追加</button>
+        </div>
+      </div>`;
+  };
+
+  const monthlySec = (category, catLabel) => {
+    const items = allRecs.filter(r => r.category === category)
+                         .sort((a,b) => b.record_year - a.record_year || b.record_month - a.record_month);
+    const total = window._periodicTotals[category] || 0;
+    const rows  = items.map(r =>
+      `<tr>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);">${r.record_year}年${r.record_month}月</td>
+        <td style="padding:3px 8px;font-size:12px;text-align:right;">${fmt(r.amount)}</td>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">万円</td>
+        <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
+          style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
+      </tr>`).join('');
+    return `
+      <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:500;">${catLabel}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 万円</span>
+        </div>
+        ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input id="p-year-${category}" type="number" class="qs-control" value="${thisYear}" style="width:76px;padding:4px 6px;" placeholder="年">
+          <span style="font-size:12px;color:var(--text-muted);">年</span>
+          <select id="p-month-${category}" class="qs-control" style="width:72px;padding:4px 6px;">
+            ${months12.map(m => `<option value="${m}" ${m===new Date().getMonth()+1?'selected':''}>${m}月</option>`).join('')}
+          </select>
+          <input id="p-amt-${category}" type="number" step="0.01" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
+          <span style="font-size:12px;color:var(--text-muted);">万円</span>
+          <button onclick="addPeriodicRecord('${propId}','${category}','monthly')"
+            style="font-size:11px;color:var(--accent);background:var(--accent-dim);border:none;border-radius:4px;padding:4px 10px;cursor:pointer;">＋追加</button>
+        </div>
+      </div>`;
+  };
+
+  const irregularSec = (category, catLabel) => {
+    const items = allRecs.filter(r => r.category === category)
+                         .sort((a,b) => (b.record_date||'') > (a.record_date||'') ? 1 : -1);
+    const total = window._periodicTotals[category] || 0;
+    const rows  = items.map(r =>
+      `<tr>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);white-space:nowrap;">${r.record_date || '—'}</td>
+        <td style="padding:3px 8px;font-size:12px;text-align:right;white-space:nowrap;">${fmt(r.amount)}</td>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">万円</td>
+        <td style="padding:3px 8px;font-size:11px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;">${r.memo ? esc(r.memo) : ''}</td>
+        <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
+          style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
+      </tr>`).join('');
+    return `
+      <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
+          <span style="font-size:13px;font-weight:500;">${catLabel}</span>
+          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 万円</span>
+        </div>
+        ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+          <input id="p-date-${category}" type="date" class="qs-control" style="width:150px;padding:4px 6px;">
+          <input id="p-amt-${category}" type="number" step="0.01" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
+          <span style="font-size:12px;color:var(--text-muted);">万円</span>
+          <input id="p-memo-${category}" type="text" class="qs-control" style="width:150px;padding:4px 6px;" placeholder="メモ（任意）">
+          <button onclick="addPeriodicRecord('${propId}','${category}','irregular')"
+            style="font-size:11px;color:var(--accent);background:var(--accent-dim);border:none;border-radius:4px;padding:4px 10px;cursor:pointer;">＋追加</button>
+        </div>
+      </div>`;
+  };
+
+  const sec5Total = cats.reduce((s, cat) => s + (window._periodicTotals[cat] || 0), 0);
+  const sec5 = `
+    <div class="section" style="margin-bottom:16px;">
+      <div class="section-title" style="justify-content:space-between;">
+        <span><span class="icon">📅</span>積み上げ原価</span>
+        <span id="sub5" style="font-size:12px;font-weight:600;color:var(--accent);">${fmt(sec5Total)} 万円</span>
+      </div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">📆 年毎管理</div>
+      ${annualSec('hoa_annual',  '町内会費')}
+      ${annualSec('tax_annual',  '固定資産税・都市計画税')}
+      ${annualSec('fire_annual', '火災保険料')}
+
+      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">📅 月毎管理</div>
+      ${monthlySec('utilities_monthly', '水道光熱費')}
+
+      <div style="font-size:12px;font-weight:600;color:var(--text-secondary);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">📌 不定期積み上げ</div>
+      ${irregularSec('irregular_ad',    '宣伝費')}
+      ${irregularSec('irregular_maint', '敷地内整備費（草刈り・除雪・清掃など）')}
+      ${irregularSec('irregular_labor', '人件費')}
+      ${irregularSec('irregular_other', 'その他')}
+    </div>`;
+
+  // ── ページ組み立て ─────────────────────────────────────────────────────────
   el.innerHTML = `
     <div class="page-header">
       <div>
@@ -2296,13 +2492,9 @@ async function renderCost(propId) {
     </div>
 
     <div style="display:flex;gap:16px;align-items:flex-start;">
-
-      <!-- 左：入力フォーム -->
       <div style="flex:1;min-width:0;">
-        ${sec1}${sec2}${sec3}${sec4}
+        ${sec1}${sec2}${sec3}${sec4}${sec5}
       </div>
-
-      <!-- 右：集計サマリー（sticky） -->
       <div style="width:260px;flex-shrink:0;">
         <div class="section" style="position:sticky;top:16px;">
           <div class="section-title"><span class="icon">📈</span>収支サマリー</div>
@@ -2312,11 +2504,10 @@ async function renderCost(propId) {
           </span>
           <div id="cost-summary" style="font-size:13px;">—</div>
           <div style="margin-top:12px;">
-            <button id="save-cost-btn2" class="btn-primary" style="width:100%;" onclick="saveCost('${propId}')">💾 保存</button>
+            <button class="btn-primary" style="width:100%;" onclick="saveCost('${propId}')">💾 保存</button>
           </div>
         </div>
       </div>
-
     </div>
   `;
 
