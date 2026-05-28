@@ -2044,6 +2044,16 @@ function periodicTotal(cat) {
   return (window._periodicTotals || {})[cat] || 0;
 }
 
+function toggleYearGroup(gid) {
+  const el  = document.getElementById(gid);
+  const btn = document.getElementById(gid + '-btn');
+  if (!el || !btn) return;
+  const expanded = el.style.display !== 'none';
+  el.style.display = expanded ? 'none' : '';
+  if (!btn.dataset.orig) btn.dataset.orig = btn.textContent;
+  btn.textContent = expanded ? btn.dataset.orig : '閉じる▲';
+}
+
 function calcCostSummary() {
   const isHouse = document.getElementById('c-land-acq-cost') !== null;
 
@@ -2364,27 +2374,62 @@ async function renderCost(propId) {
   const thisYear = new Date().getFullYear();
   const months12 = [1,2,3,4,5,6,7,8,9,10,11,12];
 
+  // 年度別グループを生成するヘルパー
+  // yearKey: 各レコードの年を返す関数
+  // makeRow: レコードから <tr> HTML を返す関数
+  const makeYearGroups = (items, yearKey, makeRow) => {
+    if (items.length === 0) return '';
+    const years = [...new Set(items.map(yearKey))].sort((a, b) => b - a);
+    return years.map(yr => {
+      const recs = items.filter(r => yearKey(r) === yr);
+      const yearTotal = recs.reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
+      const gid = `pg-${Math.random().toString(36).slice(2,8)}`;
+      const visRows = recs.slice(0, 3).map(makeRow).join('');
+      const hidRows = recs.slice(3).map(makeRow).join('');
+      return `
+        <div style="margin-bottom:8px;border:1px solid var(--border);border-radius:6px;overflow:hidden;">
+          <div style="display:flex;justify-content:space-between;align-items:center;padding:5px 10px;background:var(--bg-card);">
+            <span style="font-size:12px;font-weight:600;color:var(--text-secondary);">${yr}年</span>
+            <span style="font-size:12px;font-weight:700;color:var(--accent);">${fmt(yearTotal)} 円</span>
+          </div>
+          <table style="width:100%;border-collapse:collapse;">
+            <tbody>${visRows}</tbody>
+          </table>
+          ${hidRows ? `
+          <div id="${gid}" style="display:none;">
+            <table style="width:100%;border-collapse:collapse;"><tbody>${hidRows}</tbody></table>
+          </div>
+          <div style="padding:3px 10px;border-top:1px solid var(--border);background:var(--bg-input);">
+            <button id="${gid}-btn" onclick="toggleYearGroup('${gid}')"
+              style="font-size:10px;color:var(--accent);background:none;border:none;cursor:pointer;padding:3px 0;">
+              もっと見る▼（${recs.length - 3}件）
+            </button>
+          </div>` : ''}
+        </div>`;
+    }).join('');
+  };
+
   const annualSec = (category, catLabel) => {
     const items = allRecs.filter(r => r.category === category)
-                         .sort((a,b) => b.record_year - a.record_year);
+                         .sort((a, b) => b.record_year - a.record_year);
     const total = window._periodicTotals[category] || 0;
-    const rows  = items.map(r =>
-      `<tr>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);">${r.record_year}年</td>
-        <td style="padding:3px 8px;font-size:12px;text-align:right;">${fmt(r.amount)}</td>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">${r.memo ? esc(r.memo) : ''}</td>
-        <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
-          style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
-      </tr>`).join('');
+    const makeRow = r => `<tr>
+      <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);">${r.record_year}年</td>
+      <td style="padding:3px 8px;font-size:12px;text-align:right;">${fmt(r.amount)}</td>
+      <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
+      <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">${r.memo ? esc(r.memo) : ''}</td>
+      <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
+        style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
+    </tr>`;
+    const groupsHtml = makeYearGroups(items, r => r.record_year, makeRow);
     return `
       <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:13px;font-weight:500;">${catLabel}</span>
           <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 円</span>
         </div>
-        ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        ${groupsHtml}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:${groupsHtml ? '8px' : '0'};">
           <input id="p-year-${category}" type="number" class="qs-control" value="${thisYear}" style="width:76px;padding:4px 6px;" placeholder="年">
           <span style="font-size:12px;color:var(--text-muted);">年</span>
           <input id="p-amt-${category}" type="number" step="1" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
@@ -2397,24 +2442,24 @@ async function renderCost(propId) {
 
   const monthlySec = (category, catLabel) => {
     const items = allRecs.filter(r => r.category === category)
-                         .sort((a,b) => b.record_year - a.record_year || b.record_month - a.record_month);
+                         .sort((a, b) => b.record_year - a.record_year || b.record_month - a.record_month);
     const total = window._periodicTotals[category] || 0;
-    const rows  = items.map(r =>
-      `<tr>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);">${r.record_year}年${r.record_month}月</td>
-        <td style="padding:3px 8px;font-size:12px;text-align:right;">${fmt(r.amount)}</td>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
-        <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
-          style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
-      </tr>`).join('');
+    const makeRow = r => `<tr>
+      <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);">${r.record_year}年${r.record_month}月</td>
+      <td style="padding:3px 8px;font-size:12px;text-align:right;">${fmt(r.amount)}</td>
+      <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
+      <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
+        style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
+    </tr>`;
+    const groupsHtml = makeYearGroups(items, r => r.record_year, makeRow);
     return `
       <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:13px;font-weight:500;">${catLabel}</span>
           <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 円</span>
         </div>
-        ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        ${groupsHtml}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:${groupsHtml ? '8px' : '0'};">
           <input id="p-year-${category}" type="number" class="qs-control" value="${thisYear}" style="width:76px;padding:4px 6px;" placeholder="年">
           <span style="font-size:12px;color:var(--text-muted);">年</span>
           <select id="p-month-${category}" class="qs-control" style="width:72px;padding:4px 6px;">
@@ -2430,25 +2475,26 @@ async function renderCost(propId) {
 
   const irregularSec = (category, catLabel) => {
     const items = allRecs.filter(r => r.category === category)
-                         .sort((a,b) => (b.record_date||'') > (a.record_date||'') ? 1 : -1);
+                         .sort((a, b) => (b.record_date || '') > (a.record_date || '') ? 1 : -1);
     const total = window._periodicTotals[category] || 0;
-    const rows  = items.map(r =>
-      `<tr>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);white-space:nowrap;">${r.record_date || '—'}</td>
-        <td style="padding:3px 8px;font-size:12px;text-align:right;white-space:nowrap;">${fmt(r.amount)}</td>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
-        <td style="padding:3px 8px;font-size:11px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;">${r.memo ? esc(r.memo) : ''}</td>
-        <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
-          style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
-      </tr>`).join('');
+    const getYear = r => r.record_date ? parseInt(r.record_date.substring(0, 4)) : 0;
+    const makeRow = r => `<tr>
+      <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);white-space:nowrap;">${r.record_date || '—'}</td>
+      <td style="padding:3px 8px;font-size:12px;text-align:right;white-space:nowrap;">${fmt(r.amount)}</td>
+      <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
+      <td style="padding:3px 8px;font-size:11px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;">${r.memo ? esc(r.memo) : ''}</td>
+      <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
+        style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
+    </tr>`;
+    const groupsHtml = makeYearGroups(items, getYear, makeRow);
     return `
       <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:13px;font-weight:500;">${catLabel}</span>
           <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 円</span>
         </div>
-        ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
-        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
+        ${groupsHtml}
+        <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;margin-top:${groupsHtml ? '8px' : '0'};">
           <input id="p-date-${category}" type="date" class="qs-control" style="width:150px;padding:4px 6px;">
           <input id="p-amt-${category}" type="number" step="1" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
           <span style="font-size:12px;color:var(--text-muted);">円</span>
