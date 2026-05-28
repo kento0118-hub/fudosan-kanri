@@ -1058,7 +1058,7 @@ function showPropertyModal(type, prop, det) {
   const sewageOpts    = [['','（未選択）'],['公共下水','公共下水'],['合併浄化槽','合併浄化槽'],['単独浄化槽','単独浄化槽'],['なし','なし'],['不明','不明']];
   const buriedOpts    = [['','（未選択）'],['あり','あり'],['なし','なし'],['不明','不明']];
   const transOpts    = [['','（未選択）'],['owner','売主'],['broker','仲介'],['managed','管理物件']];
-  const saleTypeOpts = [['','（未選択）'],['none','建築条件なし'],['conditional','建築条件あり']];
+  const saleTypeOpts = [['','（未選択）'],['conditional','建築条件あり']];
 
   // 坪自動計算 input
   const sqmInput = (idSuffix, sqmVal, tsuboId) =>
@@ -1887,7 +1887,7 @@ function transactionLabel(t) {
 }
 
 function saleTypeLabel(t) {
-  return { none:'建築条件なし', conditional:'建築条件あり' }[t] || '—';
+  return { conditional:'建築条件あり' }[t] || '—';
 }
 
 // ════════════════════════════════════════════════════════════
@@ -2049,7 +2049,7 @@ function calcCostSummary() {
   let acqCost;
   if (isHouse) {
     const bldInc = costVal('c-bld-acq-cost');
-    const bldExcl = bldInc > 0 ? bldInc / 1.1 : 0;
+    const bldExcl = bldInc > 0 ? Math.round(bldInc / 1.1) : 0;
     acqCost = costVal('c-land-acq-cost') + bldExcl;
   } else {
     acqCost = costVal('c-acq-cost');
@@ -2058,7 +2058,7 @@ function calcCostSummary() {
              + costVal('c-transfer-reg') + costVal('c-stamp-tax') + costVal('c-survey-purchase')
              + costVal('c-demolition') + costVal('c-mortgage-release') + costVal('c-other-purchase');
 
-  // ── 2. 施工関連（移動項目含む）──────────────────────────
+  // ── 2. 施工関連 ──────────────────────────────────────────
   const sub2 = costVal('c-land-prep') + costVal('c-construction') + costVal('c-design')
              + costVal('c-performance-cert') + costVal('c-ground-warranty')
              + costVal('c-survey-sales') + costVal('c-furniture')
@@ -2075,20 +2075,21 @@ function calcCostSummary() {
 
   // ── 5. 積み上げ（年毎・月毎・不定期） ────────────────────
   const sub5 = periodicTotal('hoa_annual') + periodicTotal('tax_annual')
-             + periodicTotal('fire_annual') + periodicTotal('utilities_monthly')
+             + periodicTotal('fire_annual')
+             + periodicTotal('water_monthly') + periodicTotal('electricity_monthly') + periodicTotal('gas_monthly')
              + periodicTotal('irregular_ad') + periodicTotal('irregular_maint')
              + periodicTotal('irregular_labor') + periodicTotal('irregular_other');
 
   const total = sub1 + sub2 + sub3 + sub4 + sub5;
 
   const priceEl = document.getElementById('c-prop-price');
-  const price   = priceEl ? (parseFloat(priceEl.dataset.price) || 0) : 0;
+  const price   = priceEl ? (parseFloat(priceEl.dataset.price) || 0) * 10000 : 0;
   const grossProfit = price - total;
   const grossMargin = price > 0 ? (grossProfit / price * 100) : 0;
 
-  const fmt = v => (Math.round(v * 100) / 100).toLocaleString('ja-JP', { maximumFractionDigits: 2 });
+  const fmt = v => Math.round(v).toLocaleString('ja-JP');
 
-  const setSub = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = fmt(v) + ' 万円'; };
+  const setSub = (id, v) => { const e = document.getElementById(id); if (e) e.textContent = fmt(v) + ' 円'; };
   setSub('sub1', sub1); setSub('sub2', sub2); setSub('sub3', sub3);
   setSub('sub4', sub4); setSub('sub5', sub5);
 
@@ -2098,7 +2099,7 @@ function calcCostSummary() {
   const srow = (label, val, style) =>
     `<tr>
       <th style="padding:6px 10px 6px 0;text-align:left;font-weight:500;color:var(--text-secondary);font-size:12px;white-space:nowrap;border-bottom:1px solid var(--border);">${label}</th>
-      <td style="padding:6px 0 6px 10px;text-align:right;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);${style||''}">${fmt(val)} 万円</td>
+      <td style="padding:6px 0 6px 10px;text-align:right;font-size:13px;font-weight:600;border-bottom:1px solid var(--border);${style||''}">${fmt(val)} 円</td>
     </tr>`;
 
   summaryEl.innerHTML = `
@@ -2123,9 +2124,9 @@ function calcCostSummary() {
 
 function calcBldExcl() {
   const inc  = parseFloat(document.getElementById('c-bld-acq-cost')?.value) || 0;
-  const excl = inc > 0 ? Math.round(inc / 1.1 * 100) / 100 : 0;
+  const excl = inc > 0 ? Math.round(inc / 1.1) : 0;
   const el   = document.getElementById('c-bld-excl-disp');
-  if (el) el.textContent = inc > 0 ? `税別: ${excl.toLocaleString('ja-JP', {maximumFractionDigits:2})} 万円` : '';
+  if (el) el.textContent = inc > 0 ? `税別: ${excl.toLocaleString('ja-JP')} 円` : '';
   calcCostSummary();
 }
 
@@ -2135,9 +2136,9 @@ function calcPurchaseBrokerFee() {
     ? (parseFloat(document.getElementById('c-land-acq-cost')?.value) || 0)
     : (parseFloat(document.getElementById('c-acq-cost')?.value) || 0);
   if (baseVal <= 0) return;
-  const fee = Math.round((baseVal * 10000 * 0.03 + 60000) * 1.1) / 10000;
+  const fee = Math.round((baseVal * 0.03 + 60000) * 1.1);
   const feeEl = document.getElementById('c-broker-fee');
-  if (feeEl) { feeEl.value = Math.round(fee * 100) / 100; calcCostSummary(); }
+  if (feeEl) { feeEl.value = fee; calcCostSummary(); }
 }
 
 async function addPeriodicRecord(propId, category, inputType) {
@@ -2240,7 +2241,8 @@ async function renderCost(propId) {
   const label    = esc(prop.property_name || prop.address || prop.code || '（名称未入力）');
 
   // ── 積み上げ合計を window._periodicTotals に保存 ──────────────────────────
-  const cats = ['hoa_annual','tax_annual','fire_annual','utilities_monthly',
+  const cats = ['hoa_annual','tax_annual','fire_annual',
+                'water_monthly','electricity_monthly','gas_monthly',
                 'irregular_ad','irregular_maint','irregular_labor','irregular_other'];
   window._periodicTotals = {};
   cats.forEach(cat => {
@@ -2249,14 +2251,14 @@ async function renderCost(propId) {
       .reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
   });
 
-  const autoBroker = price > 0 ? Math.round((price * 10000 * 0.03 + 60000) * 1.1) / 10000 : '';
+  const autoBroker = price > 0 ? Math.round((price * 10000 * 0.03 + 60000) * 1.1) : '';
   const brokerFee  = c.broker_fee != null ? c.broker_fee : autoBroker;
 
   const v   = key => c[key] != null ? c[key] : '';
-  const fmt = val => (Math.round(val * 100) / 100).toLocaleString('ja-JP', { maximumFractionDigits: 2 });
+  const fmt = val => Math.round(val).toLocaleString('ja-JP');
 
   const ni = (id, val, oninput, extra) =>
-    `<input id="${id}" type="number" step="0.01" class="qs-control"
+    `<input id="${id}" type="number" step="1" class="qs-control"
       value="${val !== '' && val != null ? val : ''}"
       oninput="${oninput || 'calcCostSummary()'}" placeholder="0"
       style="width:130px;text-align:right;padding:4px 8px;" ${extra || ''}>`;
@@ -2264,7 +2266,7 @@ async function renderCost(propId) {
   const row = (id, lbl, val, unit, oninput) =>
     `<tr>
       <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);white-space:nowrap;width:55%;">${lbl}</td>
-      <td style="padding:5px 0;white-space:nowrap;">${ni(id, val, oninput)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">${unit || '万円'}</span></td>
+      <td style="padding:5px 0;white-space:nowrap;">${ni(id, val, oninput)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">${unit || '円'}</span></td>
     </tr>`;
 
   const subRow = (subId) =>
@@ -2281,7 +2283,7 @@ async function renderCost(propId) {
 
   // ── 1. 仕入関連 ───────────────────────────────────────────────────────────
   const bldAcqCost = v('building_acquisition_cost');
-  const bldExclVal = bldAcqCost > 0 ? Math.round(bldAcqCost / 1.1 * 100) / 100 : '';
+  const bldExclVal = bldAcqCost > 0 ? Math.round(bldAcqCost / 1.1) : '';
 
   const acqRows = isHouse
     ? `<tr>
@@ -2296,8 +2298,8 @@ async function renderCost(propId) {
          </td>
          <td style="padding:5px 0;white-space:nowrap;">
            ${ni('c-bld-acq-cost', bldAcqCost, 'calcBldExcl()')}
-           <span style="margin-left:5px;font-size:12px;color:var(--text-muted);">万円</span>
-           <span id="c-bld-excl-disp" style="margin-left:8px;font-size:11px;color:var(--accent);">${bldExclVal ? '税別: ' + fmt(bldExclVal) + ' 万円' : ''}</span>
+           <span style="margin-left:5px;font-size:12px;color:var(--text-muted);">円</span>
+           <span id="c-bld-excl-disp" style="margin-left:8px;font-size:11px;color:var(--accent);">${bldExclVal ? '税別: ' + bldExclVal.toLocaleString('ja-JP') + ' 円' : ''}</span>
          </td>
        </tr>`
     : `<tr>
@@ -2315,7 +2317,7 @@ async function renderCost(propId) {
           style="margin-left:6px;font-size:10px;color:var(--accent);background:var(--accent-dim);
             border:none;border-radius:4px;padding:1px 6px;cursor:pointer;vertical-align:middle;">自動計算</button>
       </td>
-      <td style="padding:5px 0;white-space:nowrap;">${ni('c-broker-fee', brokerFee)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">万円</span></td>
+      <td style="padding:5px 0;white-space:nowrap;">${ni('c-broker-fee', brokerFee)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">円</span></td>
     </tr>` +
     row('c-acq-tax',        '不動産取得税',       v('acquisition_tax')) +
     row('c-transfer-reg',   '所有権移転登記費用', v('transfer_reg')) +
@@ -2326,7 +2328,7 @@ async function renderCost(propId) {
     row('c-other-purchase', 'その他（仕入）',     v('other_purchase'))
   );
 
-  // ── 2. 施工関連（地盤保証料・測量境界・展示家具 移動後）──────────────────
+  // ── 2. 施工関連 ──────────────────────────────────────────────────────────
   const sec2 = sec('施工関連', '🏗️', 'sub2',
     row('c-land-prep',         '造成工事費',                   v('land_prep')) +
     row('c-construction',      '建築本体工事費',               v('construction')) +
@@ -2368,8 +2370,8 @@ async function renderCost(propId) {
       `<tr>
         <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);">${r.record_year}年</td>
         <td style="padding:3px 8px;font-size:12px;text-align:right;">${fmt(r.amount)}</td>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">万円</td>
-        <td style="padding:3px 8px;font-size:11px;color:var(--text-muted);">${r.memo ? esc(r.memo) : ''}</td>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">${r.memo ? esc(r.memo) : ''}</td>
         <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
           style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
       </tr>`).join('');
@@ -2377,14 +2379,14 @@ async function renderCost(propId) {
       <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:13px;font-weight:500;">${catLabel}</span>
-          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 万円</span>
+          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 円</span>
         </div>
         ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <input id="p-year-${category}" type="number" class="qs-control" value="${thisYear}" style="width:76px;padding:4px 6px;" placeholder="年">
           <span style="font-size:12px;color:var(--text-muted);">年</span>
-          <input id="p-amt-${category}" type="number" step="0.01" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
-          <span style="font-size:12px;color:var(--text-muted);">万円/年</span>
+          <input id="p-amt-${category}" type="number" step="1" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
+          <span style="font-size:12px;color:var(--text-muted);">円/年</span>
           <button onclick="addPeriodicRecord('${propId}','${category}','annual')"
             style="font-size:11px;color:var(--accent);background:var(--accent-dim);border:none;border-radius:4px;padding:4px 10px;cursor:pointer;">＋追加</button>
         </div>
@@ -2399,7 +2401,7 @@ async function renderCost(propId) {
       `<tr>
         <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);">${r.record_year}年${r.record_month}月</td>
         <td style="padding:3px 8px;font-size:12px;text-align:right;">${fmt(r.amount)}</td>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">万円</td>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
         <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
           style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
       </tr>`).join('');
@@ -2407,7 +2409,7 @@ async function renderCost(propId) {
       <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:13px;font-weight:500;">${catLabel}</span>
-          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 万円</span>
+          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 円</span>
         </div>
         ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
@@ -2416,8 +2418,8 @@ async function renderCost(propId) {
           <select id="p-month-${category}" class="qs-control" style="width:72px;padding:4px 6px;">
             ${months12.map(m => `<option value="${m}" ${m===new Date().getMonth()+1?'selected':''}>${m}月</option>`).join('')}
           </select>
-          <input id="p-amt-${category}" type="number" step="0.01" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
-          <span style="font-size:12px;color:var(--text-muted);">万円</span>
+          <input id="p-amt-${category}" type="number" step="1" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
+          <span style="font-size:12px;color:var(--text-muted);">円</span>
           <button onclick="addPeriodicRecord('${propId}','${category}','monthly')"
             style="font-size:11px;color:var(--accent);background:var(--accent-dim);border:none;border-radius:4px;padding:4px 10px;cursor:pointer;">＋追加</button>
         </div>
@@ -2432,7 +2434,7 @@ async function renderCost(propId) {
       `<tr>
         <td style="padding:3px 8px;font-size:12px;color:var(--text-secondary);white-space:nowrap;">${r.record_date || '—'}</td>
         <td style="padding:3px 8px;font-size:12px;text-align:right;white-space:nowrap;">${fmt(r.amount)}</td>
-        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">万円</td>
+        <td style="padding:3px 8px;font-size:12px;color:var(--text-muted);">円</td>
         <td style="padding:3px 8px;font-size:11px;color:var(--text-muted);max-width:120px;overflow:hidden;text-overflow:ellipsis;">${r.memo ? esc(r.memo) : ''}</td>
         <td style="padding:3px 8px;"><button onclick="deletePeriodicRecord('${r.id}','${propId}')"
           style="font-size:10px;color:var(--red);background:none;border:1px solid var(--red);border-radius:4px;padding:1px 6px;cursor:pointer;">削除</button></td>
@@ -2441,13 +2443,13 @@ async function renderCost(propId) {
       <div style="margin-bottom:14px;padding:10px;background:var(--bg-input);border-radius:8px;">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;">
           <span style="font-size:13px;font-weight:500;">${catLabel}</span>
-          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 万円</span>
+          <span style="font-size:12px;font-weight:700;color:var(--accent);">累計: ${fmt(total)} 円</span>
         </div>
         ${items.length > 0 ? `<table style="width:100%;border-collapse:collapse;margin-bottom:8px;">${rows}</table>` : ''}
         <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap;">
           <input id="p-date-${category}" type="date" class="qs-control" style="width:150px;padding:4px 6px;">
-          <input id="p-amt-${category}" type="number" step="0.01" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
-          <span style="font-size:12px;color:var(--text-muted);">万円</span>
+          <input id="p-amt-${category}" type="number" step="1" class="qs-control" style="width:110px;padding:4px 6px;text-align:right;" placeholder="0">
+          <span style="font-size:12px;color:var(--text-muted);">円</span>
           <input id="p-memo-${category}" type="text" class="qs-control" style="width:150px;padding:4px 6px;" placeholder="メモ（任意）">
           <button onclick="addPeriodicRecord('${propId}','${category}','irregular')"
             style="font-size:11px;color:var(--accent);background:var(--accent-dim);border:none;border-radius:4px;padding:4px 10px;cursor:pointer;">＋追加</button>
@@ -2455,12 +2457,16 @@ async function renderCost(propId) {
       </div>`;
   };
 
+  const waterTotal = (window._periodicTotals['water_monthly'] || 0)
+                   + (window._periodicTotals['electricity_monthly'] || 0)
+                   + (window._periodicTotals['gas_monthly'] || 0);
+
   const sec5Total = cats.reduce((s, cat) => s + (window._periodicTotals[cat] || 0), 0);
   const sec5 = `
     <div class="section" style="margin-bottom:16px;">
       <div class="section-title" style="justify-content:space-between;">
         <span><span class="icon">📅</span>積み上げ原価</span>
-        <span id="sub5" style="font-size:12px;font-weight:600;color:var(--accent);">${fmt(sec5Total)} 万円</span>
+        <span id="sub5" style="font-size:12px;font-weight:600;color:var(--accent);">${fmt(sec5Total)} 円</span>
       </div>
 
       <div style="font-size:12px;font-weight:600;color:var(--text-secondary);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">📆 年毎管理</div>
@@ -2469,7 +2475,13 @@ async function renderCost(propId) {
       ${annualSec('fire_annual', '火災保険料')}
 
       <div style="font-size:12px;font-weight:600;color:var(--text-secondary);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">📅 月毎管理</div>
-      ${monthlySec('utilities_monthly', '水道光熱費')}
+      ${monthlySec('water_monthly', '水道代')}
+      ${monthlySec('electricity_monthly', '電気代')}
+      ${monthlySec('gas_monthly', 'ガス代')}
+      <div style="padding:8px 12px;background:var(--bg);border:1px solid var(--border);border-radius:6px;font-size:12px;display:flex;justify-content:space-between;margin-bottom:14px;">
+        <span style="color:var(--text-secondary);">水道光熱費 合計</span>
+        <span style="font-weight:700;color:var(--accent);">${fmt(waterTotal)} 円</span>
+      </div>
 
       <div style="font-size:12px;font-weight:600;color:var(--text-secondary);padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:10px;">📌 不定期積み上げ</div>
       ${irregularSec('irregular_ad',    '宣伝費')}
