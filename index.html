@@ -592,6 +592,21 @@ async function renderList() {
   else if (state.filterType === 'sold')    displayed = codeSort(soldProps);
   else                                     displayed = codeSort(all);
 
+  // 内見・問い合わせカウントを付加
+  if (displayed.length) {
+    const { data: _iqd } = await db.from('inquiry_logs')
+      .select('property_id,type').eq('property_type','sale')
+      .in('property_id', displayed.map(p => p.id));
+    if (_iqd) {
+      const _cm = {};
+      _iqd.forEach(r => {
+        if (!_cm[r.property_id]) _cm[r.property_id] = { v:0, i:0 };
+        if (r.type === 'viewing') _cm[r.property_id].v++; else _cm[r.property_id].i++;
+      });
+      displayed.forEach(p => { p._iq = _cm[p.id] || {}; });
+    }
+  }
+
   el.innerHTML = `
     <div class="page-header">
       <div>
@@ -628,12 +643,16 @@ function buildListTable(props) {
 
   // SUUMO + status セル
   const statusCell = (p) => {
-    const d = p.property_details || {};
+    const d  = p.property_details || {};
+    const iq = p._iq || {};
+    const iqBadge = (iq.v || iq.i)
+      ? `<div style="font-size:10px;color:var(--text-secondary);margin-top:1px;">${iq.v ? '内見 '+iq.v : ''}${iq.v && iq.i ? ' / ' : ''}${iq.i ? '問 '+iq.i : ''}</div>` : '';
     return `<div style="display:flex;flex-direction:column;gap:3px;">
       ${statusBadge(p.status)}
       ${d.suumo_listed   ? '<span class="badge-suumo">SUUMO掲載</span>' : ''}
       ${d.hp_listed      ? '<span class="badge-hp">🌐 HP掲載</span>' : ''}
       ${d.for_sale_sign  ? '<span class="badge-sign">🪧 売看板あり</span>' : ''}
+      ${iqBadge}
     </div>`;
   };
 
@@ -723,12 +742,13 @@ async function renderDetail(id) {
   const el = document.getElementById('content');
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">読み込み中…</div>';
 
-  const [propRes, photosRes, checksRes, logsRes, priceHistRes] = await Promise.all([
+  const [propRes, photosRes, checksRes, logsRes, priceHistRes, inqRes] = await Promise.all([
     db.from('properties').select('*, property_details(*)').eq('id', id).single(),
     db.from('property_photos').select('*').eq('property_id', id).order('order_index'),
     db.from('checklist_checks').select('*').eq('property_id', id),
     db.from('task_logs').select('*').eq('property_id', id).order('performed_date', { ascending: false }),
     db.from('price_history').select('*').eq('property_id', id).order('recorded_date', { ascending: false }),
+    db.from('inquiry_logs').select('*').eq('property_id', id).eq('property_type', 'sale').order('date', { ascending: false }),
   ]);
 
   if (propRes.error) { toast('物件取得失敗: ' + propRes.error.message, 'error'); return; }
@@ -738,6 +758,7 @@ async function renderDetail(id) {
   const checks       = checksRes.data   || [];
   const logs         = logsRes.data     || [];
   const priceHistory = priceHistRes.data || [];
+  const inquiries    = inqRes.data        || [];
   const det          = prop.property_details || {};
   const isLand = prop.type === 'land';
 
@@ -902,6 +923,8 @@ async function renderDetail(id) {
           <tr><th>物件種別</th><td>${isLand ? '土地' : '中古住宅'}</td></tr>
           <tr><th>掲載状況</th><td>${statusLabel(prop.status)}${det.suumo_listed ? '　<span class="badge-suumo">SUUMO掲載</span>' : ''}${det.hp_listed ? '　<span class="badge-hp">🌐 HP掲載</span>' : ''}${det.for_sale_sign ? '　<span class="badge-sign">🪧 売看板あり</span>' : ''}</td></tr>
           <tr><th>情報公開日</th><td>${det.publish_date || '—'}</td></tr>
+          ${det.sale_start_date ? `<tr><th>販売開始日</th><td>${det.sale_start_date}</td></tr>` : ''}
+          ${(det.suumo_start_date||det.hp_start_date||det.sign_start_date) ? `<tr><th>掲載開始日</th><td style="font-size:12px;">${det.suumo_start_date?'SUUMO: '+det.suumo_start_date+'\u3000':''}${det.hp_start_date?'HP: '+det.hp_start_date+'\u3000':''}${det.sign_start_date?'売看板: '+det.sign_start_date:''}</td></tr>` : ''}
           <tr><th>取引態様</th><td>${transactionLabel(det.transaction_type)}</td></tr>
           <tr><th>販売形態</th><td>${saleTypeLabel(det.sale_type)}</td></tr>
           <tr><th>販売価格</th><td>${prop.price ? prop.price.toLocaleString()+'万円' : '—'}</td></tr>
@@ -977,6 +1000,8 @@ async function renderDetail(id) {
 
     <!-- 間取り図（中古住宅のみ） -->
     ${floorHtml}
+
+    ${buildInquirySection(inquiries, id, 'sale')}
 
     <!-- チェックリスト ＋ 実施記録 -->
     <div class="two-col" style="margin-top:16px;">
@@ -1189,6 +1214,26 @@ function showPropertyModal(type, prop, det) {
                    onchange="this.closest('.doc-check-label').classList.toggle('checked',this.checked)">
             🪧 売看板あり
           </label>
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>販売開始日</label>
+          <input id="f-sale-start" type="date" class="qs-control" value="${d.sale_start_date||''}">
+        </div>
+        <div class="form-group">
+          <label>SUUMO掲載開始日</label>
+          <input id="f-suumo-start" type="date" class="qs-control" value="${d.suumo_start_date||''}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>HP掲載開始日</label>
+          <input id="f-hp-start" type="date" class="qs-control" value="${d.hp_start_date||''}">
+        </div>
+        <div class="form-group">
+          <label>売看板設置日</label>
+          <input id="f-sign-start" type="date" class="qs-control" value="${d.sign_start_date||''}">
         </div>
       </div>
 
@@ -1471,6 +1516,10 @@ async function saveProperty() {
     hp_listed:         document.getElementById('f-hp').checked,
     for_sale_sign:     document.getElementById('f-sign').checked,
     publish_date:      document.getElementById('f-publish-date').value      || null,
+    sale_start_date:  document.getElementById('f-sale-start')?.value        || null,
+    suumo_start_date: document.getElementById('f-suumo-start')?.value       || null,
+    hp_start_date:    document.getElementById('f-hp-start')?.value          || null,
+    sign_start_date:  document.getElementById('f-sign-start')?.value        || null,
   };
 
   const _toTsubo = v => v ? parseFloat((v/3.30579).toFixed(2)) : null;
@@ -2748,12 +2797,13 @@ async function renderRentalDetail(id) {
   const el = document.getElementById('content');
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">読み込み中…</div>';
 
-  const [propRes, detRes, tenantRes, histRes, unitsRes] = await Promise.all([
+  const [propRes, detRes, tenantRes, histRes, unitsRes, inqRes] = await Promise.all([
     db.from('rental_properties').select('*').eq('id', id).single(),
     db.from('rental_details').select('*').eq('rental_id', id).maybeSingle(),
     db.from('rental_tenants').select('*').eq('rental_id', id).maybeSingle(),
     db.from('rental_tenant_history').select('*').eq('rental_id', id).order('contract_end', { ascending: false }),
     db.from('rental_units').select('*').eq('rental_id', id).order('unit_number'),
+    db.from('inquiry_logs').select('*').eq('property_id', id).eq('property_type', 'rental').order('date', { ascending: false }),
   ]);
 
   if (propRes.error) { toast('物件取得失敗: ' + propRes.error.message, 'error'); return; }
@@ -2761,7 +2811,8 @@ async function renderRentalDetail(id) {
   const det     = detRes.data  || {};
   const tenant  = tenantRes.data || null;
   const history = histRes.data  || [];
-  const units   = unitsRes.data || [];
+  const units     = unitsRes.data || [];
+  const inquiries = inqRes.data   || [];
 
   const isBuilding = prop.type === 'building';
   const isLand     = prop.type === 'land';
@@ -2954,6 +3005,7 @@ async function renderRentalDetail(id) {
 
     ${tenantSection}
     ${unitsSection}
+    ${buildInquirySection(inquiries, id, 'rental')}
     ${historySection}
   `;
 
@@ -4549,6 +4601,142 @@ function initPropertyMapView(sales, rentals) {
       <br><a href="#" onclick="showRentalDetail('${p.id}');return false;" style="color:#2e9e68;font-weight:600;">詳細を見る →</a>`;
     placeMarker(p.address, color, content, p.property_name || p.code || '');
   });
+}
+
+// ════════════════════════════════════════════════════════════
+// 内見・問い合わせ記録 v1
+// ════════════════════════════════════════════════════════════
+
+const IQ_TYPE  = { viewing:'内見', inquiry:'問い合わせ' };
+const IQ_ROUTE = { suumo:'SUUMO', hp:'HP', sign:'売看板', referral:'紹介', other:'その他' };
+const IQ_STAT  = { considering:'検討中', positive:'前向き', declined:'見送り', contracted:'成約' };
+const IQ_STAT_COLOR = {
+  considering: 'color:var(--text-secondary);',
+  positive:    'color:var(--green);font-weight:600;',
+  declined:    'color:var(--text-muted);',
+  contracted:  'color:var(--accent);font-weight:600;',
+};
+
+function buildInquirySection(logs, propId, propType) {
+  const rows = logs.map(l => `
+    <tr>
+      <td style="white-space:nowrap;">${l.date || '—'}</td>
+      <td>
+        <span style="font-size:11px;padding:2px 7px;border-radius:4px;font-weight:600;
+          ${l.type === 'viewing'
+            ? 'background:#1a3a6e;color:#6ea8fe;'
+            : 'background:#2a1a5e;color:#b39ddb;'}">
+          ${IQ_TYPE[l.type] || l.type}
+        </span>
+      </td>
+      <td style="font-size:12px;">${IQ_ROUTE[l.route] || '—'}</td>
+      <td style="font-size:12px;${IQ_STAT_COLOR[l.status] || ''}">${IQ_STAT[l.status] || '—'}</td>
+      <td style="font-size:12px;max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"
+          title="${esc(l.memo || '')}">${esc(l.memo || '')}</td>
+      <td>
+        <button class="btn-sm btn-danger"
+                onclick="deleteInquiryLog('${l.id}','${propId}','${propType}')">削除</button>
+      </td>
+    </tr>`).join('');
+
+  return `
+    <div class="section" style="margin-bottom:16px;">
+      <div class="section-title" style="display:flex;justify-content:space-between;align-items:center;">
+        <span><span class="icon">📞</span>内見・問い合わせ記録</span>
+        <button class="btn-sm" onclick="openInquiryModal('${propId}','${propType}')">＋ 記録を追加</button>
+      </div>
+      ${logs.length === 0
+        ? '<div style="padding:10px 0;font-size:12px;color:var(--text-muted);">記録がありません</div>'
+        : `<div style="overflow-x:auto;">
+             <table class="data-table">
+               <thead><tr>
+                 <th>日付</th><th>種別</th><th>経路</th><th>検討状況</th><th>メモ</th><th></th>
+               </tr></thead>
+               <tbody>${rows}</tbody>
+             </table>
+           </div>`
+      }
+    </div>`;
+}
+
+function openInquiryModal(propId, propType) {
+  const today = new Date().toISOString().slice(0, 10);
+  const sel   = (id, opts) =>
+    `<select id="${id}" class="qs-control">
+      ${opts.map(([v,l]) => `<option value="${v}">${l}</option>`).join('')}
+    </select>`;
+
+  document.getElementById('modal').innerHTML = `
+    <div class="modal-header">
+      <div class="modal-title">📞 内見・問い合わせを記録</div>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="iq-prop-id"   value="${propId}">
+      <input type="hidden" id="iq-prop-type" value="${propType}">
+      <div class="form-row">
+        <div class="form-group">
+          <label>日付 *</label>
+          <input type="date" id="iq-date" class="qs-control" value="${today}">
+        </div>
+        <div class="form-group">
+          <label>種別 *</label>
+          ${sel('iq-type', [['viewing','内見'],['inquiry','問い合わせ']])}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>経路</label>
+          ${sel('iq-route', [['','（未選択）'],['suumo','SUUMO'],['hp','HP'],['sign','売看板'],['referral','紹介'],['other','その他']])}
+        </div>
+        <div class="form-group">
+          <label>検討状況</label>
+          ${sel('iq-status', [['','（未選択）'],['considering','検討中'],['positive','前向き'],['declined','見送り'],['contracted','成約']])}
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group" style="grid-column:span 2;">
+          <label>メモ</label>
+          <input type="text" id="iq-memo" class="qs-control" placeholder="顧客の反応・特記事項など">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-cancel" onclick="closeModal()">キャンセル</button>
+      <button class="btn-primary" onclick="saveInquiryLog()">💾 保存</button>
+    </div>
+  `;
+  document.getElementById('modal-bg').classList.remove('hidden');
+}
+
+async function saveInquiryLog() {
+  const propId   = document.getElementById('iq-prop-id')?.value;
+  const propType = document.getElementById('iq-prop-type')?.value;
+  const date     = document.getElementById('iq-date')?.value;
+  const type     = document.getElementById('iq-type')?.value;
+  const route    = document.getElementById('iq-route')?.value  || null;
+  const status   = document.getElementById('iq-status')?.value || null;
+  const memo     = document.getElementById('iq-memo')?.value.trim() || null;
+
+  if (!date) { toast('日付を入力してください', 'error'); return; }
+
+  const { error } = await db.from('inquiry_logs').insert({
+    property_id: propId, property_type: propType, date, type, route, status, memo,
+  });
+  if (error) { toast('保存失敗: ' + error.message, 'error'); return; }
+  toast('記録を保存しました', 'success');
+  closeModal();
+  if (propType === 'sale')   await renderDetail(propId);
+  else                       await renderRentalDetail(propId);
+}
+
+async function deleteInquiryLog(id, propId, propType) {
+  if (!confirm('この記録を削除しますか？')) return;
+  const { error } = await db.from('inquiry_logs').delete().eq('id', id);
+  if (error) { toast('削除失敗: ' + error.message, 'error'); return; }
+  toast('削除しました', 'success');
+  if (propType === 'sale')   await renderDetail(propId);
+  else                       await renderRentalDetail(propId);
 }
 
 </script>
