@@ -573,18 +573,21 @@ async function renderList() {
   const managed   = all.filter(p => p.property_details?.transaction_type === 'managed' && !p.is_sold);
   const soldProps = all.filter(p => p.is_sold);
 
-  const ownerFirst = arr => [...arr].sort((a, b) => {
-    const ta = a.property_details?.transaction_type === 'owner' ? 0 : 1;
-    const tb = b.property_details?.transaction_type === 'owner' ? 0 : 1;
-    return ta - tb;
+  const codeSort = arr => [...arr].sort((a, b) => {
+    const ORDER = { B: 0, T: 1, C: 2 };
+    const letter = p => (p?.code || '').charAt(0).toUpperCase();
+    const num    = p => parseInt((p?.code || '').replace(/^[^\d]+/, '')) || 0;
+    const la = ORDER[letter(a)] ?? 3, lb = ORDER[letter(b)] ?? 3;
+    if (la !== lb) return la - lb;
+    return num(a) - num(b);
   });
 
   let displayed;
-  if      (state.filterType === 'land')    displayed = ownerFirst(lands);
-  else if (state.filterType === 'house')   displayed = ownerFirst(houses);
-  else if (state.filterType === 'managed') displayed = managed;
-  else if (state.filterType === 'sold')    displayed = soldProps;
-  else                                     displayed = all;
+  if      (state.filterType === 'land')    displayed = codeSort(lands);
+  else if (state.filterType === 'house')   displayed = codeSort(houses);
+  else if (state.filterType === 'managed') displayed = codeSort(managed);
+  else if (state.filterType === 'sold')    displayed = codeSort(soldProps);
+  else                                     displayed = codeSort(all);
 
   el.innerHTML = `
     <div class="page-header">
