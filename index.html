@@ -885,7 +885,7 @@ async function renderDetail(id) {
         </div>
       </div>
       <div style="display:flex;gap:8px;flex-wrap:wrap;">
-        ${det.transaction_type === 'broker' ? `<button class="btn-secondary" onclick="showSellerInfo('${id}')">👤 顧客情報</button>` : ''}
+        ${det.transaction_type === 'broker' ? `<button style="background:#fff3e0;color:#bf5000;border:1px solid #f5a623;font-weight:600;" class="btn-secondary" onclick="showSellerInfo('${id}')">👤 顧客情報</button>` : ''}
         <button class="btn-secondary" onclick="showCost('${id}')">📊 原価管理</button>
         <button class="btn-primary" onclick="openEditModal()">✏️ 編集</button>
         <button class="btn-danger"  onclick="confirmDelete('${id}')">🗑 削除</button>
