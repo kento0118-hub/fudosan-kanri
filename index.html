@@ -1701,11 +1701,11 @@ async function saveProperty() {
   let propId;
   if (id) {
     const { error } = await db.from('properties').update(propData).eq('id', id);
-    if (error) { toast('保存失敗: ' + error.message, 'error'); return; }
+    if (error) { console.error('[saveProperty update]', error, 'propData.status=', propData.status); toast('保存失敗: ' + error.message + ' [status=' + propData.status + ']', 'error'); return; }
     propId = id;
   } else {
     const { data, error } = await db.from('properties').insert(propData).select().single();
-    if (error) { toast('保存失敗: ' + error.message, 'error'); return; }
+    if (error) { console.error('[saveProperty insert]', error, 'propData.status=', propData.status); toast('保存失敗: ' + error.message + ' [status=' + propData.status + ']', 'error'); return; }
     propId = data.id;
   }
 
