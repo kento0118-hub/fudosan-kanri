@@ -806,7 +806,7 @@ function buildListTable(props) {
     const iqBadge = (iq.v || iq.i)
       ? `<div style="font-size:10px;color:var(--text-secondary);margin-top:1px;">${iq.v ? '内見 '+iq.v : ''}${iq.v && iq.i ? ' / ' : ''}${iq.i ? '問 '+iq.i : ''}</div>` : '';
     return `<div style="display:flex;flex-direction:column;gap:3px;">
-      ${statusBadge(p.status)}
+      ${(p.status === 'active' && (d.suumo_listed || d.hp_listed || d.for_sale_sign)) ? '' : statusBadge(p.status)}
       ${d.suumo_listed   ? '<span class="badge-suumo">SUUMO掲載</span>' : ''}
       ${d.hp_listed      ? '<span class="badge-hp">🌐 HP掲載</span>' : ''}
       ${d.for_sale_sign  ? '<span class="badge-sign">🪧 売看板あり</span>' : ''}
@@ -916,7 +916,7 @@ function buildListCards(props) {
       <div class="prop-card-top">
         <span class="prop-card-code">${esc(p.code||'')}</span>
         ${typeBadge}
-        ${statusBadge(p.status)}
+        ${(p.status === 'active' && (d.suumo_listed || d.hp_listed || d.for_sale_sign)) ? '' : statusBadge(p.status)}
       </div>
       <div class="prop-card-name">${esc(p.property_name||p.address||'(名称未入力)')}</div>
       <div class="prop-card-row">
