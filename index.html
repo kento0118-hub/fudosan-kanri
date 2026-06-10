@@ -391,6 +391,8 @@
     .badge-sold-s   { font-size: 10px; background: #cc0000; color: #ffffff;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-preparing{ font-size: 10px; background: #2a2010; color: #f0c040;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-negotiating{ font-size: 10px; background: #e67e00; color: #ffffff;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-contract-prep { font-size: 10px; background: #cc6600; color: #ffffff;     padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-contracted    { font-size: 10px; background: #1a6e1a; color: #ffffff;     padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-recruiting{ font-size: 10px; background: #1a3a6e; color: #6ea8fe;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-occupied  { font-size: 10px; background: #1a3a1e; color: var(--green);  padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-vacant    { font-size: 10px; background: #2a2d35; color: var(--text-muted); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
@@ -1119,6 +1121,7 @@ async function renderDetail(id) {
           <tr><th>情報公開日</th><td>${det.publish_date || '—'}</td></tr>
           ${det.sale_start_date ? `<tr><th>販売開始日</th><td>${det.sale_start_date}</td></tr>` : ''}
           ${(det.suumo_start_date||det.hp_start_date||det.sign_start_date) ? `<tr><th>掲載開始日</th><td style="font-size:12px;">${det.suumo_start_date?'SUUMO: '+det.suumo_start_date+'\u3000':''}${det.hp_start_date?'HP: '+det.hp_start_date+'\u3000':''}${det.sign_start_date?'売看板: '+det.sign_start_date:''}</td></tr>` : ''}
+          ${(det.purchase_offer_date||det.contract_date||det.delivery_date) ? `<tr><th>契約情報</th><td style="font-size:12px;">${det.purchase_offer_date?'買付: '+det.purchase_offer_date+'\u3000':''}${det.contract_date?'契約: '+det.contract_date+'\u3000':''}${det.delivery_date?'引渡: '+det.delivery_date:''}</td></tr>` : ''}
           <tr><th>取引態様</th><td>${transactionLabel(det.transaction_type)}</td></tr>
           <tr><th>販売形態</th><td>${saleTypeLabel(det.sale_type)}</td></tr>
           <tr><th>販売価格</th><td>${prop.price ? prop.price.toLocaleString()+'万円' : '—'}</td></tr>
@@ -1316,7 +1319,7 @@ function showPropertyModal(type, prop, det) {
     `<select id="${id}" class="qs-control" ${extra||''}>${opts.map(([v,l]) =>
       `<option value="${v}" ${(val||'')==v?'selected':''}>${l}</option>`).join('')}</select>`;
 
-  const statusOpts    = [['active','掲載中'],['negotiating','商談中'],['preparing','販売準備中'],['inactive','非掲載'],['sold','成約済']];
+  const statusOpts    = [['active','掲載中'],['negotiating','商談中'],['preparing','販売準備中'],['inactive','非掲載'],['contract_prep','契約準備中'],['contracted','契約済み'],['sold','成約済']];
   const waterOpts     = [['','（未選択）'],['公営水道','公営水道'],['私設水道','私設水道'],['井戸','井戸'],['なし','なし'],['不明','不明']];
   const sewageOpts    = [['','（未選択）'],['公共下水','公共下水'],['合併浄化槽','合併浄化槽'],['単独浄化槽','単独浄化槽'],['なし','なし'],['不明','不明']];
   const buriedOpts    = [['','（未選択）'],['あり','あり'],['なし','なし'],['不明','不明']];
@@ -1428,6 +1431,22 @@ function showPropertyModal(type, prop, det) {
         <div class="form-group">
           <label>売看板設置日</label>
           <input id="f-sign-start" type="date" class="qs-control" value="${d.sign_start_date||''}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>買付申込日</label>
+          <input id="f-offer-date" type="date" class="qs-control" value="${d.purchase_offer_date||''}">
+        </div>
+        <div class="form-group">
+          <label>契約日</label>
+          <input id="f-contract-date" type="date" class="qs-control" value="${d.contract_date||''}">
+        </div>
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label>引渡し日</label>
+          <input id="f-delivery-date" type="date" class="qs-control" value="${d.delivery_date||''}">
         </div>
       </div>
 
@@ -1718,7 +1737,10 @@ async function saveProperty() {
     sale_start_date:  document.getElementById('f-sale-start')?.value        || null,
     suumo_start_date: document.getElementById('f-suumo-start')?.value       || null,
     hp_start_date:    document.getElementById('f-hp-start')?.value          || null,
-    sign_start_date:  document.getElementById('f-sign-start')?.value        || null,
+    sign_start_date:         document.getElementById('f-sign-start')?.value         || null,
+    purchase_offer_date:     document.getElementById('f-offer-date')?.value          || null,
+    contract_date:           document.getElementById('f-contract-date')?.value       || null,
+    delivery_date:           document.getElementById('f-delivery-date')?.value       || null,
   };
 
   const _toTsubo = v => v ? parseFloat((v/3.30579).toFixed(2)) : null;
@@ -2150,17 +2172,19 @@ function parseDocuments(docs) {
 
 function statusBadge(s) {
   const map = {
-    active:   '<span class="badge-active">掲載中</span>',
-    inactive: '<span class="badge-inactive">非掲載</span>',
-    sold:     '<span class="badge-sold-s">成約済</span>',
-    negotiating:'<span class="badge-negotiating">商談中</span>',
-    preparing:'<span class="badge-preparing">販売準備中</span>',
+    active:        '<span class="badge-active">掲載中</span>',
+    inactive:      '<span class="badge-inactive">非掲載</span>',
+    sold:          '<span class="badge-sold-s">成約済</span>',
+    negotiating:   '<span class="badge-negotiating">商談中</span>',
+    preparing:     '<span class="badge-preparing">販売準備中</span>',
+    contract_prep: '<span class="badge-contract-prep">契約準備中</span>',
+    contracted:    '<span class="badge-contracted">契約済み</span>',
   };
   return map[s] || `<span>${esc(s)}</span>`;
 }
 
 function statusLabel(s) {
-  return { active:'掲載中', negotiating:'商談中', inactive:'非掲載', sold:'成約済', preparing:'販売準備中' }[s] || s;
+  return { active:'掲載中', negotiating:'商談中', inactive:'非掲載', sold:'成約済', preparing:'販売準備中', contract_prep:'契約準備中', contracted:'契約済み' }[s] || s;
 }
 
 function transactionLabel(t) {
