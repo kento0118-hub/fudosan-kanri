@@ -391,8 +391,7 @@
     .badge-sold-s   { font-size: 10px; background: #cc0000; color: #ffffff;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-preparing{ font-size: 10px; background: #2a2010; color: #f0c040;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-negotiating{ font-size: 10px; background: #e67e00; color: #ffffff;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
-    .badge-contract-prep { font-size: 10px; background: #cc6600; color: #ffffff;     padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
-    .badge-contracted    { font-size: 10px; background: #1a6e1a; color: #ffffff;     padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
+    .badge-contract-prep { font-size: 10px; background: #ffd700; color: #cc0000;     padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-recruiting{ font-size: 10px; background: #1a3a6e; color: #6ea8fe;       padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-occupied  { font-size: 10px; background: #1a3a1e; color: var(--green);  padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
     .badge-vacant    { font-size: 10px; background: #2a2d35; color: var(--text-muted); padding: 2px 8px; border-radius: 6px; font-weight: 600; white-space: nowrap; }
@@ -1319,7 +1318,7 @@ function showPropertyModal(type, prop, det) {
     `<select id="${id}" class="qs-control" ${extra||''}>${opts.map(([v,l]) =>
       `<option value="${v}" ${(val||'')==v?'selected':''}>${l}</option>`).join('')}</select>`;
 
-  const statusOpts    = [['active','掲載中'],['negotiating','商談中'],['preparing','販売準備中'],['inactive','非掲載'],['contract_prep','契約準備中'],['contracted','契約済み'],['sold','成約済']];
+  const statusOpts    = [['active','掲載中'],['negotiating','商談中'],['preparing','販売準備中'],['inactive','非掲載'],['contract_prep','契約準備中'],['sold','成約済']];
   const waterOpts     = [['','（未選択）'],['公営水道','公営水道'],['私設水道','私設水道'],['井戸','井戸'],['なし','なし'],['不明','不明']];
   const sewageOpts    = [['','（未選択）'],['公共下水','公共下水'],['合併浄化槽','合併浄化槽'],['単独浄化槽','単独浄化槽'],['なし','なし'],['不明','不明']];
   const buriedOpts    = [['','（未選択）'],['あり','あり'],['なし','なし'],['不明','不明']];
@@ -2178,13 +2177,12 @@ function statusBadge(s) {
     negotiating:   '<span class="badge-negotiating">商談中</span>',
     preparing:     '<span class="badge-preparing">販売準備中</span>',
     contract_prep: '<span class="badge-contract-prep">契約準備中</span>',
-    contracted:    '<span class="badge-contracted">契約済み</span>',
   };
   return map[s] || `<span>${esc(s)}</span>`;
 }
 
 function statusLabel(s) {
-  return { active:'掲載中', negotiating:'商談中', inactive:'非掲載', sold:'成約済', preparing:'販売準備中', contract_prep:'契約準備中', contracted:'契約済み' }[s] || s;
+  return { active:'掲載中', negotiating:'商談中', inactive:'非掲載', sold:'成約済', preparing:'販売準備中', contract_prep:'契約準備中' }[s] || s;
 }
 
 function transactionLabel(t) {
