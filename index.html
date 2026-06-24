@@ -766,37 +766,26 @@ async function renderList() {
     }
   }
 
-  // チェックリストアラートを付加
-  if (displayed.length) {
-    const curYear  = new Date().getFullYear();
-    const curMonth = new Date().getMonth() + 1;
-    const { data: _ckd } = await db.from('checklist_checks')
-      .select('property_id,item_id,year,is_checked')
-      .in('property_id', displayed.map(p => p.id))
-      .eq('year', curYear);
-    const _ckMap = {};
-    if (_ckd) _ckd.forEach(c => {
-      if (!_ckMap[c.property_id]) _ckMap[c.property_id] = [];
-      _ckMap[c.property_id].push(c);
-    });
-    const passedSeasons = [];
-    if (curMonth > 2)  passedSeasons.push({ key:'winter', label:'冬' });
-    if (curMonth > 5)  passedSeasons.push({ key:'spring', label:'春' });
-    if (curMonth > 8)  passedSeasons.push({ key:'summer', label:'夏' });
-    if (curMonth > 11) passedSeasons.push({ key:'fall',   label:'秋' });
-    const clItems = state.checklistItems || [];
+  // 今の季節のチェックリスト未完了チェック
+  const _currentSeason = getCurrentSeason();
+  const _seasonItems = state.checklistItems.filter(i =>
+    i.season === _currentSeason &&
+    (i.property_type === 'both' || displayed.some(p => p.type === i.property_type))
+  );
+
+  if (displayed.length && _seasonItems.length) {
+    const { data: _chkd } = await db.from('checklist_checks')
+      .select('property_id,item_id,is_checked')
+      .in('property_id', displayed.map(p => p.id));
+
     displayed.forEach(p => {
-      const propChecks = _ckMap[p.id] || [];
-      const alerts = [];
-      for (const { key, label } of passedSeasons) {
-        const items = clItems.filter(i => i.season === key);
-        if (!items.length) continue;
-        const allDone = items.every(item =>
-          propChecks.some(c => c.item_id === item.id && c.is_checked)
-        );
-        if (!allDone) alerts.push(label);
-      }
-      p._checkAlert = alerts;
+      const myItems = _seasonItems.filter(i => i.property_type === 'both' || i.property_type === p.type);
+      if (!myItems.length) { p._checkAlert = false; return; }
+      const myChecks = (_chkd || []).filter(c => c.property_id === p.id);
+      const allDone = myItems.every(item =>
+        myChecks.some(c => c.item_id === item.id && c.is_checked)
+      );
+      p._checkAlert = !allDone;
     });
   }
 
@@ -854,13 +843,10 @@ function buildListTable(props) {
   const transBadge = (t) => t === 'owner'   ? '<span class="badge-owner">売主</span>'
                            : t === 'broker'  ? '<span class="badge-broker">仲介</span>'
                            : t === 'managed' ? '<span class="badge-managed">管理物件</span>' : '—';
-  const alertBadge     = p => (p._checkAlert||[]).length
-    ? '<span style="font-size:10px;background:#fde8e8;color:#c94040;padding:2px 6px;border-radius:4px;font-weight:700;">⚠️ 未点検</span>' : '';
-  const checkStatBadge = p => !p.staff_checked_at
-    ? '<span style="font-size:10px;background:#fdf0d4;color:#d4920a;padding:2px 6px;border-radius:4px;font-weight:700;">📝 未確認</span>'
-    : !p.admin_checked_at
-    ? '<span style="font-size:10px;background:#deeafc;color:#2a7ae2;padding:2px 6px;border-radius:4px;font-weight:700;">👁️ 要承認</span>'
-    : '<span style="font-size:10px;background:#d4f0e3;color:#2e9e68;padding:2px 6px;border-radius:4px;font-weight:700;">✅ 承認済</span>';
+  const alertBadge = p => p._checkAlert
+    ? '<span style="font-size:10px;background:#fde8e8;color:#c94040;padding:2px 6px;border-radius:4px;font-weight:700;margin-left:4px;">⚠️ 要確認</span>' : '';
+  const adminBadge  = p => p.admin_checked_at
+    ? '<span style="font-size:10px;background:#d4f0e3;color:#2e9e68;padding:2px 6px;border-radius:4px;font-weight:700;margin-left:4px;">✅ 管理者確認済</span>' : '';
 
   let heads, rowFn;
 
@@ -880,7 +866,7 @@ function buildListTable(props) {
         <td>${transBadge(d.transaction_type)}</td>
         <td style="font-size:12px;white-space:nowrap;">${saleTypeLabel(d.sale_type)}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
-        <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button>${alertBadge(p)}${checkStatBadge(p)}</div></td>
+        <td onclick="event.stopPropagation()" style="white-space:nowrap;"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button>${alertBadge(p)}${adminBadge(p)}</td>
       </tr>`;
     };
   } else if (t === 'house') {
@@ -901,7 +887,7 @@ function buildListTable(props) {
         <td>${transBadge(d.transaction_type)}</td>
         <td style="font-size:12px;white-space:nowrap;">${saleTypeLabel(d.sale_type)}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
-        <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button>${alertBadge(p)}${checkStatBadge(p)}</div></td>
+        <td onclick="event.stopPropagation()" style="white-space:nowrap;"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button>${alertBadge(p)}${adminBadge(p)}</td>
       </tr>`;
     };
   } else {
@@ -922,7 +908,7 @@ function buildListTable(props) {
         <td style="font-size:12px;white-space:nowrap;">${saleTypeLabel(d.sale_type)}</td>
         <td>${esc(d.school_elementary||'—')}</td>
         <td>${p.is_sold ? '<span class="badge-done">完了</span>' : '—'}</td>
-        <td onclick="event.stopPropagation()"><div style="display:flex;gap:4px;align-items:center;flex-wrap:wrap;"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button>${alertBadge(p)}${checkStatBadge(p)}</div></td>
+        <td onclick="event.stopPropagation()" style="white-space:nowrap;"><button class="btn-sm" onclick="showDetail('${p.id}')">詳細</button>${alertBadge(p)}${adminBadge(p)}</td>
       </tr>`;
     };
   }
@@ -1151,20 +1137,13 @@ async function renderDetail(id) {
       </div>
     </div>
 
-    <!-- 社員・管理者確認 -->
-    <div style="display:flex;gap:10px;margin-top:6px;margin-bottom:8px;flex-wrap:wrap;align-items:center;">
-      <button onclick="markStaffChecked('${id}')" style="background:#e8f0fe;color:#2a7ae2;border:1px solid #a8c4f5;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
-        📝 社員確認済にする
-      </button>
-      <span style="font-size:11px;color:var(--text-muted);">
-        ${prop.staff_checked_at ? '社員確認: ' + prop.staff_checked_at.slice(0,10) : 'まだ未確認'}
-      </span>
-      <button onclick="markAdminChecked('${id}')" style="background:#d4f0e3;color:#2e9e68;border:1px solid #8ecfa8;padding:6px 14px;border-radius:6px;font-size:12px;font-weight:600;cursor:pointer;">
-        ✅ 管理者承認
-      </button>
-      <span style="font-size:11px;color:var(--text-muted);">
-        ${prop.admin_checked_at ? '管理者承認: ' + prop.admin_checked_at.slice(0,10) : '未承認'}
-      </span>
+    <!-- 管理者承認 -->
+    <div style="margin-top:10px;display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+      ${prop.admin_checked_at
+        ? `<span style="font-size:12px;background:#d4f0e3;color:#2e9e68;padding:4px 12px;border-radius:6px;font-weight:600;">✅ 管理者確認済　${new Date(prop.admin_checked_at).toLocaleDateString('ja-JP')}</span>
+           <button onclick="clearAdminCheck('${id}')" style="font-size:11px;background:none;border:1px solid #ccc;border-radius:4px;padding:3px 8px;cursor:pointer;color:var(--text-muted);">取消</button>`
+        : `<button onclick="markAdminChecked('${id}')" style="font-size:13px;background:#d4f0e3;color:#2e9e68;border:1px solid #b8dfc8;border-radius:6px;padding:6px 16px;cursor:pointer;font-weight:600;">✅ 管理者承認する</button>`
+      }
     </div>
 
     <!-- 基本情報 ＋ 詳細情報 -->
@@ -2307,6 +2286,14 @@ function onTransChange() {
   calcBrokerFeeHint();
 }
 
+function getCurrentSeason() {
+  const m = new Date().getMonth() + 1;
+  if (m >= 3 && m <= 5)  return 'spring';
+  if (m >= 6 && m <= 8)  return 'summer';
+  if (m >= 9 && m <= 11) return 'fall';
+  return 'winter';
+}
+
 async function markStaffChecked(id) {
   const now = new Date().toISOString();
   const { error } = await db.from('properties').update({ staff_checked_at: now }).eq('id', id);
@@ -2315,10 +2302,18 @@ async function markStaffChecked(id) {
   await showDetail(id);
 }
 async function markAdminChecked(id) {
-  const now = new Date().toISOString();
-  const { error } = await db.from('properties').update({ admin_checked_at: now }).eq('id', id);
-  if (error) { toast('承認記録失敗: ' + error.message, 'error'); return; }
-  toast('管理者承認を記録しました', 'success');
+  const { error } = await db.from('properties')
+    .update({ admin_checked_at: new Date().toISOString() }).eq('id', id);
+  if (error) { toast('承認失敗: ' + error.message, 'error'); return; }
+  toast('管理者承認しました', 'success');
+  await showDetail(id);
+}
+
+async function clearAdminCheck(id) {
+  const { error } = await db.from('properties')
+    .update({ admin_checked_at: null }).eq('id', id);
+  if (error) { toast('取消失敗: ' + error.message, 'error'); return; }
+  toast('承認を取り消しました', 'success');
   await showDetail(id);
 }
 
