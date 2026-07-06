@@ -558,13 +558,10 @@
   <nav>
     <div class="nav-group-label">メニュー</div>
     <a class="nav-item" id="nav-list" onclick="showList()" href="#">
-      <span class="icon">🏠</span>売買
+      <span class="icon">🏠</span>物件一覧
     </a>
     <a class="nav-item" id="nav-logs" onclick="showLogs()" href="#">
       <span class="icon">📋</span>敷地整備台帳
-    </a>
-    <a class="nav-item" id="nav-rental" onclick="showRentalList()" href="#">
-      <span class="icon">🏢</span>賃貸
     </a>
     <a class="nav-item" id="nav-repair" onclick="showRepairLog()" href="#">
       <span class="icon">🔧</span>修繕台帳
@@ -689,6 +686,12 @@ async function renderList() {
   const { data: allProps, error } = await q;
   if (error) { toast('データ取得失敗: ' + error.message, 'error'); return; }
 
+  const { data: rentalData } = await db
+    .from('rental_properties')
+    .select('*, rental_details(*)')
+    .order('created_at', { ascending: false });
+  const rentals = (rentalData || []).map(p => ({ ...p, _isRental: true }));
+
   const all       = allProps || [];
   const lands     = all.filter(p => p.type === 'land'  && p.property_details?.transaction_type !== 'managed' && !p.is_sold);
   const houses    = all.filter(p => p.type === 'house' && p.property_details?.transaction_type !== 'managed' && !p.is_sold);
@@ -747,9 +750,10 @@ async function renderList() {
   let displayed;
   if      (state.filterType === 'land')    displayed = codeSort(lands);
   else if (state.filterType === 'house')   displayed = codeSort(houses);
+  else if (state.filterType === 'rental')  displayed = rentals;
   else if (state.filterType === 'managed') displayed = codeSort(managed);
   else if (state.filterType === 'sold')    displayed = codeSort(soldProps);
-  else                                     displayed = codeSort(all);
+  else                                     displayed = [...codeSort(all), ...rentals];
 
   // 内見・問い合わせカウントを付加
   if (displayed.length) {
@@ -779,6 +783,7 @@ async function renderList() {
       .in('property_id', displayed.map(p => p.id));
 
     displayed.forEach(p => {
+      if (p._isRental) { p._checkAlert = false; return; }
       const myItems = _seasonItems.filter(i => i.property_type === 'both' || i.property_type === p.type);
       if (!myItems.length) { p._checkAlert = false; return; }
       const myChecks = (_chkd || []).filter(c => c.property_id === p.id);
@@ -793,7 +798,7 @@ async function renderList() {
     <div class="page-header">
       <div>
         <div class="page-title">🏠 物件一覧</div>
-        <div class="page-sub">土地 ${lands.length}件 ／ 中古住宅 ${houses.length}件 ／ 管理物件 ${managed.length}件 ／ 成約済み ${soldProps.length}件</div>
+        <div class="page-sub">土地 ${lands.length}件 ／ 中古住宅 ${houses.length}件 ／ 賃貸 ${rentals.length}件 ／ 管理物件 ${managed.length}件 ／ 成約済み ${soldProps.length}件</div>
       </div>
       <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
         <button class="btn-primary" onclick="openAddModal('land')">＋ 土地を追加</button>
@@ -804,9 +809,10 @@ async function renderList() {
     <div class="filter-tabs">
       <button class="filter-tab ${state.filterType==='land'    ?'active':''}" onclick="state.filterType='land';renderList()">🌐 土地（${lands.length}）</button>
       <button class="filter-tab ${state.filterType==='house'   ?'active':''}" onclick="state.filterType='house';renderList()">🏡 中古住宅（${houses.length}）</button>
+      <button class="filter-tab ${state.filterType==='rental'  ?'active':''}" onclick="state.filterType='rental';renderList()">🏢 賃貸（${rentals.length}）</button>
       <button class="filter-tab ${state.filterType==='managed' ?'active':''}" onclick="state.filterType='managed';renderList()">🔧 管理物件（${managed.length}）</button>
       <button class="filter-tab ${state.filterType==='sold'    ?'active':''}" onclick="state.filterType='sold';renderList()" style="${state.filterType==='sold' ? '' : 'color:#cc0000;'}">🔴 成約済み（${soldProps.length}）</button>
-      <button class="filter-tab ${state.filterType==='all'     ?'active':''}" onclick="state.filterType='all';renderList()">全て（${all.length}）</button>
+      <button class="filter-tab ${state.filterType==='all'     ?'active':''}" onclick="state.filterType='all';renderList()">全て（${all.length + rentals.length}）</button>
     </div>
 
     ${displayed.length === 0
@@ -893,6 +899,24 @@ function buildListTable(props) {
   } else {
     heads = ['種別', '掲載 / SUUMO', 'コード', '物件名', '販売価格', '面積(坪)', '取引態様', '販売形態', '学区（小）', '売買完了', ''];
     rowFn = p => {
+      if (p._isRental) {
+        const rd = Array.isArray(p.rental_details) ? (p.rental_details[0] || {}) : (p.rental_details || {});
+        const rent = rd.rent ? Number(rd.rent).toLocaleString('ja-JP') + '円/月' : '—';
+        const tcBadge = rd.tenant_count != null ? `<br><span style="font-size:10px;color:var(--text-muted);">テナント ${rd.tenant_count}件</span>` : '';
+        return `<tr onclick="showRentalDetail('${p.id}')" style="cursor:pointer;">
+          <td><span style="font-size:10px;background:#e8f0fe;color:#1a73e8;padding:2px 8px;border-radius:6px;font-weight:600;white-space:nowrap;">🏢 賃貸</span></td>
+          <td>—</td>
+          <td>${esc(p.code || '')}</td>
+          <td style="max-width:160px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;" title="${esc(p.property_name || p.address || '')}">${esc(p.property_name || p.address || '—')}</td>
+          <td style="white-space:nowrap;">${rent}${tcBadge}</td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td>—</td>
+          <td onclick="event.stopPropagation()" style="white-space:nowrap;"><button class="btn-sm" onclick="showRentalDetail('${p.id}')">詳細</button></td>
+        </tr>`;
+      }
       const d    = p.property_details || {};
       const tsubo = p.type === 'land'
         ? (d.area_tsubo ? d.area_tsubo+'坪' : '—')
@@ -3315,6 +3339,7 @@ async function renderRentalDetail(id) {
           <tr><th>契約種別</th><td>${esc(det.contract_type || '—')}</td></tr>
           <tr><th>契約期間</th><td>${esc(det.contract_period || '—')}</td></tr>
           <tr><th>更新料</th><td>${esc(det.renewal_fee || '—')}</td></tr>
+          <tr><th>テナント件数</th><td>${det.tenant_count != null ? det.tenant_count + '件' : '—'}</td></tr>
           <tr><th>駐車場</th><td>${det.parking_available
             ? `あり${det.parking_count ? ' (' + det.parking_count + '台)' : ''}${det.parking_fee ? ' / ' + Number(det.parking_fee).toLocaleString('ja-JP') + '円/月' : ''}`
             : 'なし'}</td></tr>
@@ -3572,6 +3597,12 @@ async function renderRentalForm(id) {
           </div>
           <div class="form-row">
             <div class="form-group">
+              <label>テナント件数</label>
+              <input type="number" id="rf-tenant-count" class="qs-control" min="0" step="1" value="${det.tenant_count ?? ''}"> 
+            </div>
+          </div>
+          <div class="form-row">
+            <div class="form-group">
               <label>駐車場</label>
               <select id="rf-parking" class="qs-control">
                 <option value="false" ${!det.parking_available ? 'selected' : ''}>なし</option>
@@ -3649,6 +3680,7 @@ async function saveRentalProperty() {
     parking_available:  document.getElementById('rf-parking')?.value === 'true',
     parking_count:      parseIntOrNull(document.getElementById('rf-parking-cnt')?.value),
     parking_fee:        parseFloatOrNull(document.getElementById('rf-parking-fee')?.value),
+    tenant_count:       parseIntOrNull(document.getElementById('rf-tenant-count')?.value),
   };
 
   let rentalId = id;
