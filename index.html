@@ -5377,7 +5377,7 @@ async function showVisitForm() {
   _visitSeason = autoSeason;
 
   const propOptions = (props || []).map(p =>
-    `<option value="${p.id}">${esc(p.code ? p.code + ' ' : '')}${esc(p.property_name || p.address || '（名称未入力）')}</option>`
+    `<option value="${p.id}">${esc(p.property_name || p.address || '（名称未入力）')}</option>`
   ).join('');
 
   el.innerHTML = `
