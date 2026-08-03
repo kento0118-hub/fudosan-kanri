@@ -79,9 +79,22 @@
       text-transform: uppercase;
     }
     .sidebar-footer {
-      padding: 14px 18px;
+      padding: 12px 18px 16px;
       border-top: 1px solid var(--border);
       font-size: 11px; color: var(--text-muted);
+      line-height: 1.6;
+    }
+    .sidebar-footer .footer-title {
+      font-size: 10px; font-weight: 700;
+      letter-spacing: .08em; text-transform: uppercase;
+      margin-bottom: 6px; color: var(--text-muted);
+    }
+    .sidebar-footer .footer-row {
+      display: flex; gap: 6px; align-items: baseline;
+      font-size: 10.5px;
+    }
+    .sidebar-footer .footer-date {
+      flex-shrink: 0; color: var(--accent); font-weight: 600;
     }
 
     /* ── メイン ── */
@@ -598,8 +611,11 @@
     </a>
   </nav>
   <div class="sidebar-footer">
-    代表：安部憲人<br>
-    米沢市本町2丁目1-12
+    <div class="footer-title">更新履歴</div>
+    <div class="footer-row"><span class="footer-date">08.03</span>修繕台帳・物件管理台帳リニューアル</div>
+    <div class="footer-row"><span class="footer-date">07.xx</span>賃貸物件を物件一覧に統合</div>
+    <div class="footer-row"><span class="footer-date">07.xx</span>物件管理台帳（訪問記録）新設</div>
+    <div class="footer-row"><span class="footer-date">07.xx</span>物件マップ追加</div>
   </div>
 </aside>
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
