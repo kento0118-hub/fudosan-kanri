@@ -90,8 +90,8 @@
       margin-bottom: 6px; color: var(--text-muted);
     }
     .sidebar-footer .footer-row {
-      display: flex; gap: 6px; align-items: baseline;
-      font-size: 10.5px;
+      display: flex; gap: 5px; align-items: baseline;
+      font-size: 10.5px; overflow: hidden;
     }
     .sidebar-footer .footer-date {
       flex-shrink: 0; color: var(--accent); font-weight: 600;
@@ -612,10 +612,7 @@
   </nav>
   <div class="sidebar-footer">
     <div class="footer-title">更新履歴</div>
-    <div class="footer-row"><span class="footer-date">08.03</span>修繕台帳・物件管理台帳リニューアル</div>
-    <div class="footer-row"><span class="footer-date">07.xx</span>賃貸物件を物件一覧に統合</div>
-    <div class="footer-row"><span class="footer-date">07.xx</span>物件管理台帳（訪問記録）新設</div>
-    <div class="footer-row"><span class="footer-date">07.xx</span>物件マップ追加</div>
+    <div id="sidebar-history"><div style="color:var(--text-muted);font-size:10px;">読み込み中…</div></div>
   </div>
 </aside>
 <div class="sidebar-overlay" id="sidebar-overlay" onclick="toggleSidebar()"></div>
@@ -670,7 +667,54 @@ let state = {
   if (error) toast('チェックリスト取得失敗: ' + error.message, 'error');
   state.checklistItems = data || [];
   await showList();
+  loadSidebarHistory();
 })();
+
+async function loadSidebarHistory() {
+  const el = document.getElementById('sidebar-history');
+  if (!el) return;
+
+  const fmt = d => {
+    if (!d) return '——';
+    const dt = new Date(d);
+    return (dt.getMonth()+1).toString().padStart(2,'0') + '.' + dt.getDate().toString().padStart(2,'0');
+  };
+  const pLabel = p => p ? (p.property_name || p.address || p.code || '物件') : '物件';
+
+  const [propRes, priceRes, visitRes, repairRes] = await Promise.all([
+    db.from('properties')
+      .select('id, property_name, address, code, created_at')
+      .order('created_at', { ascending: false }).limit(10),
+    db.from('price_history')
+      .select('id, recorded_date, new_price, properties(property_name,address,code)')
+      .order('recorded_date', { ascending: false }).limit(10),
+    db.from('site_visits')
+      .select('id, visit_date, properties(property_name,address,code)')
+      .order('visit_date', { ascending: false }).limit(10),
+    db.from('repair_logs')
+      .select('id, repair_date, properties(property_name,address,code)')
+      .order('repair_date', { ascending: false }).limit(10),
+  ]);
+
+  const entries = [
+    ...(propRes.data  || []).map(r => ({ date: r.created_at,     label: pLabel(r),               tag: '追加' })),
+    ...(priceRes.data || []).map(r => ({ date: r.recorded_date,  label: pLabel(r.properties),    tag: '価格変更' })),
+    ...(visitRes.data || []).map(r => ({ date: r.visit_date,     label: pLabel(r.properties),    tag: '訪問記録' })),
+    ...(repairRes.data|| []).map(r => ({ date: r.repair_date,    label: pLabel(r.properties),    tag: '修繕記録' })),
+  ];
+
+  entries.sort((a, b) => (b.date || '').localeCompare(a.date || ''));
+  const top = entries.slice(0, 6);
+
+  if (!top.length) { el.innerHTML = '<div style="font-size:10px;color:var(--text-muted);">記録がありません</div>'; return; }
+
+  el.innerHTML = top.map(e => `
+    <div class="footer-row">
+      <span class="footer-date">${fmt(e.date)}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;max-width:90px;" title="${esc(e.label)}">${esc(e.label)}</span>
+      <span style="color:var(--text-muted);font-size:10px;flex-shrink:0;">${e.tag}</span>
+    </div>`).join('');
+}
 
 // ════════════════════════════════════════════════════════════
 // ナビゲーション
