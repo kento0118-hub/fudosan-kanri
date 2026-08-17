@@ -647,6 +647,8 @@ const DOC_OPTIONS = ['登記','公図','案内図','上水道配管図','下水�
 // ── アプリ状態 ──
 let _visitSeason = 'normal';
 let _visitCheckItemAdminTab = 'land-normal';
+let _visitFormChecks = {};   // { checkItemId: true/false }
+let _visitFormPhotos = [];   // アップロード済みの公開URL配列
 
 let state = {
   view:             'list',
@@ -2502,12 +2504,6 @@ function getCurrentSeason() {
   if (m >= 6 && m <= 8)  return 'summer';
   if (m >= 9 && m <= 11) return 'fall';
   return 'winter';
-}
-
-function selectVisitSeason(season, btn) {
-  _visitSeason = season;
-  document.querySelectorAll('[id^="vf-season-"]').forEach(b => b.classList.remove('active'));
-  btn.classList.add('active');
 }
 
 function seasonLabel(s) {
@@ -5524,17 +5520,25 @@ async function showVisitForm() {
   const el = document.getElementById('content');
   el.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-muted);">読み込み中…</div>';
 
-  const { data: props } = await db.from('properties')
-    .select('id, property_name, address, type, code')
-    .order('code');
+  // 状態リセット
+  _visitFormChecks = {};
+  _visitFormPhotos = [];
+
+  const [propsRes, itemsRes] = await Promise.all([
+    db.from('properties').select('id, property_name, address, type, code').order('code'),
+    db.from('site_check_items').select('*').eq('is_active', true).order('order_index'),
+  ]);
+
+  const props = propsRes.data || [];
+  window._visitFormItems = itemsRes.data || [];
 
   const today = new Date().toISOString().slice(0, 10);
   const m = new Date().getMonth() + 1;
   const autoSeason = (m === 12 || m <= 3) ? 'winter' : 'normal';
   _visitSeason = autoSeason;
 
-  const propOptions = (props || []).map(p =>
-    `<option value="${p.id}">${esc(p.property_name || p.address || '（名称未入力）')}</option>`
+  const propOptions = props.map(p =>
+    `<option value="${p.id}" data-type="${p.type}">${esc(p.property_name || p.address || '（名称未入力）')}</option>`
   ).join('');
 
   el.innerHTML = `
@@ -5543,10 +5547,12 @@ async function showVisitForm() {
       <button class="btn-back" onclick="showLogs()">← 台帳へ</button>
     </div>
 
-    <div class="section" style="max-width:600px;">
+    <div class="section" style="max-width:640px;">
+
+      <!-- 物件選択 -->
       <div class="form-group" style="margin-bottom:16px;">
-        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">物件</label>
-        <select id="vf-property" class="qs-control">
+        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">物件 <span style="color:#c94040;">*</span></label>
+        <select id="vf-property" class="qs-control" onchange="renderVisitFormChecks()">
           <option value="">物件を選択...</option>
           ${propOptions}
         </select>
@@ -5554,7 +5560,7 @@ async function showVisitForm() {
 
       <div class="form-row">
         <div class="form-group">
-          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">訪問日</label>
+          <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">訪問日 <span style="color:#c94040;">*</span></label>
           <input type="date" id="vf-date" class="qs-control" value="${today}">
         </div>
         <div class="form-group">
@@ -5563,25 +5569,130 @@ async function showVisitForm() {
         </div>
       </div>
 
-      <div class="form-group" style="margin-bottom:16px;">
+      <!-- 季節区分 -->
+      <div class="form-group" style="margin-bottom:20px;">
         <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">季節区分</label>
         <div style="display:flex;gap:6px;">
           <button type="button" id="vf-season-normal" class="filter-tab ${autoSeason==='normal'?'active':''}"
-            onclick="selectVisitSeason('normal',this)">🌿 通常期</button>
+            onclick="selectVisitSeasonAndRefresh('normal',this)">🌿 通常期</button>
           <button type="button" id="vf-season-winter" class="filter-tab ${autoSeason==='winter'?'active':''}"
-            onclick="selectVisitSeason('winter',this)">❄️ 冬季</button>
+            onclick="selectVisitSeasonAndRefresh('winter',this)">❄️ 冬季</button>
         </div>
       </div>
 
+      <!-- 現地チェック項目（物件選択で動的表示） -->
+      <div class="form-group" style="margin-bottom:20px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:8px;">✅ 現地チェック項目</label>
+        <div id="vf-check-container"
+          style="border:1px solid var(--border);border-radius:8px;padding:14px;background:var(--bg-base);">
+          <div style="color:var(--text-muted);font-size:13px;">物件を選択するとチェック項目が表示されます</div>
+        </div>
+      </div>
+
+      <!-- 現地写真 -->
+      <div class="form-group" style="margin-bottom:20px;">
+        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:8px;">📷 現地写真</label>
+        <div id="vf-photo-preview" style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:10px;"></div>
+        <label class="btn-secondary" style="cursor:pointer;display:inline-block;padding:10px 18px;font-size:14px;">
+          📷 写真を撮影・選択
+          <input type="file" accept="image/*" capture="environment" multiple style="display:none;"
+            onchange="uploadVisitFormPhotos(this)">
+        </label>
+        <div style="font-size:11px;color:var(--text-muted);margin-top:6px;">
+          スマホの場合はカメラが起動します。複数枚選択可。
+        </div>
+      </div>
+
+      <!-- メモ -->
       <div class="form-group" style="margin-bottom:24px;">
-        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">気づき・メモ</label>
+        <label style="font-size:12px;font-weight:600;color:var(--text-secondary);display:block;margin-bottom:6px;">📝 気づき・メモ</label>
         <textarea id="vf-notes" rows="5" class="qs-control"
           style="resize:vertical;" placeholder="現地で気づいたことを入力..."></textarea>
       </div>
 
-      <button class="btn-primary" style="min-width:140px;" onclick="saveVisitForm()">💾 記録を保存して詳細へ</button>
+      <button class="btn-primary" style="min-width:180px;padding:12px 24px;font-size:15px;"
+        onclick="saveVisitForm()">💾 記録を保存</button>
     </div>
   `;
+}
+
+// 物件・季節が変わったらチェック項目を再描画
+function renderVisitFormChecks() {
+  const container = document.getElementById('vf-check-container');
+  if (!container) return;
+
+  const sel = document.getElementById('vf-property');
+  const opt = sel?.selectedOptions?.[0];
+  const propType = opt?.dataset?.type;
+
+  if (!propType) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">物件を選択するとチェック項目が表示されます</div>';
+    return;
+  }
+
+  const items = (window._visitFormItems || []).filter(i =>
+    i.property_type === propType && i.season === _visitSeason
+  );
+
+  if (!items.length) {
+    container.innerHTML = '<div style="color:var(--text-muted);font-size:13px;">この物件種別・季節のチェック項目がありません</div>';
+    return;
+  }
+
+  container.innerHTML = items.map(item => `
+    <label style="display:flex;align-items:center;gap:10px;padding:10px 4px;border-bottom:1px solid var(--border);cursor:pointer;font-size:14px;">
+      <input type="checkbox" data-item-id="${item.id}"
+        ${_visitFormChecks[item.id] ? 'checked' : ''}
+        onchange="_visitFormChecks['${item.id}'] = this.checked"
+        style="width:20px;height:20px;cursor:pointer;flex-shrink:0;">
+      <span>${esc(item.label)}</span>
+    </label>
+  `).join('');
+}
+
+// 季節切替時にチェック項目も更新
+function selectVisitSeasonAndRefresh(season, btn) {
+  _visitSeason = season;
+  document.querySelectorAll('[id^="vf-season-"]').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  _visitFormChecks = {};   // 季節が変わったらチェックをリセット
+  renderVisitFormChecks();
+}
+
+async function uploadVisitFormPhotos(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+  toast('アップロード中…', 'success');
+
+  for (const file of files) {
+    const ext  = file.name.split('.').pop() || 'jpg';
+    const path = `site-visits/temp/${Date.now()}_${Math.random().toString(36).slice(2,8)}.${ext}`;
+    const { error: upErr } = await db.storage.from('property-photos').upload(path, file);
+    if (upErr) { toast('アップロード失敗: ' + upErr.message, 'error'); continue; }
+    const { data: urlData } = db.storage.from('property-photos').getPublicUrl(path);
+    if (urlData?.publicUrl) _visitFormPhotos.push(urlData.publicUrl);
+  }
+
+  input.value = '';
+  renderVisitFormPhotoPreview();
+  toast(`写真 ${_visitFormPhotos.length}枚`, 'success');
+}
+
+function renderVisitFormPhotoPreview() {
+  const el = document.getElementById('vf-photo-preview');
+  if (!el) return;
+  el.innerHTML = _visitFormPhotos.map((url, i) => `
+    <div style="position:relative;">
+      <img src="${esc(url)}" style="width:100px;height:80px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+      <button type="button" onclick="removeVisitFormPhoto(${i})"
+        style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;line-height:22px;text-align:center;">✕</button>
+    </div>
+  `).join('');
+}
+
+function removeVisitFormPhoto(index) {
+  _visitFormPhotos.splice(index, 1);
+  renderVisitFormPhotoPreview();
 }
 
 async function saveVisitForm() {
@@ -5590,16 +5701,38 @@ async function saveVisitForm() {
   if (!propId) { toast('物件を選択してください', 'error'); return; }
   if (!date)   { toast('訪問日を入力してください', 'error'); return; }
 
+  // ① 訪問記録を保存
   const { data: newVisit, error } = await db.from('site_visits').insert({
     property_id:  propId,
     visit_date:   date,
     visitor_name: document.getElementById('vf-visitor')?.value.trim() || null,
     season:       _visitSeason,
     notes:        document.getElementById('vf-notes')?.value.trim() || null,
+    photo_urls:   JSON.stringify(_visitFormPhotos),
   }).select().single();
 
   if (error) { toast('保存失敗: ' + error.message, 'error'); return; }
+
+  // ② チェック結果を保存
+  const checkRows = Object.entries(_visitFormChecks)
+    .filter(([, checked]) => checked)
+    .map(([itemId]) => ({
+      visit_id: newVisit.id,
+      check_item_id: itemId,
+      is_checked: true,
+    }));
+
+  if (checkRows.length) {
+    const { error: cErr } = await db.from('site_visit_checks').insert(checkRows);
+    if (cErr) toast('チェック保存に一部失敗: ' + cErr.message, 'error');
+  }
+
   toast('訪問記録を保存しました', 'success');
+
+  // 状態リセット
+  _visitFormChecks = {};
+  _visitFormPhotos = [];
+
   await showVisitDetail(newVisit.id);
 }
 
@@ -5780,9 +5913,15 @@ async function deactivateCheckItem(itemId) {
 // 物件管理台帳 ヘルパー：物件プリセット
 // ════════════════════════════════════════════════════════════
 
-function showVisitFormForProp(propId) {
-  showLogs();
-  setTimeout(() => showVisitForm(propId), 600);
+async function showVisitFormForProp(propId) {
+  await showVisitForm();
+  setTimeout(() => {
+    const sel = document.getElementById('vf-property');
+    if (sel) {
+      sel.value = propId;
+      renderVisitFormChecks();
+    }
+  }, 100);
 }
 
 function showRepairFormForProp(propId) {
