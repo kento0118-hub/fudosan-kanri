@@ -5566,7 +5566,10 @@ async function showVisitDetail(visitId) {
         ${confirmed ? 'disabled' : ''}
         onchange="toggleSiteTask('${t.id}','${visitId}',this.checked)"
         style="width:16px;height:16px;cursor:${confirmed?'not-allowed':'pointer'};flex-shrink:0;">
-      <span style="flex:1;font-size:13px;">${esc(t.content)}</span>
+      <span id="task-text-${t.id}" style="flex:1;font-size:13px;cursor:text;"
+        onclick="startEditTask('${t.id}','${visitId}')"
+        title="クリックして編集">${esc(t.content)}</span>
+
       ${t.done_at ? `<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">実施 ${t.done_at.slice(0,10)}</span>` : ''}
       ${confirmed
         ? `<span style="font-size:11px;background:#d4f0e3;color:#2e9e68;padding:3px 8px;border-radius:10px;font-weight:600;white-space:nowrap;">✅ 確認済 ${t.admin_confirmed_at.slice(0,10)}</span>
@@ -5576,6 +5579,7 @@ async function showVisitDetail(visitId) {
                onclick="confirmSiteTask('${t.id}','${visitId}')">✅ 上長確認</button>`
           : `<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">未実施</span>`
       }
+      <button class="btn-sm" onclick="startEditTask('${t.id}','${visitId}')">✏️</button>
       <button class="btn-sm btn-danger" onclick="deleteSiteTask('${t.id}','${visitId}')">削除</button>
     </div>`;
   }).join('');
@@ -5943,6 +5947,39 @@ async function clearTaskConfirm(taskId, visitId) {
   await showVisitDetail(visitId);
 }
 
+// タスク本文をインライン編集モードにする
+function startEditTask(taskId, visitId) {
+  const span = document.getElementById(`task-text-${taskId}`);
+  if (!span || span.dataset.editing === '1') return;
+
+  const original = span.textContent;
+  span.dataset.editing = '1';
+  span.innerHTML = `
+    <input type="text" id="task-edit-input-${taskId}"
+      value="${esc(original)}"
+      style="width:100%;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:13px;font-family:inherit;"
+      onkeydown="if(event.key==='Enter'){saveEditTask('${taskId}','${visitId}')}else if(event.key==='Escape'){showVisitDetail('${visitId}')}"
+      onblur="saveEditTask('${taskId}','${visitId}')">
+  `;
+  const input = document.getElementById(`task-edit-input-${taskId}`);
+  input?.focus();
+  input?.select();
+}
+
+async function saveEditTask(taskId, visitId) {
+  const input = document.getElementById(`task-edit-input-${taskId}`);
+  if (!input) return;
+  const content = input.value.trim();
+  if (!content) { await showVisitDetail(visitId); return; }
+
+  const { error } = await db.from('site_tasks')
+    .update({ content })
+    .eq('id', taskId);
+  if (error) { toast('更新失敗: ' + error.message, 'error'); return; }
+  toast('タスクを更新しました', 'success');
+  await showVisitDetail(visitId);
+}
+
 async function approveVisit(visitId) {
   const { error } = await db.from('site_visits').update({
     admin_approved_at: new Date().toISOString()
@@ -6253,13 +6290,15 @@ async function showRepairDetail(repairId) {
         return `
         <div class="log-row" style="align-items:flex-start;${waiting ? 'background:#fdf9ef;' : ''}">
           <div style="flex:1;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:${confirmed?'not-allowed':'pointer'};">
+            <div style="display:flex;align-items:center;gap:8px;">
               <input type="checkbox" ${t.is_done ? 'checked' : ''}
                      ${confirmed ? 'disabled' : ''}
                      onchange="toggleRepairTask('${t.id}','${repairId}',this.checked)"
-                     style="width:16px;height:16px;">
-              <span style="${confirmed ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${esc(t.content)}</span>
-            </label>
+                     style="width:16px;height:16px;cursor:${confirmed?'not-allowed':'pointer'};flex-shrink:0;">
+              <span id="repair-task-text-${t.id}" style="cursor:text;${confirmed ? 'text-decoration:line-through;color:var(--text-muted);' : ''}"
+                onclick="startEditRepairTask('${t.id}','${repairId}')"
+                title="クリックして編集">${esc(t.content)}</span>
+            </div>
             ${t.done_at ? `<div style="font-size:11px;color:var(--text-muted);margin-left:24px;">完了: ${new Date(t.done_at).toLocaleDateString('ja-JP')}</div>` : ''}
           </div>
           ${confirmed
@@ -6270,6 +6309,7 @@ async function showRepairDetail(repairId) {
                    onclick="confirmRepairTask('${t.id}','${repairId}')">✅ 上長確認</button>`
               : `<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">未実施</span>`
           }
+          <button class="btn-sm" onclick="startEditRepairTask('${t.id}','${repairId}')">✏️</button>
           <button class="btn-sm btn-danger" onclick="deleteRepairTask('${t.id}','${repairId}')">削除</button>
         </div>`;
       }).join('')
@@ -6465,6 +6505,39 @@ async function clearRepairTaskConfirm(taskId, repairId) {
     .update({ admin_confirmed_at: null })
     .eq('id', taskId);
   if (error) { toast('取消失敗: ' + error.message, 'error'); return; }
+  await showRepairDetail(repairId);
+}
+
+// タスク本文をインライン編集モードにする
+function startEditRepairTask(taskId, repairId) {
+  const span = document.getElementById(`repair-task-text-${taskId}`);
+  if (!span || span.dataset.editing === '1') return;
+
+  const original = span.textContent;
+  span.dataset.editing = '1';
+  span.innerHTML = `
+    <input type="text" id="repair-task-edit-input-${taskId}"
+      value="${esc(original)}"
+      style="width:100%;padding:4px 8px;border:1px solid var(--accent);border-radius:4px;font-size:13px;font-family:inherit;"
+      onkeydown="if(event.key==='Enter'){saveEditRepairTask('${taskId}','${repairId}')}else if(event.key==='Escape'){showRepairDetail('${repairId}')}"
+      onblur="saveEditRepairTask('${taskId}','${repairId}')">
+  `;
+  const input = document.getElementById(`repair-task-edit-input-${taskId}`);
+  input?.focus();
+  input?.select();
+}
+
+async function saveEditRepairTask(taskId, repairId) {
+  const input = document.getElementById(`repair-task-edit-input-${taskId}`);
+  if (!input) return;
+  const content = input.value.trim();
+  if (!content) { await showRepairDetail(repairId); return; }
+
+  const { error } = await db.from('repair_tasks')
+    .update({ content })
+    .eq('id', taskId);
+  if (error) { toast('更新失敗: ' + error.message, 'error'); return; }
+  toast('タスクを更新しました', 'success');
   await showRepairDetail(repairId);
 }
 
