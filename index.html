@@ -148,6 +148,37 @@
     .filter-tab:hover  { background: var(--bg-card-hover); }
     .filter-tab.active { background: var(--accent); color: #fff; border-color: var(--accent); }
 
+    /* ── ライトボックス ── */
+    .lightbox-bg {
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.9);
+      display: flex; align-items: center; justify-content: center;
+      z-index: 9999;
+    }
+    .lightbox-bg img {
+      max-width: 92vw; max-height: 88vh;
+      object-fit: contain; border-radius: 4px;
+    }
+    .lightbox-close {
+      position: absolute; top: 16px; right: 20px;
+      background: rgba(255,255,255,0.15); color: #fff;
+      border: none; border-radius: 50%;
+      width: 40px; height: 40px; font-size: 20px; cursor: pointer;
+    }
+    .lightbox-nav {
+      position: absolute; top: 50%; transform: translateY(-50%);
+      background: rgba(255,255,255,0.15); color: #fff;
+      border: none; border-radius: 50%;
+      width: 46px; height: 46px; font-size: 22px; cursor: pointer;
+    }
+    .lightbox-nav.prev { left: 16px; }
+    .lightbox-nav.next { right: 16px; }
+    .lightbox-counter {
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      color: #fff; font-size: 13px;
+      background: rgba(0,0,0,0.5); padding: 4px 14px; border-radius: 12px;
+    }
+
     /* ── データテーブル ── */
     .data-table { width: 100%; border-collapse: collapse; font-size: 12px; }
     .data-table th {
@@ -649,6 +680,59 @@ let _visitSeason = 'normal';
 let _visitCheckItemAdminTab = 'land-normal';
 let _visitFormChecks = {};   // { checkItemId: true/false }
 let _visitFormPhotos = [];   // アップロード済みの公開URL配列
+let _visitListTab = 'all';   // 'all' | 'pending' | 'active' | 'done'
+let _repairListTab = 'all';  // 'all' | 'pending' | 'active' | 'done'
+
+// ── ライトボックス ──
+let _lightboxUrls = [];
+let _lightboxIndex = 0;
+
+function openLightbox(urls, index) {
+  _lightboxUrls  = Array.isArray(urls) ? urls : [urls];
+  _lightboxIndex = index || 0;
+  renderLightbox();
+  document.addEventListener('keydown', lightboxKeyHandler);
+}
+
+function renderLightbox() {
+  let bg = document.getElementById('lightbox-bg');
+  if (!bg) {
+    bg = document.createElement('div');
+    bg.id = 'lightbox-bg';
+    bg.className = 'lightbox-bg';
+    bg.onclick = e => { if (e.target === bg) closeLightbox(); };
+    document.body.appendChild(bg);
+  }
+  const multi = _lightboxUrls.length > 1;
+  bg.innerHTML = `
+    <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+    ${multi ? '<button class="lightbox-nav prev" onclick="lightboxPrev()">‹</button>' : ''}
+    <img src="${esc(_lightboxUrls[_lightboxIndex])}" alt="写真">
+    ${multi ? '<button class="lightbox-nav next" onclick="lightboxNext()">›</button>' : ''}
+    ${multi ? `<div class="lightbox-counter">${_lightboxIndex + 1} / ${_lightboxUrls.length}</div>` : ''}
+  `;
+}
+
+function closeLightbox() {
+  document.getElementById('lightbox-bg')?.remove();
+  document.removeEventListener('keydown', lightboxKeyHandler);
+}
+
+function lightboxPrev() {
+  _lightboxIndex = (_lightboxIndex - 1 + _lightboxUrls.length) % _lightboxUrls.length;
+  renderLightbox();
+}
+
+function lightboxNext() {
+  _lightboxIndex = (_lightboxIndex + 1) % _lightboxUrls.length;
+  renderLightbox();
+}
+
+function lightboxKeyHandler(e) {
+  if (e.key === 'Escape')     closeLightbox();
+  if (e.key === 'ArrowLeft')  lightboxPrev();
+  if (e.key === 'ArrowRight') lightboxNext();
+}
 
 let state = {
   view:             'list',
@@ -2408,8 +2492,8 @@ function renderLogPhotos(photoUrlsJson) {
   const urls = parsePhotoUrls(photoUrlsJson);
   if (!urls.length) return '';
   return `<div class="log-thumbs">
-    ${urls.map(url => `<img class="log-thumb" src="${esc(url)}" loading="lazy"
-      onclick="window.open('${esc(url)}','_blank')" title="クリックで拡大">`).join('')}
+    ${urls.map((url, i) => `<img class="log-thumb" src="${esc(url)}" loading="lazy"
+      onclick='openLightbox(${JSON.stringify(urls).replace(/'/g, "&#39;")}, ${i})' title="クリックで拡大">`).join('')}
   </div>`;
 }
 
@@ -5303,35 +5387,78 @@ async function renderSiteVisitList() {
     db.from('site_visits')
       .select('*, properties(id, property_name, address, type, code)')
       .order('visit_date', { ascending: false }),
-    db.from('site_tasks').select('visit_id, is_done'),
+    db.from('site_tasks').select('visit_id, is_done, admin_confirmed_at'),
   ]);
 
   const visits = visitsRes.data || [];
   const tasks  = tasksRes.data  || [];
 
+  // タスク集計（上長確認済みで初めて「完了」扱い）
   const taskMap = {};
   tasks.forEach(t => {
-    if (!taskMap[t.visit_id]) taskMap[t.visit_id] = { total: 0, done: 0 };
+    if (!taskMap[t.visit_id]) taskMap[t.visit_id] = { total: 0, confirmed: 0, waiting: 0 };
     taskMap[t.visit_id].total++;
-    if (t.is_done) taskMap[t.visit_id].done++;
+    if (t.admin_confirmed_at) taskMap[t.visit_id].confirmed++;
+    else if (t.is_done) taskMap[t.visit_id].waiting++;
   });
 
-  const rows = visits.map(v => {
+  // ステータス判定
+  const statusOf = v => {
+    const tm = taskMap[v.id] || { total:0, confirmed:0, waiting:0 };
+    if (!v.admin_approved_at) return 'pending';                     // 要承認
+    if (tm.total > 0 && tm.confirmed < tm.total) return 'active';   // 対応中
+    return 'done';                                                  // 完了
+  };
+
+  visits.forEach(v => { v._status = statusOf(v); });
+
+  const counts = {
+    all:     visits.length,
+    pending: visits.filter(v => v._status === 'pending').length,
+    active:  visits.filter(v => v._status === 'active').length,
+    done:    visits.filter(v => v._status === 'done').length,
+  };
+
+  // 表示対象を絞り込み
+  let shown = _visitListTab === 'all'
+    ? visits
+    : visits.filter(v => v._status === _visitListTab);
+
+  // 並び順: 要承認 → 対応中 → 完了、各グループ内は訪問日の新しい順
+  const ORDER = { pending: 0, active: 1, done: 2 };
+  shown = [...shown].sort((a, b) => {
+    const d = ORDER[a._status] - ORDER[b._status];
+    if (d !== 0) return d;
+    return (b.visit_date || '').localeCompare(a.visit_date || '');
+  });
+
+  const rows = shown.map(v => {
     const prop = v.properties || {};
-    const tm   = taskMap[v.id] || { total: 0, done: 0 };
-    const taskBadge = tm.total === 0
-      ? '<span style="color:var(--text-muted);font-size:12px;">なし</span>'
-      : tm.done < tm.total
-        ? `<span style="color:#c94040;font-size:12px;font-weight:600;">${tm.done}/${tm.total}件</span>`
-        : `<span style="color:#2e9e68;font-size:12px;font-weight:600;">✅ ${tm.total}件完了</span>`;
-    const approvedBadge = v.admin_approved_at
-      ? '<span style="font-size:11px;background:#d4f0e3;color:#2e9e68;padding:2px 8px;border-radius:10px;font-weight:600;">✅ 承認済</span>'
-      : '<span style="color:var(--text-muted);font-size:12px;">—</span>';
+    const tm   = taskMap[v.id] || { total:0, confirmed:0, waiting:0 };
+
+    let taskBadge;
+    if (tm.total === 0) {
+      taskBadge = '<span style="color:var(--text-muted);font-size:12px;">なし</span>';
+    } else if (tm.confirmed >= tm.total) {
+      taskBadge = `<span style="color:#2e9e68;font-size:12px;font-weight:600;">✅ ${tm.total}件完了</span>`;
+    } else if (tm.waiting > 0) {
+      taskBadge = `<span style="color:#d4920a;font-size:12px;font-weight:600;">⏳ ${tm.waiting}件 確認待ち</span>`;
+    } else {
+      taskBadge = `<span style="color:#c94040;font-size:12px;font-weight:600;">${tm.confirmed}/${tm.total}件</span>`;
+    }
+
+    const statusBadge = {
+      pending: '<span style="font-size:11px;background:#fdf0d4;color:#d4920a;padding:2px 8px;border-radius:10px;font-weight:600;">要承認</span>',
+      active:  '<span style="font-size:11px;background:#deeafc;color:#2a7ae2;padding:2px 8px;border-radius:10px;font-weight:600;">対応中</span>',
+      done:    '<span style="font-size:11px;background:#d4f0e3;color:#2e9e68;padding:2px 8px;border-radius:10px;font-weight:600;">完了</span>',
+    }[v._status];
+
     const typeBadge = prop.type === 'land'
       ? '<span class="badge-land">土地</span>'
       : prop.type === 'house'
         ? '<span class="badge-house">建物</span>'
         : '';
+
     return `
       <tr onclick="showVisitDetail('${v.id}')" style="cursor:pointer;">
         <td style="white-space:nowrap;">${v.visit_date || '—'}</td>
@@ -5342,7 +5469,7 @@ async function renderSiteVisitList() {
         <td>${seasonBadge(v.season)}</td>
         <td>${esc(v.visitor_name || '—')}</td>
         <td>${taskBadge}</td>
-        <td>${approvedBadge}</td>
+        <td>${statusBadge}</td>
         <td onclick="event.stopPropagation()">
           <button class="btn-sm" onclick="showVisitDetail('${v.id}')">詳細</button>
         </td>
@@ -5361,14 +5488,21 @@ async function renderSiteVisitList() {
       </div>
     </div>
 
-    ${visits.length === 0
-      ? '<div class="section" style="text-align:center;padding:40px;color:var(--text-muted);">訪問記録がありません。「＋ 訪問記録を追加」から登録してください。</div>'
+    <div class="filter-tabs" style="margin-bottom:16px;">
+      <button class="filter-tab ${_visitListTab==='all'?'active':''}"     onclick="_visitListTab='all';renderSiteVisitList()">全て（${counts.all}）</button>
+      <button class="filter-tab ${_visitListTab==='pending'?'active':''}" onclick="_visitListTab='pending';renderSiteVisitList()">📝 要承認（${counts.pending}）</button>
+      <button class="filter-tab ${_visitListTab==='active'?'active':''}"  onclick="_visitListTab='active';renderSiteVisitList()">🔧 対応中（${counts.active}）</button>
+      <button class="filter-tab ${_visitListTab==='done'?'active':''}"    onclick="_visitListTab='done';renderSiteVisitList()">✅ 完了（${counts.done}）</button>
+    </div>
+
+    ${shown.length === 0
+      ? '<div class="section" style="text-align:center;padding:40px;color:var(--text-muted);">該当する訪問記録がありません。</div>'
       : `<div class="section" style="padding:0;overflow:hidden;">
            <div style="overflow-x:auto;">
              <table class="data-table">
                <thead><tr>
                  <th>訪問日</th><th>物件名</th><th>種別</th><th>季節</th>
-                 <th>担当者</th><th>対応タスク</th><th>上長承認</th><th></th>
+                 <th>担当者</th><th>対応タスク</th><th>状態</th><th></th>
                </tr></thead>
                <tbody>${rows}</tbody>
              </table>
@@ -5413,22 +5547,38 @@ async function showVisitDetail(visitId) {
     ? `<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:8px;">
         ${photos.map((url, i) => `
           <div style="position:relative;">
-            <img src="${esc(url)}" style="width:120px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border);">
+            <img src="${esc(url)}"
+              onclick='openLightbox(${JSON.stringify(photos).replace(/'/g, "&#39;")}, ${i})'
+              style="width:120px;height:90px;object-fit:cover;border-radius:6px;border:1px solid var(--border);cursor:zoom-in;">
             <button onclick="deleteVisitPhoto('${visitId}',${i})"
               style="position:absolute;top:2px;right:2px;background:rgba(0,0,0,0.5);color:#fff;border:none;border-radius:50%;width:20px;height:20px;font-size:10px;cursor:pointer;line-height:20px;text-align:center;">✕</button>
           </div>`).join('')}
        </div>`
     : '<div style="color:var(--text-muted);font-size:12px;margin-top:6px;">写真なし</div>';
 
-  const tasksHtml = tasks.map(t => `
-    <div class="task-item ${t.is_done ? 'done' : ''}" id="task-${t.id}">
+  const tasksHtml = tasks.map(t => {
+    const confirmed = !!t.admin_confirmed_at;
+    const waiting   = t.is_done && !confirmed;
+    return `
+    <div class="task-item ${confirmed ? 'done' : ''}" id="task-${t.id}"
+         style="${waiting ? 'background:#fdf9ef;' : ''}">
       <input type="checkbox" ${t.is_done ? 'checked' : ''}
+        ${confirmed ? 'disabled' : ''}
         onchange="toggleSiteTask('${t.id}','${visitId}',this.checked)"
-        style="width:16px;height:16px;cursor:pointer;flex-shrink:0;">
+        style="width:16px;height:16px;cursor:${confirmed?'not-allowed':'pointer'};flex-shrink:0;">
       <span style="flex:1;font-size:13px;">${esc(t.content)}</span>
-      ${t.done_at ? `<span style="font-size:11px;color:var(--text-muted);">${t.done_at.slice(0,10)}</span>` : ''}
+      ${t.done_at ? `<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">実施 ${t.done_at.slice(0,10)}</span>` : ''}
+      ${confirmed
+        ? `<span style="font-size:11px;background:#d4f0e3;color:#2e9e68;padding:3px 8px;border-radius:10px;font-weight:600;white-space:nowrap;">✅ 確認済 ${t.admin_confirmed_at.slice(0,10)}</span>
+           <button class="btn-sm" onclick="clearTaskConfirm('${t.id}','${visitId}')">取消</button>`
+        : waiting
+          ? `<button class="btn-sm" style="background:#d4f0e3;color:#2e9e68;border:1px solid #b8dfc8;font-weight:600;white-space:nowrap;"
+               onclick="confirmSiteTask('${t.id}','${visitId}')">✅ 上長確認</button>`
+          : `<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">未実施</span>`
+      }
       <button class="btn-sm btn-danger" onclick="deleteSiteTask('${t.id}','${visitId}')">削除</button>
-    </div>`).join('');
+    </div>`;
+  }).join('');
 
   el.innerHTML = `
     <div class="page-header">
@@ -5776,6 +5926,23 @@ async function deleteSiteTask(taskId, visitId) {
   await showVisitDetail(visitId);
 }
 
+async function confirmSiteTask(taskId, visitId) {
+  const { error } = await db.from('site_tasks')
+    .update({ admin_confirmed_at: new Date().toISOString() })
+    .eq('id', taskId);
+  if (error) { toast('確認失敗: ' + error.message, 'error'); return; }
+  toast('上長確認しました', 'success');
+  await showVisitDetail(visitId);
+}
+
+async function clearTaskConfirm(taskId, visitId) {
+  const { error } = await db.from('site_tasks')
+    .update({ admin_confirmed_at: null })
+    .eq('id', taskId);
+  if (error) { toast('取消失敗: ' + error.message, 'error'); return; }
+  await showVisitDetail(visitId);
+}
+
 async function approveVisit(visitId) {
   const { error } = await db.from('site_visits').update({
     admin_approved_at: new Date().toISOString()
@@ -5947,31 +6114,73 @@ async function renderRepairList() {
   let taskMap = {};
   if (list.length) {
     const { data: allTasks } = await db.from('repair_tasks')
-      .select('repair_id, is_done')
+      .select('repair_id, is_done, admin_confirmed_at')
       .in('repair_id', list.map(r => r.id));
     (allTasks || []).forEach(t => {
-      if (!taskMap[t.repair_id]) taskMap[t.repair_id] = { total:0, done:0 };
+      if (!taskMap[t.repair_id]) taskMap[t.repair_id] = { total:0, confirmed:0, waiting:0 };
       taskMap[t.repair_id].total++;
-      if (t.is_done) taskMap[t.repair_id].done++;
+      if (t.admin_confirmed_at) taskMap[t.repair_id].confirmed++;
+      else if (t.is_done) taskMap[t.repair_id].waiting++;
     });
   }
 
-  const rows = list.map(r => {
+  // ステータス判定
+  const statusOf = r => {
+    const tm = taskMap[r.id] || { total:0, confirmed:0, waiting:0 };
+    if (!r.admin_approved_at) return 'pending';                     // 要承認
+    if (tm.total > 0 && tm.confirmed < tm.total) return 'active';   // 対応中
+    return 'done';                                                  // 完了
+  };
+
+  list.forEach(r => { r._status = statusOf(r); });
+
+  const counts = {
+    all:     list.length,
+    pending: list.filter(r => r._status === 'pending').length,
+    active:  list.filter(r => r._status === 'active').length,
+    done:    list.filter(r => r._status === 'done').length,
+  };
+
+  let shown = _repairListTab === 'all'
+    ? list
+    : list.filter(r => r._status === _repairListTab);
+
+  const ORDER = { pending: 0, active: 1, done: 2 };
+  shown = [...shown].sort((a, b) => {
+    const d = ORDER[a._status] - ORDER[b._status];
+    if (d !== 0) return d;
+    return (b.repair_date || '').localeCompare(a.repair_date || '');
+  });
+
+  const rows = shown.map(r => {
     const p  = r.properties;
     const pn = p ? (p.property_name || p.address || p.code || '（名称未入力）') : '—';
-    const tm = taskMap[r.id] || { total:0, done:0 };
-    const tb = tm.total === 0
-      ? '<span style="color:var(--text-muted);font-size:11px;">なし</span>'
-      : tm.done < tm.total
-        ? '<span style="color:#c94040;font-size:11px;font-weight:600;">⚠️ ' + (tm.total - tm.done) + '件未対応</span>'
-        : '<span style="color:#2e9e68;font-size:11px;">✅ 完了</span>';
+    const tm = taskMap[r.id] || { total:0, confirmed:0, waiting:0 };
+
+    let tb;
+    if (tm.total === 0) {
+      tb = '<span style="color:var(--text-muted);font-size:11px;">なし</span>';
+    } else if (tm.confirmed >= tm.total) {
+      tb = '<span style="color:#2e9e68;font-size:11px;font-weight:600;">✅ 完了</span>';
+    } else if (tm.waiting > 0) {
+      tb = `<span style="color:#d4920a;font-size:11px;font-weight:600;">⏳ ${tm.waiting}件 確認待ち</span>`;
+    } else {
+      tb = `<span style="color:#c94040;font-size:11px;font-weight:600;">⚠️ ${tm.total - tm.confirmed}件未対応</span>`;
+    }
+
+    const statusBadge = {
+      pending: '<span style="font-size:11px;background:#fdf0d4;color:#d4920a;padding:2px 8px;border-radius:10px;font-weight:600;">要承認</span>',
+      active:  '<span style="font-size:11px;background:#deeafc;color:#2a7ae2;padding:2px 8px;border-radius:10px;font-weight:600;">対応中</span>',
+      done:    '<span style="font-size:11px;background:#d4f0e3;color:#2e9e68;padding:2px 8px;border-radius:10px;font-weight:600;">完了</span>',
+    }[r._status];
+
     return `<tr onclick="showRepairDetail('${r.id}')" style="cursor:pointer;">
       <td>${esc(pn)}</td>
       <td>${r.repair_date || '—'}</td>
       <td>${r.season === 'winter' ? '❄️ 冬季' : '🌿 通常期'}</td>
       <td>${esc(r.visitor_name || '—')}</td>
       <td>${tb}</td>
-      <td>${r.admin_approved_at ? '✅ 承認済' : '—'}</td>
+      <td>${statusBadge}</td>
       <td><button class="btn-sm" onclick="event.stopPropagation();showRepairDetail('${r.id}')">詳細</button></td>
     </tr>`;
   }).join('');
@@ -5985,14 +6194,21 @@ async function renderRepairList() {
       <button class="btn-primary" onclick="showRepairForm()">＋ 修繕記録を追加</button>
     </div>
 
-    ${list.length === 0
-      ? '<div class="section" style="text-align:center;padding:40px;color:var(--text-muted);">修繕記録がありません</div>'
+    <div class="filter-tabs" style="margin-bottom:16px;">
+      <button class="filter-tab ${_repairListTab==='all'?'active':''}"     onclick="_repairListTab='all';renderRepairList()">全て（${counts.all}）</button>
+      <button class="filter-tab ${_repairListTab==='pending'?'active':''}" onclick="_repairListTab='pending';renderRepairList()">📝 要承認（${counts.pending}）</button>
+      <button class="filter-tab ${_repairListTab==='active'?'active':''}"  onclick="_repairListTab='active';renderRepairList()">🔧 対応中（${counts.active}）</button>
+      <button class="filter-tab ${_repairListTab==='done'?'active':''}"    onclick="_repairListTab='done';renderRepairList()">✅ 完了（${counts.done}）</button>
+    </div>
+
+    ${shown.length === 0
+      ? '<div class="section" style="text-align:center;padding:40px;color:var(--text-muted);">該当する修繕記録がありません</div>'
       : `<div class="section" style="padding:0;overflow:hidden;">
            <div style="overflow-x:auto;">
              <table class="data-table">
                <thead><tr>
                  <th>物件名</th><th>修繕日</th><th>季節</th><th>担当者</th>
-                 <th>タスク</th><th>承認</th><th></th>
+                 <th>タスク</th><th>状態</th><th></th>
                </tr></thead>
                <tbody>${rows}</tbody>
              </table>
@@ -6026,23 +6242,37 @@ async function showRepairDetail(repairId) {
   try { photos = JSON.parse(r.photo_urls || '[]'); } catch(e) {}
 
   const photoHtml = photos.length
-    ? photos.map(u => `<img src="${esc(u)}" style="height:80px;border-radius:6px;cursor:pointer;object-fit:cover;" onclick="window.open('${esc(u)}','_blank')">`).join('')
+    ? photos.map((u, i) => `<img src="${esc(u)}" style="height:80px;border-radius:6px;cursor:zoom-in;object-fit:cover;"
+        onclick='openLightbox(${JSON.stringify(photos).replace(/'/g, "&#39;")}, ${i})'>`).join('')
     : '<span style="color:var(--text-muted);font-size:12px;">写真なし</span>';
 
   const taskHtml = taskList.length
-    ? taskList.map(t => `
-        <div class="log-row" style="align-items:flex-start;">
+    ? taskList.map(t => {
+        const confirmed = !!t.admin_confirmed_at;
+        const waiting   = t.is_done && !confirmed;
+        return `
+        <div class="log-row" style="align-items:flex-start;${waiting ? 'background:#fdf9ef;' : ''}">
           <div style="flex:1;">
-            <label style="display:flex;align-items:center;gap:8px;cursor:pointer;">
+            <label style="display:flex;align-items:center;gap:8px;cursor:${confirmed?'not-allowed':'pointer'};">
               <input type="checkbox" ${t.is_done ? 'checked' : ''}
+                     ${confirmed ? 'disabled' : ''}
                      onchange="toggleRepairTask('${t.id}','${repairId}',this.checked)"
                      style="width:16px;height:16px;">
-              <span style="${t.is_done ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${esc(t.content)}</span>
+              <span style="${confirmed ? 'text-decoration:line-through;color:var(--text-muted);' : ''}">${esc(t.content)}</span>
             </label>
             ${t.done_at ? `<div style="font-size:11px;color:var(--text-muted);margin-left:24px;">完了: ${new Date(t.done_at).toLocaleDateString('ja-JP')}</div>` : ''}
           </div>
+          ${confirmed
+            ? `<span style="font-size:11px;background:#d4f0e3;color:#2e9e68;padding:3px 8px;border-radius:10px;font-weight:600;white-space:nowrap;">✅ 確認済 ${new Date(t.admin_confirmed_at).toLocaleDateString('ja-JP')}</span>
+               <button class="btn-sm" onclick="clearRepairTaskConfirm('${t.id}','${repairId}')">取消</button>`
+            : waiting
+              ? `<button class="btn-sm" style="background:#d4f0e3;color:#2e9e68;border:1px solid #b8dfc8;font-weight:600;white-space:nowrap;"
+                   onclick="confirmRepairTask('${t.id}','${repairId}')">✅ 上長確認</button>`
+              : `<span style="font-size:11px;color:var(--text-muted);white-space:nowrap;">未実施</span>`
+          }
           <button class="btn-sm btn-danger" onclick="deleteRepairTask('${t.id}','${repairId}')">削除</button>
-        </div>`).join('')
+        </div>`;
+      }).join('')
     : '<div style="font-size:12px;color:var(--text-muted);">タスクがありません</div>';
 
   el.innerHTML = `
@@ -6218,6 +6448,23 @@ async function deleteRepairTask(taskId, repairId) {
   const { error } = await db.from('repair_tasks').delete().eq('id', taskId);
   if (error) { toast('削除失敗: ' + error.message, 'error'); return; }
   toast('削除しました', 'success');
+  await showRepairDetail(repairId);
+}
+
+async function confirmRepairTask(taskId, repairId) {
+  const { error } = await db.from('repair_tasks')
+    .update({ admin_confirmed_at: new Date().toISOString() })
+    .eq('id', taskId);
+  if (error) { toast('確認失敗: ' + error.message, 'error'); return; }
+  toast('上長確認しました', 'success');
+  await showRepairDetail(repairId);
+}
+
+async function clearRepairTaskConfirm(taskId, repairId) {
+  const { error } = await db.from('repair_tasks')
+    .update({ admin_confirmed_at: null })
+    .eq('id', taskId);
+  if (error) { toast('取消失敗: ' + error.message, 'error'); return; }
   await showRepairDetail(repairId);
 }
 
