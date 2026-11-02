@@ -2709,9 +2709,24 @@ function verifyCostPw(propId) {
   }
 }
 
+function parseAmount(s) {
+  return parseFloat(String(s ?? '').replace(/,/g, '')) || 0;
+}
+
+function fmtAmt(v) {
+  if (v === '' || v == null) return '';
+  return parseAmount(v).toLocaleString('ja-JP');
+}
+
+// 入力中に3桁区切りを付ける（数字以外は取り除く）
+function fmtAmountField(el) {
+  const digits = el.value.replace(/\D/g, '');
+  el.value = digits ? Number(digits).toLocaleString('ja-JP') : '';
+}
+
 function costVal(id) {
   const el = document.getElementById(id);
-  return el ? (parseFloat(el.value) || 0) : 0;
+  return el ? parseAmount(el.value) : 0;
 }
 
 function periodicTotal(cat) {
@@ -2809,7 +2824,7 @@ function calcCostSummary() {
 }
 
 function calcBldExcl() {
-  const inc  = parseFloat(document.getElementById('c-bld-acq-cost')?.value) || 0;
+  const inc  = costVal('c-bld-acq-cost');
   const excl = inc > 0 ? Math.round(inc / 1.1) : 0;
   const el   = document.getElementById('c-bld-excl-disp');
   if (el) el.textContent = inc > 0 ? `税別: ${excl.toLocaleString('ja-JP')} 円` : '';
@@ -2818,13 +2833,14 @@ function calcBldExcl() {
 
 function calcPurchaseBrokerFee() {
   const isHouse = document.getElementById('c-land-acq-cost') !== null;
+  // 戸建は土地＋建物（税込）を仕入額とする
   const baseVal = isHouse
-    ? (parseFloat(document.getElementById('c-land-acq-cost')?.value) || 0)
-    : (parseFloat(document.getElementById('c-acq-cost')?.value) || 0);
+    ? costVal('c-land-acq-cost') + costVal('c-bld-acq-cost')
+    : costVal('c-acq-cost');
   if (baseVal <= 0) return;
   const fee = Math.round((baseVal * 0.03 + 60000) * 1.1);
   const feeEl = document.getElementById('c-broker-fee');
-  if (feeEl) { feeEl.value = fee; calcCostSummary(); }
+  if (feeEl) { feeEl.value = fmtAmt(fee); calcCostSummary(); }
 }
 
 async function addPeriodicRecord(propId, category, inputType) {
@@ -2944,9 +2960,9 @@ async function renderCost(propId) {
   const fmt = val => Math.round(val).toLocaleString('ja-JP');
 
   const ni = (id, val, oninput, extra) =>
-    `<input id="${id}" type="number" step="1" class="qs-control"
-      value="${val !== '' && val != null ? val : ''}"
-      oninput="${oninput || 'calcCostSummary()'}" placeholder="0"
+    `<input id="${id}" type="text" inputmode="numeric" class="qs-control"
+      value="${fmtAmt(val)}"
+      oninput="fmtAmountField(this);${oninput || 'calcCostSummary()'}" placeholder="0"
       style="width:130px;text-align:right;padding:4px 8px;" ${extra || ''}>`;
 
   const row = (id, lbl, val, unit, oninput) =>
