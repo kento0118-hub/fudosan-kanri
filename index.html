@@ -2953,8 +2953,8 @@ async function renderCost(propId) {
       .reduce((s, r) => s + (parseFloat(r.amount) || 0), 0);
   });
 
-  const autoBroker = price > 0 ? Math.round((price * 10000 * 0.03 + 60000) * 1.1) : '';
-  const brokerFee  = c.broker_fee != null ? c.broker_fee : autoBroker;
+  // 仲介手数料は自動入力しない（値引きがある場合があるため、手入力か「自動計算」ボタンで入れる）
+  const brokerFee = c.broker_fee != null ? c.broker_fee : '';
 
   const v   = key => c[key] != null ? c[key] : '';
   const fmt = val => Math.round(val).toLocaleString('ja-JP');
@@ -3305,7 +3305,7 @@ function calcBuildingAge(year, month) {
 
 function parseFloatOrNull(v) {
   if (v === '' || v == null) return null;
-  const n = parseFloat(v);
+  const n = parseFloat(String(v).replace(/,/g, ''));
   return isNaN(n) ? null : n;
 }
 
@@ -4511,12 +4511,12 @@ async function renderRentalCost(rentalId) {
         ${prop.type === 'land' ? `
         <div class="form-group">
           <label>取得価格（円）</label>
-          <input type="number" id="rc-acq" class="qs-control" step="1" value="${costs.acquisition_cost ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-acq" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.acquisition_cost)}">
         </div>
         ` : `
         <div class="form-group">
           <label>土地取得価格（円）</label>
-          <input type="number" id="rc-land-acq" class="qs-control" step="1" value="${costs.land_acquisition_cost ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-land-acq" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.land_acquisition_cost)}">
         </div>
         `}
       </div>
@@ -4524,87 +4524,87 @@ async function renderRentalCost(rentalId) {
       <div class="form-row">
         <div class="form-group">
           <label>建物取得価格（税込・円）</label>
-          <input type="number" id="rc-bld-acq" class="qs-control" step="1" value="${costs.building_acquisition_cost ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-bld-acq" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.building_acquisition_cost)}">
         </div>
         <div class="form-group">
           <label>仲介手数料（円）</label>
-          <input type="number" id="rc-broker" class="qs-control" step="1" value="${costs.broker_fee ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-broker" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.broker_fee)}">
         </div>
       </div>` : `
       <div class="form-row">
         <div class="form-group">
           <label>仲介手数料（円）</label>
-          <input type="number" id="rc-broker" class="qs-control" step="1" value="${costs.broker_fee ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-broker" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.broker_fee)}">
         </div>
       </div>`}
       <div class="form-row">
         <div class="form-group">
           <label>不動産取得税（円）</label>
-          <input type="number" id="rc-acq-tax" class="qs-control" step="1" value="${costs.acquisition_tax ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-acq-tax" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.acquisition_tax)}">
         </div>
         <div class="form-group">
           <label>移転登記費用（円）</label>
-          <input type="number" id="rc-transfer-reg" class="qs-control" step="1" value="${costs.transfer_reg ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-transfer-reg" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.transfer_reg)}">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>印紙税（円）</label>
-          <input type="number" id="rc-stamp" class="qs-control" step="1" value="${costs.stamp_tax ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-stamp" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.stamp_tax)}">
         </div>
         <div class="form-group">
           <label>測量費（円）</label>
-          <input type="number" id="rc-survey" class="qs-control" step="1" value="${costs.survey_purchase ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-survey" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.survey_purchase)}">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>その他購入費用（円）</label>
-          <input type="number" id="rc-other-purch" class="qs-control" step="1" value="${costs.other_purchase ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-other-purch" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.other_purchase)}">
         </div>
         <div class="form-group">
           <label>リフォーム工事費（円）</label>
-          <input type="number" id="rc-reform" class="qs-control" step="1" value="${costs.reform_cost ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-reform" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.reform_cost)}">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>設備交換費（円）</label>
-          <input type="number" id="rc-equip" class="qs-control" step="1" value="${costs.equipment_cost ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-equip" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.equipment_cost)}">
         </div>
         <div class="form-group">
           <label>地盤保証料（円）</label>
-          <input type="number" id="rc-ground" class="qs-control" step="1" value="${costs.ground_warranty ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-ground" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.ground_warranty)}">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>展示内装費（円）</label>
-          <input type="number" id="rc-interior" class="qs-control" step="1" value="${costs.interior_cost ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-interior" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.interior_cost)}">
         </div>
         <div class="form-group">
           <label>その他工事費（円）</label>
-          <input type="number" id="rc-other-const" class="qs-control" step="1" value="${costs.other_construction ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-other-const" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.other_construction)}">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>表示登記（円）</label>
-          <input type="number" id="rc-reg-survey" class="qs-control" step="1" value="${costs.reg_survey ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-reg-survey" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.reg_survey)}">
         </div>
         <div class="form-group">
           <label>農地転用（円）</label>
-          <input type="number" id="rc-farmland" class="qs-control" step="1" value="${costs.farmland ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-farmland" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.farmland)}">
         </div>
       </div>
       <div class="form-row">
         <div class="form-group">
           <label>開発許可費（円）</label>
-          <input type="number" id="rc-dev-permit" class="qs-control" step="1" value="${costs.dev_permit ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-dev-permit" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.dev_permit)}">
         </div>
         <div class="form-group">
           <label>その他登記費（円）</label>
-          <input type="number" id="rc-other-reg" class="qs-control" step="1" value="${costs.other_reg ?? ''}">
+          <input type="text" inputmode="numeric" id="rc-other-reg" class="qs-control" oninput="fmtAmountField(this)" value="${fmtAmt(costs.other_reg)}">
         </div>
       </div>
     </div>
