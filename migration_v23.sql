@@ -19,4 +19,10 @@ CREATE TABLE IF NOT EXISTS repair_tasks (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE repair_tasks ENABLE ROW LEVEL SECURITY;
-CREATE POLICY IF NOT EXISTS "anon_all" ON repair_tasks FOR ALL TO anon USING (true) WITH CHECK (true);
+DO $$ BEGIN
+  IF NOT EXISTS (
+    SELECT 1 FROM pg_policies WHERE tablename = 'repair_tasks' AND policyname = 'anon_all'
+  ) THEN
+    EXECUTE 'CREATE POLICY "anon_all" ON repair_tasks FOR ALL TO anon USING (true) WITH CHECK (true)';
+  END IF;
+END $$;
