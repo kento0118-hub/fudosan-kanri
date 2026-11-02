@@ -2843,6 +2843,16 @@ function calcPurchaseBrokerFee() {
   if (feeEl) { feeEl.value = fmtAmt(fee); calcCostSummary(); }
 }
 
+// 販売仲介手数料：販売価格（販売管理の金額）を基準に上限額（3% + 6万円、税込）を入れる
+function calcSalesBrokerFee() {
+  const priceEl = document.getElementById('c-prop-price');
+  const price   = priceEl ? (parseFloat(priceEl.dataset.price) || 0) * 10000 : 0;
+  if (price <= 0) return;
+  const fee = Math.round((price * 0.03 + 60000) * 1.1);
+  const feeEl = document.getElementById('c-sales-broker');
+  if (feeEl) { feeEl.value = fmtAmt(fee); calcCostSummary(); }
+}
+
 async function addPeriodicRecord(propId, category, inputType) {
   let year = null, month = null, date = null, memo = null;
   const amount = parseFloat(document.getElementById(`p-amt-${category}`)?.value);
@@ -3054,7 +3064,10 @@ async function renderCost(propId) {
   const sec4 = sec('販売費（一括）', '📣', 'sub4',
     row('c-planning',       '企画費',           v('planning')) +
     row('c-handover-finish','引渡し仕上費',     v('handover_finish')) +
-    row('c-sales-broker',   '販売仲介手数料',   v('sales_broker_fee')) +
+    row('c-sales-broker',   `販売仲介手数料
+        <button type="button" onclick="calcSalesBrokerFee()"
+          style="margin-left:6px;font-size:10px;color:var(--accent);background:var(--accent-dim);
+            border:none;border-radius:4px;padding:1px 6px;cursor:pointer;vertical-align:middle;">自動計算</button>`, v('sales_broker_fee')) +
     row('c-sales-office',   '現地案内所設置費', v('sales_office')) +
     row('c-handover-docs',  '引渡し書類作成費', v('handover_docs')) +
     row('c-other-sales',    'その他（販売）',   v('other_sales'))
