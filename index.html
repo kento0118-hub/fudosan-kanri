@@ -2816,6 +2816,16 @@ function calcBldExcl() {
   calcCostSummary();
 }
 
+function calcPurchaseBrokerFee() {
+  const isHouse = document.getElementById('c-land-acq-cost') !== null;
+  const baseVal = isHouse
+    ? (parseFloat(document.getElementById('c-land-acq-cost')?.value) || 0)
+    : (parseFloat(document.getElementById('c-acq-cost')?.value) || 0);
+  if (baseVal <= 0) return;
+  const fee = Math.round((baseVal * 0.03 + 60000) * 1.1);
+  const feeEl = document.getElementById('c-broker-fee');
+  if (feeEl) { feeEl.value = fee; calcCostSummary(); }
+}
 
 async function addPeriodicRecord(propId, category, inputType) {
   let year = null, month = null, date = null, memo = null;
@@ -2988,7 +2998,11 @@ async function renderCost(propId) {
   const sec1 = sec('仕入関連', '🏷️', 'sub1',
     acqRows +
     `<tr>
-      <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">不動産仲介手数料</td>
+      <td style="padding:5px 10px 5px 0;font-size:13px;color:var(--text-secondary);">不動産仲介手数料
+        <button type="button" onclick="calcPurchaseBrokerFee()"
+          style="margin-left:6px;font-size:10px;color:var(--accent);background:var(--accent-dim);
+            border:none;border-radius:4px;padding:1px 6px;cursor:pointer;vertical-align:middle;">自動計算</button>
+      </td>
       <td style="padding:5px 0;white-space:nowrap;">${ni('c-broker-fee', brokerFee)}<span style="margin-left:5px;font-size:12px;color:var(--text-muted);">円</span></td>
     </tr>` +
     row('c-acq-tax',        '不動産取得税',       v('acquisition_tax')) +
