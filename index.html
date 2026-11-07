@@ -617,6 +617,7 @@
 
     /* ── 不動産査定（satei/index.html を枠の中で開く。画面を切り替えても入力中の内容は残る） ── */
     .satei-main { padding: 0 !important; }
+    .nav-tag { margin-left: auto; font-size: 10px; line-height: 1; padding: 3px 6px; border-radius: 4px; border: 1px solid var(--text-muted); color: var(--text-muted); white-space: nowrap; }
     .satei-main iframe { display: block; width: 100%; height: 100vh; border: 0; background: #EDEEEA; }
     @media (max-width: 767px) {
       .satei-main { padding-top: 56px !important; }
@@ -649,7 +650,7 @@
       <span class="icon">🗺</span>物件マップ
     </a>
     <a class="nav-item" id="nav-satei" onclick="showSatei()" href="#">
-      <span class="icon">📝</span>不動産査定
+      <span class="icon">📝</span>不動産査定<span class="nav-tag">PC専用</span>
     </a>
   </nav>
   <div class="sidebar-footer">
