@@ -614,6 +614,14 @@
       :root { --sidebar-w: 180px; }
       .main { padding: 24px 20px; }
     }
+
+    /* ── 不動産査定（satei/index.html を枠の中で開く。画面を切り替えても入力中の内容は残る） ── */
+    .satei-main { padding: 0 !important; }
+    .satei-main iframe { display: block; width: 100%; height: 100vh; border: 0; background: #EDEEEA; }
+    @media (max-width: 767px) {
+      .satei-main { padding-top: 56px !important; }
+      .satei-main iframe { height: calc(100vh - 56px); }
+    }
   </style>
 </head>
 <body>
@@ -640,6 +648,9 @@
     <a class="nav-item" id="nav-map" onclick="showPropertyMap()" href="#">
       <span class="icon">🗺</span>物件マップ
     </a>
+    <a class="nav-item" id="nav-satei" onclick="showSatei()" href="#">
+      <span class="icon">📝</span>不動産査定
+    </a>
   </nav>
   <div class="sidebar-footer">
     <div class="footer-title">更新履歴</div>
@@ -652,6 +663,8 @@
 <main class="main" id="content">
   <div style="padding:60px;text-align:center;color:var(--text-muted);">読み込み中…</div>
 </main>
+<!-- 不動産査定ツール：初めて開いたときだけ読み込む。ほかの画面に移っても消さずに隠すだけ -->
+<main class="main satei-main" id="satei-pane" style="display:none"></main>
 
 <!-- ========== モーダル ========== -->
 <div id="modal-bg" class="modal-bg hidden" onclick="closeModalBg(event)">
@@ -826,6 +839,9 @@ async function showLogs() {
 }
 
 function setActiveNav(id) {
+  // 査定ツール以外の画面に移ったら、査定ツールを隠して通常の画面に戻す
+  const sp = document.getElementById('satei-pane');
+  if (sp && id !== 'nav-satei') { sp.style.display = 'none'; document.getElementById('content').style.display = ''; }
   document.querySelectorAll('.nav-item').forEach(el => {
     el.classList.toggle('active', el.id === id);
   });
@@ -835,6 +851,20 @@ function setActiveNav(id) {
     if (s) s.classList.remove('open');
     if (o) o.classList.remove('open');
   }
+}
+
+// 不動産査定ツール（satei/index.html）。1ファイルで完結したツールを枠の中で開く。
+// 入力内容はこのブラウザに自動保存される（物件データのSupabaseとは別）。
+function showSatei() {
+  state.view = 'satei';
+  const sp = document.getElementById('satei-pane');
+  if (!sp.firstElementChild) {
+    sp.innerHTML = '<iframe src="satei/index.html" title="不動産査定ツール"></iframe>';
+  }
+  document.getElementById('content').style.display = 'none';
+  sp.style.display = '';
+  setActiveNav('nav-satei');
+  window.scrollTo(0, 0);
 }
 
 function toggleSidebar() {

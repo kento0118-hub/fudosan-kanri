@@ -1,0 +1,2565 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>不動産査定ツール｜株式会社網代建設</title>
+<style>
+:root{
+  --paper:#EDEEEA; --surface:#FFFFFF; --ink:#16211E; --ink2:#46534E; --muted:#7C8884;
+  --line:#D5D9D3; --line2:#E6E9E4; --accent:#0F5F52; --accent-soft:#E1EBE8;
+  --adjust:#8A5A1B; --adjust-soft:#F6EEE2; --alert:#8C2F2F; --auto:#2C5578; --auto-soft:#E4EDF4;
+  --gothic:"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Yu Gothic","Meiryo",system-ui,sans-serif;
+  --mincho:"Hiragino Mincho ProN","Yu Mincho","YuMincho","MS PMincho",serif;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{font-family:var(--gothic);background:var(--paper);color:var(--ink);font-size:14px;line-height:1.65;-webkit-font-smoothing:antialiased}
+.num{font-variant-numeric:tabular-nums;font-feature-settings:"tnum" 1}
+
+.topbar{display:flex;align-items:baseline;gap:16px;padding:14px 24px;background:var(--ink);color:#EDEEEA}
+.topbar h1{font-size:15px;font-weight:600;margin:0;letter-spacing:.04em}
+.topbar .co{font-size:12px;color:#9DAAA5;margin-left:auto}
+
+.wrap{display:grid;grid-template-columns:minmax(0,1fr) 316px;gap:20px;padding:20px 24px 80px;max-width:1440px;margin:0 auto}
+@media(max-width:1040px){.wrap{grid-template-columns:1fr}}
+
+section.panel{background:var(--surface);border:1px solid var(--line);margin-bottom:18px}
+.panel > h2{margin:0;padding:11px 16px;font-size:13px;font-weight:600;letter-spacing:.05em;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}
+.panel > h2 .idx{width:19px;height:19px;flex:none;border:1px solid var(--accent);color:var(--accent);border-radius:50%;font-size:11px;display:grid;place-items:center;font-weight:600}
+.panel > h2 .opt{margin-left:auto;font-size:11px;font-weight:400;color:var(--muted)}
+.body{padding:16px}
+
+.grid{display:grid;gap:12px 14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1fr 1fr 1fr}
+.g4{grid-template-columns:1fr 1fr 1fr 1fr}
+@media(max-width:760px){.g2,.g3,.g4{grid-template-columns:1fr 1fr}}
+label{display:block}
+label > span.lb{display:block;font-size:11.5px;color:var(--ink2);margin-bottom:3px;font-weight:500}
+label > span.lb em{font-style:normal;color:var(--muted);font-weight:400}
+label > span.lb i{font-style:normal;color:var(--auto);font-weight:400}
+input[type=text],input[type=number],input[type=date],select,textarea{width:100%;padding:6px 8px;font:inherit;font-size:13.5px;border:1px solid var(--line);background:#fff;color:var(--ink);border-radius:2px}
+input[type=number]{font-variant-numeric:tabular-nums;text-align:right}
+textarea{resize:vertical;line-height:1.7;font-size:12.5px}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--accent);outline-offset:-1px;border-color:var(--accent)}
+input:disabled,select:disabled{background:#F3F4F1;color:var(--muted)}
+input.auto:disabled{background:var(--auto-soft);color:#24435E}
+.chk{display:flex;align-items:center;gap:6px;font-size:13px;padding-top:16px}
+.chk input{width:15px;height:15px;accent-color:var(--accent)}
+.hint{font-size:11.5px;color:var(--muted);line-height:1.55;margin:6px 0 0}
+.hint.warn{color:var(--adjust)}
+.hint.auto{color:var(--auto)}
+.sub{font-size:12px;color:var(--ink2);margin:18px 0 8px;padding-top:14px;border-top:1px solid var(--line2);font-weight:600;display:flex;align-items:center;gap:8px}
+.sub .sp{margin-left:auto;font-weight:400}
+.sub:first-child{margin-top:0;padding-top:0;border-top:0}
+
+button{font:inherit;cursor:pointer;border-radius:2px}
+.btn{padding:6px 12px;font-size:12.5px;border:1px solid var(--line);background:#fff;color:var(--ink)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn-p{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600;padding:9px 14px;font-size:13px;width:100%}
+.btn-p:hover{background:#0B4B41;color:#fff}
+.btn-sm{padding:3px 8px;font-size:11.5px}
+.btn-go{background:var(--accent);color:#fff;border-color:var(--accent);font-weight:600}
+.btn-go:hover{background:#0B4B41;color:#fff}
+.tag{display:inline-block;padding:1px 7px;border-radius:9px;font-size:11px;font-weight:600}
+.tag.wip{background:var(--adjust-soft);color:#5C3D12}
+.tag.done{background:var(--accent-soft);color:#0B4B41}
+.btn-danger:hover{border-color:var(--alert);color:var(--alert)}
+.linkrow{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.linkrow a{display:inline-block;padding:5px 10px;font-size:12px;text-decoration:none;border:1px solid var(--line);color:var(--ink2);background:#fff;border-radius:2px}
+.linkrow a:hover{border-color:var(--accent);color:var(--accent)}
+.linkrow a[aria-disabled=true]{opacity:.4;pointer-events:none}
+
+.calc{background:var(--accent-soft);border-left:3px solid var(--accent);padding:10px 12px;margin-top:12px;font-size:13px}
+.calc .row{display:flex;justify-content:space-between;gap:12px;padding:2px 0}
+.calc .row b{font-weight:600}
+.calc .row.total{border-top:1px solid rgba(15,95,82,.28);margin-top:5px;padding-top:6px;font-size:15px}
+.formula{background:var(--adjust-soft);border-left:3px solid var(--adjust);padding:10px 12px;margin-top:12px;font-size:12.5px;color:#5C3D12;line-height:1.9}
+.formula .f{font-variant-numeric:tabular-nums}
+.formula .f s{color:#9C8460;text-decoration:none}
+.why{background:var(--auto-soft);border-left:3px solid var(--auto);padding:8px 11px;margin-top:10px;font-size:12px;color:#24435E;line-height:1.7}
+.dim{color:var(--muted)}
+
+.rail{position:sticky;top:16px;align-self:start}
+.rail .panel{margin-bottom:14px}
+.sumrow{display:flex;justify-content:space-between;align-items:baseline;padding:5px 0;font-size:13px;border-bottom:1px dotted var(--line)}
+.sumrow:last-of-type{border-bottom:0}
+.sumrow .v{font-weight:600;font-variant-numeric:tabular-nums}
+.sumbig{border-top:2px solid var(--ink);margin-top:8px;padding-top:9px;display:flex;justify-content:space-between;align-items:baseline}
+.sumbig .v{font-size:23px;font-weight:600;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+.sumbig .k{font-size:12px;color:var(--ink2)}
+.kaitori{background:var(--ink);color:#EDEEEA;padding:9px 12px;margin-top:12px;display:flex;justify-content:space-between;align-items:baseline}
+.kaitori .k{font-size:11.5px;color:#9DAAA5}
+.kaitori .v{font-size:17px;font-weight:600;font-variant-numeric:tabular-nums}
+
+.card{border:1px solid var(--line);margin-bottom:12px}
+.card > header{display:flex;align-items:center;gap:8px;padding:7px 12px;background:#F5F6F3;border-bottom:1px solid var(--line);font-size:12.5px;font-weight:600}
+.card > header .sp{margin-left:auto}
+.card > .in{padding:13px}
+.card.sub-b > header{background:#FAFBF9;font-weight:500}
+
+table.dt{width:100%;border-collapse:collapse;font-size:12px;margin-top:8px}
+table.dt th{background:#F5F6F3;font-weight:600;text-align:left;padding:5px 7px;border:1px solid var(--line);white-space:nowrap;font-size:11.5px}
+table.dt td{padding:3px 6px;border:1px solid var(--line2);vertical-align:middle}
+table.dt td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+table.dt td.dim{font-size:11px}
+table.dt input,table.dt select{padding:3px 5px;font-size:12px}
+table.dt tr.head td{background:#FAFBF9}
+.scrollx{overflow-x:auto}
+
+.drop{border:1.5px dashed var(--line);background:#FAFBF9;padding:18px;text-align:center;color:var(--muted);font-size:12.5px;cursor:pointer}
+.drop.on{border-color:var(--accent);background:var(--accent-soft);color:var(--accent)}
+.filelist{margin:10px 0 0;padding:0;list-style:none;font-size:12.5px}
+.filelist li{display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--line2)}
+.filelist li .nm{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.filelist li .sz{color:var(--muted);font-size:11.5px;margin-left:auto;flex:none}
+.status{font-size:12.5px;padding:7px 10px;margin-top:10px;white-space:pre-wrap;line-height:1.6}
+.status.run{background:var(--adjust-soft);color:#5C3D12}
+.status.ok{background:var(--accent-soft);color:#0B4B41}
+.status.ng{background:#F6E7E7;color:var(--alert)}
+
+/* 査定書の見た目は REP_CSS（script内）の1か所だけで定義し、画面・PDF・印刷・HTML書き出しで共用する */
+#report{background:transparent;color:#000}
+.repbar{display:flex;gap:8px;padding:10px 16px;border-bottom:1px solid var(--line);background:#F5F6F3;align-items:center;flex-wrap:wrap}
+.repbar .sp{margin-left:auto}
+.repscroll{overflow-x:auto;padding:16px;background:#DDE0DA}
+
+@media print{
+  body{background:#fff}
+  .topbar,.rail,.repbar,.noprint,.panel:not(#reportPanel){display:none !important}
+  .wrap{display:block;padding:0;max-width:none}
+  #reportPanel{border:0;margin:0}
+  #reportPanel > h2{display:none}
+  .repscroll{padding:0;background:#fff;overflow:visible}
+  @page{size:A4;margin:0}
+}
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <h1>不動産査定ツール</h1>
+  <span style="font-size:11.5px;color:#9DAAA5">登記の読み取りから査定報告書まで</span>
+  <span class="co">株式会社網代建設</span>
+</div>
+
+<div id="resumeBar" style="display:none;background:var(--adjust-soft);border-bottom:1px solid var(--line);padding:10px 24px;font-size:13px;color:#5C3D12;align-items:center;gap:12px;flex-wrap:wrap">
+  <span id="resumeTxt"></span>
+  <button class="btn btn-sm" id="btnResume" style="background:#fff">続きから再開する</button>
+  <button class="btn btn-sm" id="btnFresh" style="background:transparent;border-color:rgba(138,90,27,.4)">新しく始める</button>
+</div>
+
+<div class="wrap">
+<div>
+
+<!-- ========== 1. 物件情報 ========== -->
+<section class="panel">
+  <h2><span class="idx">1</span>物件情報<span class="opt">登記をアップロードすれば大半が自動で入ります</span></h2>
+  <div class="body">
+
+    <div class="sub">登記事項証明書の読み取り<span class="sp dim">土地・建物どちらもここへ。まとめて複数枚可</span></div>
+    <div class="drop" id="drop">
+      登記のPDF・画像をここにドロップ　<span class="dim">またはクリックして選択</span>
+      <input type="file" id="fileIn" accept="application/pdf,image/*" multiple hidden>
+    </div>
+    <ul class="filelist" id="fileList"></ul>
+    <div style="display:flex;gap:8px;margin-top:10px;align-items:center;flex-wrap:wrap">
+      <button class="btn" id="btnRead">登記から自動入力</button>
+      <span class="hint" style="margin:0">土地の表題部（所在・地番・地目・地積）と建物の表題部（家屋番号・種類・構造・床面積・新築年月・附属建物）をまとめて読み取ります。</span>
+    </div>
+    <div id="readStatus"></div>
+    <details style="margin-top:8px" id="pasteWrap">
+      <summary class="hint" style="cursor:pointer"><b>読み取りが動かないとき</b>（PCに保存して開いている場合はこちら）</summary>
+      <div style="border:1px solid var(--line);padding:12px;margin-top:8px;background:#FAFBF9">
+        <div class="sub" style="margin-top:0;padding-top:0;border-top:0">方法A　Claudeの会話に登記を貼って、返ってきたJSONをここに貼る<span class="sp dim">キー不要・無料</span></div>
+        <p class="hint" style="margin:0 0 6px">Claudeの会話に登記のPDFを添付して、下の一文をそのまま送ってください。返ってきたJSONを<b>この欄に貼って「取り込む」</b>、または<b>ファイルでもらったなら「JSONファイルを選ぶ」</b>。どちらでも物件情報・土地・建物が一括で入ります。周辺物件リストのJSONも、保存した査定データも、同じ場所で取り込めます。</p>
+        <div style="display:flex;gap:6px;align-items:flex-start;margin-bottom:8px">
+          <input type="text" id="promptTxt" data-nosave="1" readonly
+            value="この登記を、不動産査定ツール用のJSONにしてください。">
+          <button class="btn btn-sm" id="btnCopyPrompt" style="flex:none">コピー</button>
+        </div>
+        <textarea id="pasteBox" data-nosave="1" rows="5" placeholder='{"address":"...","lands":[...],"buildings":[...]}'></textarea>
+        <div style="display:flex;gap:8px;margin-top:8px;align-items:center">
+          <button class="btn" id="btnPaste">貼り付けた内容を取り込む</button>
+          <button class="btn" id="btnPasteFile">JSONファイルを選ぶ</button>
+          <span class="hint" style="margin:0">前置きの文章が混じっていても、JSONの部分だけ拾います。</span>
+        </div>
+        <div id="pasteStatus"></div>
+
+        <div class="sub">方法B　APIキーを入れて、このファイルから直接読み取る</div>
+        <div class="grid g2">
+          <label><span class="lb">Anthropic APIキー</span>
+            <input type="text" id="apiKey" data-nosave="1" placeholder="sk-ant-..."></label>
+          <p class="hint" style="margin:0;align-self:end">platform.claude.com の Settings → API keys で発行します。claude.ai の月額プランとは別の従量課金なので、先にクレジットカードの登録が必要です。<br><b>キーを入れても、ファイルを直接開いた状態（アドレスが file:／C:\ で始まる）では通信がブロックされることがあります。</b>その場合はフォルダで <code>python -m http.server</code> を実行し、http://localhost:8000/ から開いてください。</p>
+        </div>
+      </div>
+    </details>
+
+    <div class="sub">基本情報</div>
+    <div class="grid g4">
+      <label><span class="lb">依頼者名</span><input type="text" id="ownerName"></label>
+      <label><span class="lb">敬称</span><select id="ownerHon"><option>様</option><option>御中</option><option value="">（なし）</option></select></label>
+      <label><span class="lb">査定日</span><input type="date" id="reportDate"></label>
+      <label><span class="lb">査定時点 <em>比較表に印字</em></span><input type="text" id="asOf" placeholder="2026.9.7時点"></label>
+    </div>
+    <div class="grid g3" style="margin-top:12px">
+      <label style="grid-column:span 2"><span class="lb">所在地（住居表示）</span><input type="text" id="address"></label>
+      <label><span class="lb">物件種類</span><select id="propType">
+        <option>土地付き建物（戸建て）</option>
+        <option>土地付き建物（作業場・倉庫）</option>
+        <option>土地付き建物（アパート）</option>
+        <option>土地付き建物（店舗・事務所）</option>
+        <option>土地</option><option>建物</option>
+        <option value="__other">その他（手入力）</option>
+      </select></label>
+    </div>
+    <div class="grid g3" style="margin-top:12px" id="propTypeOtherBox" hidden>
+      <label style="grid-column:span 3"><span class="lb">物件種類（手入力）</span><input type="text" id="propTypeOther"></label>
+    </div>
+
+    <div class="linkrow" id="extLinks">
+      <a href="#" data-k="gmap" target="_blank" rel="noopener">Googleマップ</a>
+      <a href="https://www.rosenka.nta.go.jp/" target="_blank" rel="noopener">路線価図（国税庁）</a>
+      <a href="https://www.chikamap.jp/chikamap/Portal?mid=216" target="_blank" rel="noopener">全国地価マップ</a>
+      <a href="https://www.city.yonezawa.yamagata.jp/soshiki/6/1025/4/239.html" target="_blank" rel="noopener">米沢都市計画図</a>
+      <a href="https://experience.arcgis.com/experience/082e4bbf8e554170af8affc74d6a35d4" target="_blank" rel="noopener">山形の宝マップ</a>
+      <a href="https://www.reinfolib.mlit.go.jp/" target="_blank" rel="noopener">不動産情報ライブラリ</a>
+    </div>
+
+    <div class="sub">用途地域<span class="sp dim">選ぶと建蔽率・容積率が入ります</span></div>
+    <div class="grid g3">
+      <label><span class="lb">用途地域</span><select id="youto"></select></label>
+      <label><span class="lb">建蔽率 <em>％</em> <i>自動</i></span><input type="number" id="kenpei"></label>
+      <label><span class="lb">容積率 <em>％</em> <i>自動</i></span><input type="number" id="yoseki"></label>
+    </div>
+    <p class="hint" id="youtoNote"></p>
+  </div>
+</section>
+
+<!-- ========== 2. 土地査定 ========== -->
+<section class="panel">
+  <h2><span class="idx">2</span>土地査定</h2>
+  <div class="body">
+
+    <div class="sub">土地の表示（登記）<span class="sp"><button class="btn btn-sm" id="btnAddLand">＋ 地番を追加</button></span></div>
+    <div class="scrollx">
+      <table class="dt" id="landTbl">
+        <thead><tr><th style="width:34%">地番</th><th style="width:20%">地目</th><th style="width:22%">地積 ㎡</th><th style="width:16%">坪</th><th></th></tr></thead>
+        <tbody id="lands"></tbody>
+        <tfoot><tr class="head"><td><b>合計</b></td><td></td><td class="n"><b id="landSumM">—</b></td><td class="n"><b id="landSumT">—</b></td><td></td></tr></tfoot>
+      </table>
+    </div>
+
+    <div class="sub">単価の基礎<span class="sp dim">路線価は上のリンクから調べて入力</span></div>
+    <div class="grid g4">
+      <label><span class="lb">評価年度</span><select id="fyYear"></select></label>
+      <label><span class="lb">相続税路線価 <em>円/㎡</em></span><input type="number" id="rosenkaSozoku"></label>
+      <label><span class="lb">割戻し率</span><input type="number" id="ratioSozoku" step="0.01" value="0.8"></label>
+      <label><span class="lb">時価相当 <em>円/㎡</em> <i>自動</i></span><input type="text" class="auto" id="unitSozoku" disabled></label>
+    </div>
+    <div class="grid g4" style="margin-top:10px">
+      <label><span class="lb">採用方法</span><select id="unitMode">
+        <option value="avg">2つの平均</option><option value="sozoku">相続税路線価のみ</option>
+        <option value="kotei">固定資産税路線価のみ</option><option value="manual">手入力</option>
+      </select></label>
+      <label><span class="lb">固定資産税路線価 <em>円/㎡</em></span><input type="number" id="rosenkaKotei"></label>
+      <label><span class="lb">割戻し率</span><input type="number" id="ratioKotei" step="0.01" value="0.7"></label>
+      <label><span class="lb">時価相当 <em>円/㎡</em> <i>自動</i></span><input type="text" class="auto" id="unitKotei" disabled></label>
+    </div>
+    <div class="grid g3" style="margin-top:10px">
+      <label><span class="lb">調整率 <em>任意</em></span><input type="number" id="areaAdj" step="0.01" value="1.00"></label>
+      <label><span class="lb">基礎単価 <em>円/㎡</em> <i>自動</i></span><input type="number" class="auto" id="baseUnit" step="1"></label>
+      <label><span class="lb">査定額の丸め方</span><select id="roundMode">
+        <option value="tsubo">坪単価 × 坪数（小数第1位）　従来の報告書と同じ</option>
+        <option value="exact">㎡単価 × 地積　端数を丸めない</option>
+      </select></label>
+    </div>
+    <p class="hint">路線価は公示価格の約80％、固定資産税評価額は約70％の水準とされるため、割り戻して時価相当額にしています。</p>
+
+    <div class="sub">画地条件<span class="sp dim">わかる範囲でOK。空欄なら補正なし</span></div>
+    <div class="grid g4">
+      <label><span class="lb">地区区分</span><select id="chiku"></select></label>
+      <label><span class="lb">間口 <em>m</em></span><input type="number" id="maguchi" step="0.1"></label>
+      <label><span class="lb">奥行 <em>m</em></span><input type="number" id="okuyuki" step="0.1"></label>
+      <label><span class="lb">想定整形地 <em>㎡・任意</em></span><input type="number" id="seikeiArea" step="0.01"></label>
+    </div>
+    <div class="grid g4" style="margin-top:10px">
+      <label><span class="lb">側方路線</span><select id="sokuho">
+        <option value="none">なし</option><option value="kado">角地</option><option value="jun">準角地</option></select></label>
+      <label class="chk"><input type="checkbox" id="nihou"><span>二方路線</span></label>
+      <label><span class="lb">がけ地割合 <em>0〜0.9</em></span><input type="number" id="gakeRatio" step="0.01" value="0"></label>
+      <label><span class="lb">がけ地方位</span><select id="gakeDir">
+        <option value="south">南</option><option value="east">東</option>
+        <option value="west">西</option><option value="north">北</option></select></label>
+    </div>
+    <div class="grid g3" style="margin-top:10px">
+      <label class="chk"><input type="checkbox" id="useKibo" checked><span>地積規模の大きな宅地を判定</span></label>
+      <label><span class="lb">無道路地控除 <em>％・上限40</em></span><input type="number" id="mudoro" step="1" value="0"></label>
+      <label class="chk"><input type="checkbox" id="applyAdj" checked><span>画地補正を反映する</span></label>
+    </div>
+
+    <div class="formula" id="landFormula"></div>
+    <div class="calc" id="landCalc"></div>
+    <p class="hint warn" id="landWarn"></p>
+  </div>
+</section>
+
+<!-- ========== 3. 建物査定 ========== -->
+<section class="panel">
+  <h2><span class="idx">3</span>建物査定<span class="opt">単価・グレード・耐用年数は自動判定</span></h2>
+  <div class="body">
+    <div class="sub" style="margin-top:0;padding-top:0;border-top:0">評価の方針</div>
+    <div class="grid g4">
+      <label><span class="lb">残存価値を認める上限築年数 <em>年</em></span><input type="number" id="ageCap" value="30" step="1"></label>
+      <label><span class="lb">「価値なし」建物の金額表示</span><select id="noValDisp">
+        <option value="dash">「—」と表示して金額を付さない</option>
+        <option value="zero">0 円と表示する</option></select></label>
+      <p class="hint" style="margin:0;align-self:end;grid-column:span 2">法定耐用年数を超えた建物に価値を付けるかどうかの目安です。これを超える建物には、チェック欄で「価値なし」を提案します。空欄にすると提案しません。</p>
+    </div>
+
+    <div id="bldgs"></div>
+    <div style="display:flex;gap:8px;flex-wrap:wrap">
+      <button class="btn" id="btnAddBldg">＋ 主たる建物を追加</button>
+      <button class="btn" id="btnAddSub">＋ 附属建物（車庫・物置など）</button>
+    </div>
+
+    <div class="sub">駐車スペース</div>
+    <div class="grid g4">
+      <label><span class="lb">敷地内に停められる台数</span><select id="pkCnt">
+        <option value="2">2台以上（米沢の標準・減価なし）</option>
+        <option value="1">1台</option>
+        <option value="0">なし</option></select></label>
+      <label><span class="lb">不足1台あたりの減価 <em>円</em></span><input type="number" id="pkUnit" step="100000" value="1200000"></label>
+      <label><span class="lb">舗装</span><select id="pkPave">
+        <option value="done">舗装済み</option>
+        <option value="part">一部舗装</option>
+        <option value="none">未舗装</option></select></label>
+      <label><span class="lb">舗装工事費の見込み <em>円・任意</em></span><input type="number" id="pkPaveCost" step="10000"></label>
+    </div>
+    <div class="calc" id="pkCalc"></div>
+
+    <p class="hint">駐車場の補正率には公表された基準がありません。不足1台あたりの120万円は、近隣の月極5,000円を年額換算し利回り5％で割り戻した目安です。舗装工事費は見積り額を入れてください（空欄なら減価しません）。</p>
+  </div>
+</section>
+
+<!-- ========== 4. 諸費用・控除 ========== -->
+<section class="panel">
+  <h2><span class="idx">4</span>諸費用・控除<span class="opt">入力すると査定書に項目が増えます</span></h2>
+  <div class="body">
+
+    <div class="sub" style="margin-top:0;padding-top:0;border-top:0">解体処分費<span class="sp dim">「価値なし」にした建物が対象</span></div>
+    <div class="grid g4">
+      <label><span class="lb">計上のしかた</span><select id="demoMode">
+        <option value="no">計上しない</option>
+        <option value="auto">自動計算（対象延床 × 単価）</option>
+        <option value="manual">金額を手入力</option></select></label>
+      <label><span class="lb">対象の延床面積 <em>㎡</em> <i>自動</i></span><input type="text" class="auto" id="demoArea" disabled></label>
+      <label><span class="lb">解体単価 <em>円/㎡</em></span><input type="number" id="demoUnit" step="1000"></label>
+      <label><span class="lb">解体処分費 <em>円・自動で差引</em></span><input type="number" id="demoAmt" step="10000" min="0"></label>
+    </div>
+
+    <div class="sub">残置物処分費<span class="sp dim">家財・什器の撤去</span></div>
+    <div class="grid g4">
+      <label><span class="lb">計上のしかた</span><select id="zanMode">
+        <option value="no">計上しない</option>
+        <option value="auto">自動計算（延床 × 単価）</option>
+        <option value="manual">金額を手入力</option></select></label>
+      <label><span class="lb">対象の延床面積 <em>㎡</em> <i>自動</i></span><input type="text" class="auto" id="zanArea" disabled></label>
+      <label><span class="lb">残置物単価 <em>円/㎡</em></span><input type="number" id="zanUnit" step="500"></label>
+      <label><span class="lb">残置物処分費 <em>円・自動で差引</em></span><input type="number" id="zanAmt" step="10000" min="0"></label>
+    </div>
+    <p class="hint"><b>金額はプラスで入力してください。査定額からは自動で差し引かれます。</b>解体単価・残置物単価は御社の実績を入れてください。自動計算は「対象の延床面積 × 単価」です。現地を見て一式で見積もる場合は「金額を手入力」に切り替えてください。残置物の対象面積は、価値なしの建物があればその延床、無ければ建物全体の延床です。</p>
+
+    <div class="sub">仲介手数料<span class="sp dim">仲介で売却する場合</span></div>
+    <div class="grid g4">
+      <label><span class="lb">計上のしかた</span><select id="chuMode">
+        <option value="no">計上しない（買取など）</option>
+        <option value="auto">法定上限を自動計算</option>
+        <option value="manual">金額を手入力</option></select></label>
+      <label><span class="lb">仲介手数料 <em>円・税込</em></span><input type="number" id="chuAmt" step="10000"></label>
+      <label><span class="lb">査定書での扱い</span><select id="chuDeduct">
+        <option value="tedori">手取り概算として別記する</option>
+        <option value="hikaku">査定額から直接控除する</option></select></label>
+      <p class="hint" id="chuNote" style="margin:0;align-self:end"></p>
+    </div>
+
+    <div class="calc" id="costCalc"></div>
+    <div class="grid g2" style="margin-top:10px">
+      <label class="chk"><input type="checkbox" id="costPrint" checked><span>諸費用の内訳を査定書に印字する</span></label>
+      <label class="chk"><input type="checkbox" id="tedoriPrint" checked><span>手取り概算の表を査定書に載せる</span></label>
+    </div>
+    <p class="hint">内訳を出したくない場合はチェックを外してください。査定額には反映されますが、査定書には内訳が出ません。</p>
+  </div>
+</section>
+
+<!-- ========== 5. 周辺物件 ========== -->
+<section class="panel">
+  <h2><span class="idx">5</span>周辺物件リスト<span class="opt">査定報告書に比較表として印字されます</span></h2>
+  <div class="body">
+    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+      <button class="btn" id="btnSearch">近隣の売出し物件を検索</button>
+      <button class="btn btn-sm" id="btnAddCmp">＋ 手入力で1件追加</button>
+      <span class="hint" style="margin:0">SUUMO・アットホーム・LIFULL HOME'S・goo住宅・ハトマークサイトと地元業者サイトを横断して探します。1分ほどかかります。</span>
+    </div>
+    <div id="searchStatus"></div>
+    <div class="scrollx">
+      <table class="dt" id="cmpTbl">
+        <thead><tr><th style="width:26px">#</th><th style="width:12%">価格</th><th style="width:22%">所在地</th><th style="width:17%">築年数（築年月）</th>
+          <th style="width:13%">土地面積</th><th style="width:13%">建物面積</th><th style="width:9%">間取り</th><th>リフォーム状況</th><th></th></tr></thead>
+        <tbody id="cmps"></tbody>
+      </table>
+    </div>
+    <div class="calc" id="cmpCalc"></div>
+    <div class="linkrow">
+      <a href="#" data-p="suumo" target="_blank" rel="noopener">SUUMOで見る</a>
+      <a href="#" data-p="athome" target="_blank" rel="noopener">アットホーム</a>
+      <a href="#" data-p="homes" target="_blank" rel="noopener">LIFULL HOME'S</a>
+      <a href="#" data-p="goo" target="_blank" rel="noopener">goo住宅・不動産</a>
+      <a href="https://www.hatomarksite.com/search/zsell/06/06202/" target="_blank" rel="noopener">ハトマークサイト</a>
+    </div>
+  </div>
+</section>
+
+<!-- ========== 5. 査定書 ========== -->
+<section class="panel" id="reportPanel">
+  <h2><span class="idx">6</span>査定報告書</h2>
+  <div class="repbar noprint">
+    <button class="btn" id="btnBuild">プレビューを更新</button>
+    <button class="btn btn-go" id="btnPdf">PDFをダウンロード</button>
+    <button class="btn" id="btnHtml">HTMLで保存</button>
+    <button class="btn" id="btnPrint">印刷する</button>
+    <button class="btn" id="btnOpen">別タブで開く</button>
+    <label class="chk" style="padding-top:0"><input type="checkbox" id="showBreak" checked><span>算定根拠</span></label>
+    <label class="chk" style="padding-top:0"><input type="checkbox" id="showCmp" checked><span>周辺物件</span></label>
+    <span class="sp"></span>
+    <button class="btn" id="btnSaveWip">作業中として保存</button>
+    <button class="btn" id="btnSaveDone">完成として保存</button>
+    <input type="file" id="jsonIn" accept="application/json" hidden>
+  </div>
+  <div id="pdfGuide" class="status" style="display:none;margin:0;border-radius:0"></div>
+  <div class="repscroll"><div id="report"></div></div>
+  <div class="body noprint">
+    <div class="sub" style="margin-top:0;padding-top:0;border-top:0">差出人</div>
+    <div class="grid g3">
+      <label><span class="lb">会社名</span><input type="text" id="coName" value="株式会社網代建設"></label>
+      <label><span class="lb">所在地</span><input type="text" id="coAddr" value="米沢市大字竹井1657-1"></label>
+      <label><span class="lb">電話番号 <em>任意</em></span><input type="text" id="coTel"></label>
+    </div>
+    <label class="chk"><input type="checkbox" id="coLogo" checked><span>AJIROロゴを入れる（網代建設名義のとき）</span></label>
+    <div class="sub">備考</div>
+    <label><span class="lb">空欄なら入力内容から自動生成します</span>
+      <textarea id="notes" rows="8"></textarea></label>
+    <button class="btn btn-sm" id="btnGenNote" style="margin-top:8px">自動生成文を流し込む</button>
+  </div>
+</section>
+
+<!-- ========== 7. 案件アーカイブ ========== -->
+<section class="panel" id="archivePanel">
+  <h2><span class="idx">7</span>案件アーカイブ<span class="opt">作業の途中でも、完成後でも残せます</span></h2>
+  <div class="body">
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+      <button class="btn" id="btnSaveWip2">作業中として保存</button>
+      <button class="btn" id="btnSaveDone2">完成として保存</button>
+      <button class="btn" id="btnExport">ファイルに書き出す</button>
+      <button class="btn" id="btnImport">ファイルから読み込む</button>
+      <button class="btn" id="btnArcAll">一覧をまとめて書き出す</button>
+      <span class="sp" style="margin-left:auto"></span>
+      <button class="btn btn-sm btn-danger" id="btnClearAll">一覧を全部消す</button>
+    </div>
+    <div id="arcStatus"></div>
+    <div class="scrollx">
+      <table class="dt" id="arcTbl">
+        <thead><tr><th style="width:80px">状態</th><th>物件</th><th style="width:100px">依頼者</th>
+          <th style="width:110px">査定額</th><th style="width:120px">保存日時</th><th style="width:150px"></th></tr></thead>
+        <tbody id="arcs"></tbody>
+      </table>
+    </div>
+    <p class="hint" id="arcNote"></p>
+  </div>
+</section>
+
+</div>
+
+<aside class="rail">
+  <section class="panel">
+    <h2>査定サマリー</h2>
+    <div class="body">
+      <div class="sumrow"><span>土地</span><span class="v num" id="sTochi">—</span></div>
+      <div class="sumrow"><span>建物</span><span class="v num" id="sTatemono">—</span></div>
+      <div class="sumrow" style="display:none"><span>敷地条件</span><span class="v num" id="sPark">—</span></div>
+      <div class="sumrow" style="display:none"><span>解体処分費</span><span class="v num" id="sDemo">—</span></div>
+      <div class="sumrow" style="display:none"><span>残置物処分費</span><span class="v num" id="sZan">—</span></div>
+      <div class="sumbig"><span class="k">査定額 合計</span><span class="v num" id="sTotal">—</span></div>
+      <label class="chk" style="padding-top:14px"><input type="checkbox" id="doKaitori" checked><span>買取参考価格も出す</span></label>
+      <div class="sumrow" id="sChuRow" style="display:none;border-top:1px dotted var(--line);margin-top:6px;padding-top:6px"><span>仲介手数料</span><span class="v num" id="sChu">—</span></div>
+      <div class="sumrow" id="sTedoriRow" style="display:none"><span><b>手取り概算</b></span><span class="v num" id="sTedori">—</span></div>
+      <div id="kaitoriBox">
+        <div class="grid" style="margin-top:8px">
+          <label><span class="lb">買取掛け率 <em>％</em></span><input type="number" id="kaitoriRate" value="60" step="1"></label>
+        </div>
+        <div class="kaitori"><span class="k">買取参考価格</span><span class="v num" id="sKaitori">—</span></div>
+      </div>
+      <button class="btn-p" id="btnBuild2" style="margin-top:14px">査定書をつくる</button>
+    </div>
+  </section>
+  <section class="panel">
+    <h2>チェック</h2>
+    <div class="body" style="padding:12px 14px"><div id="checks" style="font-size:12.5px;line-height:1.75"></div></div>
+  </section>
+</aside>
+</div>
+
+<script>
+"use strict";
+/* =======================================================================
+   国税庁「土地及び土地の上に存する権利の評価についての調整率表」
+   （財産評価基本通達 付表1〜9 / 平成30年分以降用）
+   ======================================================================= */
+const CHIKU = [
+  ["futsujutaku","普通住宅地区"],["futsushogyo","普通商業・併用住宅地区"],
+  ["hanka","繁華街地区"],["kodo","高度商業地区"],["bill","ビル街地区"],
+  ["chushokojo","中小工場地区"],["daikojo","大工場地区"]
+];
+// 付表1 奥行価格補正率表 : [奥行距離の上限(未満), 率]
+const OKUYUKI = {
+  bill:[[4,.80],[6,.80],[8,.84],[10,.88],[12,.90],[14,.91],[16,.92],[20,.93],[24,.94],[28,.95],[32,.96],[36,.97],[40,.98],[44,.99],[48,1],[92,1],[96,.99],[100,.97],[1e9,.95]],
+  kodo:[[4,.90],[6,.92],[8,.94],[10,.96],[12,.98],[14,.99],[16,1],[48,1],[52,.99],[56,.98],[60,.97],[64,.96],[68,.95],[72,.94],[76,.93],[80,.92],[84,.90],[88,.88],[92,.86],[96,.84],[100,.82],[1e9,.80]],
+  hanka:[[4,.90],[6,.92],[8,.95],[10,.97],[12,.99],[14,1],[28,1],[32,.98],[36,.96],[40,.94],[44,.92],[48,.90],[52,.88],[56,.87],[60,.86],[64,.85],[68,.84],[72,.83],[76,.82],[80,.81],[1e9,.80]],
+  futsushogyo:[[4,.90],[6,.92],[8,.95],[10,.97],[12,.99],[14,1],[32,1],[36,.97],[40,.95],[44,.93],[48,.91],[52,.89],[56,.88],[60,.87],[64,.86],[68,.85],[72,.84],[76,.83],[80,.82],[84,.81],[1e9,.80]],
+  futsujutaku:[[4,.90],[6,.92],[8,.95],[10,.97],[24,1],[28,.97],[32,.95],[36,.93],[40,.92],[44,.91],[48,.90],[52,.89],[56,.88],[60,.87],[64,.86],[68,.85],[72,.84],[76,.83],[80,.83],[84,.82],[88,.82],[100,.81],[1e9,.80]],
+  chushokojo:[[4,.85],[6,.90],[8,.93],[10,.95],[12,.96],[14,.97],[16,.98],[20,.99],[24,1],[60,1],[64,.99],[68,.98],[72,.97],[76,.96],[80,.96],[84,.93],[88,.93],[1e9,.90]],
+  daikojo:[[4,.85],[6,.90],[8,.93],[10,.95],[12,.96],[14,.97],[16,.98],[20,.99],[1e9,1]]
+};
+// 付表2 側方路線影響加算率表 [角地, 準角地]
+const SOKUHO = {bill:[.07,.03],kodo:[.10,.05],hanka:[.10,.05],futsushogyo:[.08,.04],
+  futsujutaku:[.03,.02],chushokojo:[.03,.02],daikojo:[.02,.01]};
+// 付表3 二方路線影響加算率表
+const NIHOU = {bill:.03,kodo:.07,hanka:.07,futsushogyo:.05,futsujutaku:.02,chushokojo:.02,daikojo:.02};
+// 付表4 地積区分表 [A/Bの境, B/Cの境]（㎡）
+const CHISEKI_KUBUN = {kodo:[1000,1500],hanka:[450,700],futsushogyo:[650,1000],
+  futsujutaku:[500,750],chushokojo:[3500,5000]};
+// 付表5 不整形地補正率表 : かげ地割合 → [A,B,C]
+const FUSEIKEI = {
+  g1:[[.10,[.99,.99,1.00]],[.15,[.98,.99,.99]],[.20,[.97,.98,.99]],[.25,[.96,.98,.99]],
+      [.30,[.94,.97,.98]],[.35,[.92,.95,.98]],[.40,[.90,.93,.97]],[.45,[.87,.91,.95]],
+      [.50,[.84,.89,.93]],[.55,[.80,.87,.90]],[.60,[.76,.84,.86]],[.65,[.70,.75,.80]]],
+  g2:[[.10,[.98,.99,.99]],[.15,[.96,.98,.99]],[.20,[.94,.97,.98]],[.25,[.92,.95,.97]],
+      [.30,[.90,.93,.96]],[.35,[.88,.91,.94]],[.40,[.85,.88,.92]],[.45,[.82,.85,.90]],
+      [.50,[.79,.82,.87]],[.55,[.75,.78,.83]],[.60,[.70,.73,.78]],[.65,[.60,.65,.70]]]
+};
+// 付表6 間口狭小補正率表
+const MAGUCHI_T = {
+  bill:[[4,null],[6,null],[8,null],[10,.95],[16,.97],[22,.98],[28,.99],[1e9,1]],
+  kodo:[[4,.85],[6,.94],[8,.97],[1e9,1]],
+  hanka:[[4,.90],[6,1],[1e9,1]],
+  futsushogyo:[[4,.90],[6,.97],[1e9,1]],
+  futsujutaku:[[4,.90],[6,.94],[8,.97],[1e9,1]],
+  chushokojo:[[4,.80],[6,.85],[8,.90],[10,.95],[1e9,1]],
+  daikojo:[[4,.80],[6,.85],[8,.90],[10,.95],[16,.97],[22,.98],[28,.99],[1e9,1]]
+};
+// 付表7 奥行長大補正率表 : 奥行÷間口
+const CHODAI = {
+  bill:[[1e9,1]],
+  kodo:[[3,1],[4,.99],[5,.98],[6,.96],[7,.94],[8,.92],[1e9,.90]],
+  hanka:[[3,1],[4,.99],[5,.98],[6,.96],[7,.94],[8,.92],[1e9,.90]],
+  futsushogyo:[[3,1],[4,.99],[5,.98],[6,.96],[7,.94],[8,.92],[1e9,.90]],
+  futsujutaku:[[3,.98],[4,.96],[5,.94],[6,.92],[1e9,.90]],
+  chushokojo:[[3,1],[4,.99],[5,.98],[6,.96],[7,.94],[8,.92],[1e9,.90]],
+  daikojo:[[1e9,1]]
+};
+// 付表8 がけ地補正率表 : がけ地割合 → {南,東,西,北}
+const GAKE = [[.10,[.96,.95,.94,.93]],[.20,[.92,.91,.90,.88]],[.30,[.88,.87,.86,.83]],
+  [.40,[.85,.84,.82,.78]],[.50,[.82,.81,.78,.73]],[.60,[.79,.77,.74,.68]],
+  [.70,[.76,.74,.70,.63]],[.80,[.73,.70,.66,.58]],[.90,[.70,.65,.60,.53]]];
+const GAKE_DIR = {south:0,east:1,west:2,north:3};
+// 規模格差補正率（三大都市圏以外）: [地積下限, B, C]
+const KIBO_OTHER = [[5000,.80,500],[3000,.85,250],[1000,.90,100]];
+
+/* ---- 米沢市 用途地域別の規制値（米沢市 建築住宅課 公表値） ---- */
+const YOUTO = {
+  "第一種低層住居専用地域":{k:50,y:60,note:"壁面後退1.5m／高さ10m／敷地面積の最低限度200㎡"},
+  "第二種低層住居専用地域":{k:50,y:100,note:"壁面後退1.0m／高さ12m／敷地面積の最低限度200㎡"},
+  "第一種中高層住居専用地域":{k:60,y:200,note:""},
+  "第二種中高層住居専用地域":{k:60,y:200,note:""},
+  "第一種住居地域":{k:60,y:200,note:""},
+  "第二種住居地域":{k:60,y:200,note:""},
+  "準住居地域":{k:60,y:200,note:""},
+  "近隣商業地域":{k:80,y:300,note:""},
+  "商業地域":{k:80,y:400,note:"指定容積率400％のため「地積規模の大きな宅地」の適用対象外"},
+  "準工業地域（大規模集客施設制限地区）":{k:60,y:200,note:""},
+  "工業地域":{k:60,y:200,note:""},
+  "工業専用地域":{k:60,y:200,note:"「地積規模の大きな宅地」の適用対象外"},
+  "用途無指定":{k:70,y:200,note:"米沢市の都市計画区域は全域が区域区分非設定（非線引き）"}
+};
+
+/* ---- 建物：構造別の法定耐用年数（住宅用） ---- */
+const KOZO = [
+  ["木造・合成樹脂造",22,"木造","moku"],
+  ["木骨モルタル造",20,"木骨モルタル造","moku"],
+  ["軽量鉄骨造（骨格材3mm以下）",19,"軽量鉄骨造","s"],
+  ["軽量鉄骨造（3mm超4mm以下）",27,"軽量鉄骨造","s"],
+  ["重量鉄骨造（4mm超）",34,"鉄骨造","s"],
+  ["れんが造・石造・ブロック造",38,"ブロック造","rc"],
+  ["鉄筋コンクリート造・鉄骨鉄筋コンクリート造",47,"鉄筋コンクリート造","rc"]
+];
+
+
+/* ---- 国税庁「建物の標準的な建築価額表」千円/㎡（建築着工統計ベース・全国）
+       昭和34年(1959)〜令和5年(2023)。[木造・木骨モルタル, SRC, RC, S] ---- */
+const HYOJUN_FROM = 1959;
+const HYOJUN = {
+ moku:[8.7,9.1,10.3,12.2,13.5,15.1,16.8,18.2,19.9,22.2,24.9,28.0,31.2,34.2,45.3,61.8,67.7,70.3,74.1,77.9,82.5,92.5,98.3,101.3,102.2,102.8,104.2,106.2,110.0,116.5,123.1,131.7,137.6,143.5,150.9,156.6,158.3,161.0,160.5,158.6,159.3,159.0,157.2,153.6,152.7,152.1,151.9,152.9,153.6,156.0,156.6,156.5,156.8,157.6,159.9,163.0,165.4,165.9,166.7,168.5,170.1,172.0,172.2,176.2,204.1],
+ src:[34.1,30.9,39.5,40.9,41.3,49.1,45.0,42.4,43.6,48.6,50.9,54.3,61.2,61.6,77.6,113.0,126.4,114.6,121.8,122.4,128.9,149.4,161.8,170.9,168.0,161.2,172.2,181.9,191.8,203.6,237.3,286.7,329.8,333.7,300.3,262.9,228.8,229.7,223.0,225.6,220.9,204.3,186.1,195.2,187.3,190.1,185.7,170.5,182.5,229.1,265.2,226.4,238.4,223.3,258.5,276.2,262.2,308.3,350.4,304.2,363.3,279.2,338.4,434.4,366.7],
+ rc:[20.2,21.4,23.9,27.2,27.1,29.5,30.3,30.6,33.7,36.2,39.0,42.9,47.2,50.2,64.3,90.1,97.4,98.2,102.0,105.9,114.3,129.7,138.7,143.0,143.8,141.7,144.5,149.5,156.6,175.0,193.3,222.9,246.8,245.6,227.5,212.8,199.0,198.0,201.0,203.8,197.9,182.6,177.8,180.5,179.5,176.1,171.5,178.6,185.8,206.1,219.0,205.9,197.0,193.9,203.8,228.0,240.2,254.2,265.5,263.1,285.6,276.9,288.2,277.5,314.3],
+ s:[13.7,13.4,14.9,15.9,14.6,16.6,17.9,17.8,19.6,21.7,23.6,26.1,30.3,32.4,42.2,55.7,60.5,62.1,65.3,70.1,75.4,84.1,91.7,93.9,94.3,95.3,96.9,102.6,108.4,117.3,128.4,147.4,158.7,162.4,159.2,148.4,143.2,143.6,141.0,138.7,139.4,132.3,136.4,135.0,131.4,130.6,132.8,133.7,135.6,158.3,169.5,163.0,158.9,155.6,164.3,176.4,197.3,204.1,214.6,214.1,228.8,230.2,227.3,241.5,281.1]
+};
+
+/* ---- 現在の再調達原価の目安（円/㎡）
+       建築着工統計2025年・住宅の工事費予定額÷延床面積 ---- */
+const RCN_TOKEI = {
+  moku:{zenkoku:225700, yamagata:240500},
+  s:   {zenkoku:333700, yamagata:168700},
+  rc:  {zenkoku:373900, yamagata:373900},
+  src: {zenkoku:412300, yamagata:412300}
+};
+
+/* ---- 国交省「中古戸建て住宅に係る建物評価の改善に向けた指針」附属データ集
+       標準モデル住宅の部位別再調達原価（東京地区・円/㎡・税抜）と構成比 ---- */
+const SHIYO_TOTAL = {A:221300, B:178200, C:149500};
+const SHIYO_LABEL = {A:"A仕様（上位：瓦/タイル外壁/高断熱建具/高級システムキッチン）",
+                     B:"B仕様（標準：化粧スレート/窯業系サイディング/断熱サッシ）",
+                     C:"C仕様（普及：鋼板葺/モルタル・金属外装/普及品設備）"};
+/* [キー, 表示名, 構成比%[A,B,C], 交換周期の初期値(年), 交換周期の公表レンジ] */
+const BUI = [
+  ["kiso","基礎・躯体",       [34.4,39.8,45.9], null, "劣化対策の水準で設定"],
+  ["yane","屋根材",           [ 5.2, 5.2, 5.3],  30, "30〜60年"],
+  ["kabe","外壁材",           [ 9.2, 8.4, 4.8],  30, "30〜40年"],
+  ["gaibu","外部建具",        [12.7,10.8, 9.3],  30, "30〜40年"],
+  ["naibu","内部建具",        [ 3.2, 3.0, 3.3],  30, "約30年"],
+  ["naiso","内装仕上げ",      [12.6,11.9,12.5],  25, "20〜50年"],
+  ["dai","台所",              [ 4.1, 2.9, 1.2],  20, "15〜30年"],
+  ["yoku","浴室・洗面・トイレ",[ 8.8, 6.8, 5.6],  20, "10〜40年"],
+  ["kyu","給排水・給湯設備",   [ 5.7, 6.6, 7.2],  15, "10〜30年"],
+  ["den","照明器具・電気設備", [ 4.2, 4.5, 4.9],  20, "公表値なし"]
+];
+/* 基礎・躯体の耐用年数（国交省指針）: [キー, 表示, 下限, 上限, 初期値] */
+const KUTAI = [
+  ["t2","劣化対策等級2に相当する措置",50,60,55],
+  ["t3","劣化対策等級3に相当する措置",75,90,80],
+  ["chouki","長期優良住宅の認定",100,100,100]
+];
+/* 指針 図5：現地確認の結果と評価上の経過年数の扱い
+   [キー, 表示, 築年数に対する係数(nullは躯体の価値ゼロ)] */
+const INSPECT = [
+  ["none","現地確認なし（築年数をそのまま使う）",1.00],
+  ["i1","① 劣化事象なし。発生要因となる環境も見込めない",0.50],
+  ["i2","② 劣化事象なし。ただし発生が近い事情あり（維持管理なし・水漏れ等）",1.00],
+  ["i3","③ 劣化事象あり。ただし最低限の安全性は保たれている","cap"],
+  ["i3d","③′ 劣化事象あり。発生部位をすべて補修済み",0.75],
+  ["i4","④ 最低限の安全性が保たれていない",null]
+];
+
+/* ---- 用途別の法定耐用年数（別表第一・建物）。KOZOの並び順に対応 ---- */
+const YOUTO_TAIYO = [
+  ["jutaku","店舗用・住宅用",              [22,20,19,27,34,38,47]],
+  ["jimusho","事務所用",                   [24,22,22,30,38,41,50]],
+  ["kojo","工場（作業場を含む）用・倉庫用", [15,14,17,24,31,34,38]]
+];
+function legalYears(kIdx, use){
+  const r = YOUTO_TAIYO.find(x=>x[0]===use) || YOUTO_TAIYO[0];
+  return r[2][kIdx];
+}
+/* 登記の「種類」から用途を推定（倉庫・作業場が入っていれば短い方を採る） */
+function guessUse(shurui){
+  const t = String(shurui||"");
+  if(/倉庫|作業場|工場|納屋|車庫|格納庫/.test(t)) return "kojo";
+  if(/事務所|美術館|営業所/.test(t))              return "jimusho";
+  return "jutaku";
+}
+
+/* ---- 「評価額を付さない」ときの事由（査定書の文面に使う） ---- */
+const HASON = [
+  ["yuki","雪害による軒先・小屋組の損傷"],
+  ["ame","屋根の破損による雨漏り"],
+  ["gai","外壁・建具の著しい劣化"],
+  ["kata","構造躯体の傾き・沈下"],
+  ["aki","長期間の空家による傷みの進行"],
+  ["setsubi","給排水・電気設備の使用不能"]
+];
+
+/* ---- 宅地建物取引業者が受領できる報酬の上限（昭和45年建設省告示第1552号）
+       ・200万円以下        5％
+       ・200万円超400万円以下 4％＋2万円
+       ・400万円超          3％＋6万円
+       ・低廉な空家等（税抜800万円以下）は令和6年7月1日改正により30万円まで
+       いずれも消費税10％を加算した額が上限 ---- */
+function chukaiMax(price){
+  if(!price) return {amt:0, basis:""};
+  const tax=1.1;
+  if(price<=8000000){
+    const gen = price<=2000000 ? price*0.05
+              : price<=4000000 ? price*0.04+20000
+                               : price*0.03+60000;
+    const toku=300000;
+    return toku>=gen
+      ? {amt:Math.floor(toku*tax), basis:"低廉な空家等の特例（800万円以下）30万円＋消費税"}
+      : {amt:Math.floor(gen*tax), basis:"原則の速算式"};
+  }
+  return {amt:Math.floor((price*0.03+60000)*tax), basis:"原則の速算式（3％＋6万円）＋消費税"};
+}
+
+const TSUBO = 3.305785;
+
+/* ---- 附属建物：主たる建物の単価に対する掛け率（自社実績に置換可） ---- */
+const FUZOKU = [
+  ["車庫",0.40],["物置",0.30],["納屋",0.30],["倉庫",0.35],["作業場",0.45],["その他",0.35]
+];
+
+/* ---- リフォーム状況 → 更新される部位 ---- */
+const RENO = [
+  ["none","未実施",[]],
+  ["mizu","水回りのみ更新",["dai","yoku","kyu"]],
+  ["nai","内装のみ更新",["naiso","naibu"]],
+  ["naigai","内外装を更新",["yane","kabe","gaibu","naiso","naibu"]],
+  ["full","フルリノベーション",["yane","kabe","gaibu","naibu","naiso","dai","yoku","kyu","den"]]
+];
+
+/* =======================================================================
+   helpers
+   ======================================================================= */
+const $ = s => document.querySelector(s);
+const $$ = s => Array.from(document.querySelectorAll(s));
+const num = el => { const v = parseFloat((typeof el === "string" ? $(el) : el)?.value); return isFinite(v) ? v : 0; };
+const yen = n => (isFinite(n) && n !== 0) ? Math.round(n).toLocaleString("ja-JP") + "円" : "—";
+const yenR = n => Math.round(n).toLocaleString("ja-JP");
+const man = n => (isFinite(n) && n) ? Math.round(n/10000).toLocaleString("ja-JP") + "万円" : "";
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const TSUBO_TXT = (m) => m ? m.toFixed(2) + "㎡\n(" + (m/TSUBO).toFixed(2) + "坪)" : "";
+
+function lookup(table, x){ for(const [lim,v] of table){ if(x < lim) return v; } return table[table.length-1][1]; }
+function lookupDown(table, x){ let hit = null; for(const [lim,v] of table){ if(x >= lim) hit = v; } return hit; }
+function wareki(y, m){
+  if(!y) return "";
+  const d = new Date(y, (m||1)-1, 1);
+  if(d >= new Date(2019,4,1)) return "令和" + (y-2018===1?"元":y-2018) + "年";
+  if(d >= new Date(1989,0,8)) return "平成" + (y-1988===1?"元":y-1988) + "年";
+  if(d >= new Date(1926,11,25)) return "昭和" + (y-1925===1?"元":y-1925) + "年";
+  if(d >= new Date(1912,6,30)) return "大正" + (y-1911===1?"元":y-1911) + "年";
+  return "明治" + (y-1867) + "年";
+}
+function reiwaFY(y){ return y >= 2019 ? "令和" + (y-2018===1?"元":y-2018) + "年" : "平成" + (y-1988) + "年"; }
+function nowYear(){ return new Date($("#reportDate").value || Date.now()).getFullYear(); }
+
+/* =======================================================================
+   自動判定
+   ======================================================================= */
+/* 仕様グレード：登記の構造表記にある屋根材と、新築年から判定
+   （国交省指針の仕様区分表：屋根 A=粘土瓦 / B=化粧スレート / C=鋼板） */
+function autoGrade(kozoTxt, year){
+  const t = String(kozoTxt || "");
+  let sc = 0; const why = [];
+  if(/瓦葺|瓦ぶき|かわらぶき/.test(t) && !/セメント瓦/.test(t)){ sc += 2; why.push("屋根が瓦葺（指針のA仕様に相当）"); }
+  else if(/スレート|カラーベスト|コロニアル|セメント瓦/.test(t)){ sc += 1; why.push("屋根がスレート系（B仕様に相当）"); }
+  else if(/亜鉛|鋼板|トタン|金属|ガルバ/.test(t)){ sc += 0; why.push("屋根が金属板（C仕様に相当）"); }
+  else if(/陸屋根|コンクリート/.test(t)){ sc += 1; why.push("陸屋根"); }
+  else why.push("屋根材が構造表記から読めず");
+
+  if(year >= 2010){ sc += 2; why.push("2010年以降の新しい仕様"); }
+  else if(year >= 2000){ sc += 1; why.push("品確法（2000年）以降"); }
+  else if(year && year < 1981){ sc -= 1; why.push("1981年5月以前の旧耐震"); }
+  else if(year) why.push("1981〜1999年");
+
+  const g = sc >= 3 ? "A" : (sc >= 1 ? "B" : "C");
+  return {grade:g, why:why.join("／") + " → " + g + "仕様"};
+}
+
+/* 基礎・躯体の耐用年数：指針の等級2相当（50〜60年）の範囲内で新築年により調整 */
+function autoKutai(year){
+  if(!year)          return {lv:"t2", y:55, why:"新築年が未入力のため、等級2相当の中位55年"};
+  if(year >= 2000)   return {lv:"t2", y:60, why:"品確法（2000年）以降のため、等級2相当の上限側60年"};
+  if(year >= 1981)   return {lv:"t2", y:55, why:"新耐震（1981年6月）以降のため、等級2相当の中位55年"};
+  return                    {lv:"t2", y:50, why:"1981年5月以前のため、等級2相当の下限側50年"};
+}
+
+/* 構造の登記表記から構造区分を推定 */
+function guessKozo(t){
+  t = String(t || "");
+  if(/鉄骨鉄筋コンクリート|ＳＲＣ|SRC/.test(t)) return 6;
+  if(/鉄筋コンクリート|ＲＣ|RC/.test(t))        return 6;
+  if(/れんが|煉瓦|石造|ブロック/.test(t))        return 5;
+  if(/重量鉄骨/.test(t))                        return 4;
+  if(/軽量鉄骨/.test(t))                        return 2;
+  if(/鉄骨/.test(t))                            return 4;
+  if(/木骨モルタル/.test(t))                    return 1;
+  return 0;
+}
+
+/* =======================================================================
+   土地
+   ======================================================================= */
+function landRowHTML(){
+  const opts = ["宅地","田","畑","山林","原野","雑種地","公衆用道路"].map(o=>`<option>${o}</option>`).join("");
+  return `<tr data-land>
+    <td><input type="text" data-l="chiban"></td>
+    <td><select data-l="chimoku">${opts}</select></td>
+    <td><input type="number" data-l="area" step="0.01"></td>
+    <td class="n dim" data-l-out></td>
+    <td><button class="btn btn-sm btn-danger" data-ldel>×</button></td></tr>`;
+}
+function addLand(v){
+  const t=document.createElement("tbody"); t.innerHTML=landRowHTML();
+  const tr=t.firstElementChild; $("#lands").appendChild(tr);
+  if(v){ Object.entries(v).forEach(([k,x])=>{ const i=tr.querySelector(`[data-l="${k}"]`); if(i) i.value=x; }); }
+  return tr;
+}
+function landRows(){
+  return $$("#lands [data-land]").map(tr=>{
+    const g=k=>tr.querySelector(`[data-l="${k}"]`);
+    const a=parseFloat(g("area").value)||0;
+    tr.querySelector("[data-l-out]").textContent = a ? (a/TSUBO).toFixed(2)+" 坪" : "";
+    return {chiban:g("chiban").value, chimoku:g("chimoku").value, area:a};
+  });
+}
+
+function calcLand(){
+  const chiku = $("#chiku").value;
+  const rows = landRows();
+  const area = rows.reduce((s,r)=>s+r.area,0);
+  $("#landSumM").textContent = area ? area.toFixed(2)+" ㎡" : "—";
+  $("#landSumT").textContent = area ? (area/TSUBO).toFixed(2)+" 坪" : "—";
+  const mag = num("#maguchi"), oku = num("#okuyuki");
+
+  const rS=num("#rosenkaSozoku"), ratS=num("#ratioSozoku")||.8;
+  const rK=num("#rosenkaKotei"),  ratK=num("#ratioKotei")||.7;
+  const uS = rS? rS/ratS : 0, uK = rK? rK/ratK : 0;
+  $("#unitSozoku").value = uS ? Math.round(uS).toLocaleString("ja-JP") : "";
+  $("#unitKotei").value  = uK ? Math.round(uK).toLocaleString("ja-JP") : "";
+
+  const mode=$("#unitMode").value;
+  let base = mode==="avg" ? ((uS&&uK)?(uS+uK)/2:(uS||uK)) : mode==="sozoku" ? uS : mode==="kotei" ? uK : num("#baseUnit");
+  const adj = num("#areaAdj")||1;
+  if(mode!=="manual") base *= adj;
+  const bEl=$("#baseUnit");
+  if(mode!=="manual"){ bEl.value = base?Math.round(base):""; bEl.disabled=true; bEl.classList.add("auto"); }
+  else { bEl.disabled=false; bEl.classList.remove("auto"); }
+
+  const on=$("#applyAdj").checked; const steps=[]; let rate=1;
+  const fOku = oku ? lookup(OKUYUKI[chiku],oku) : 1;
+  if(oku){ rate*=fOku; steps.push(["奥行価格補正",fOku,`奥行${oku}m`]); }
+  const fMag = mag ? (lookup(MAGUCHI_T[chiku],mag) ?? 1) : 1;
+  const ratio = (mag&&oku) ? oku/mag : 0;
+  const fCho = ratio>=2 ? lookup(CHODAI[chiku],ratio) : 1;
+
+  const seikei=num("#seikeiArea"); let fFusei=1, kage=0;
+  if(seikei>0 && area>0 && seikei>area){
+    kage=(seikei-area)/seikei;
+    const grp = chiku==="futsujutaku" ? "g2":"g1";
+    const kb = CHISEKI_KUBUN[chiku]; let idx=0;
+    if(kb) idx = area<kb[0]?0:(area<kb[1]?1:2);
+    const row=lookupDown(FUSEIKEI[grp],kage); if(row) fFusei=row[idx];
+  }
+  if(fFusei<1){
+    const a=Math.max(fFusei*fMag,0.60), b=fMag*fCho;
+    const r = a<=b?a:b;
+    steps.push(["形状補正",r,(a<=b?`不整形地${fFusei.toFixed(2)}×間口狭小${fMag.toFixed(2)}`:`間口狭小${fMag.toFixed(2)}×奥行長大${fCho.toFixed(2)}`)+`（かげ地${(kage*100).toFixed(1)}％）`]);
+    rate*=r;
+  } else {
+    if(fMag<1){ rate*=fMag; steps.push(["間口狭小補正",fMag,`間口${mag}m`]); }
+    if(fCho<1){ rate*=fCho; steps.push(["奥行長大補正",fCho,`奥行/間口=${ratio.toFixed(2)}`]); }
+  }
+  const gr=num("#gakeRatio");
+  if(gr>=.10){ const fG=lookupDown(GAKE,Math.min(gr,.90))[GAKE_DIR[$("#gakeDir").value]];
+    rate*=fG; steps.push(["がけ地補正",fG,`がけ地割合${(gr*100).toFixed(0)}％`]); }
+
+  let kiboNG="";
+  const youto=$("#youto").value, yoseki=num("#yoseki");
+  if($("#useKibo").checked && area>=1000){
+    const ok2 = (chiku==="futsujutaku"||chiku==="futsushogyo");
+    if(!ok2) kiboNG="地区区分が普通住宅／普通商業・併用住宅以外のため適用外";
+    else if(youto==="工業専用地域") kiboNG="工業専用地域のため適用外";
+    else if(yoseki>=400) kiboNG="指定容積率400％以上のため適用外";
+    else { const r=KIBO_OTHER.find(x=>area>=x[0]);
+      const f=Math.floor(((area*r[1]+r[2])/area)*0.8*100)/100;
+      rate*=f; steps.push(["規模格差補正",f,`地積${area.toFixed(2)}㎡ B=${r[1]} C=${r[2]}`]); }
+  }
+
+  let addRate=0; const adds=[];
+  const sk=$("#sokuho").value;
+  if(sk!=="none"){ const a=SOKUHO[chiku][sk==="kado"?0:1]; addRate+=a;
+    adds.push([sk==="kado"?"側方路線影響加算（角地）":"側方路線影響加算（準角地）",a]); }
+  if($("#nihou").checked){ const a=NIHOU[chiku]; addRate+=a; adds.push(["二方路線影響加算",a]); }
+  const mudoro=Math.min(num("#mudoro"),40)/100;
+
+  const finalRate = on ? rate*(1+addRate)*(1-mudoro) : 1;
+  const unit = base*finalRate;
+  const tsubo = area/TSUBO;
+  const rMode=$("#roundMode").value;
+  const tsuboUsed = rMode==="tsubo" ? Math.round(tsubo*10)/10 : tsubo;
+  const unitTsubo = rMode==="tsubo" ? Math.round(unit*TSUBO) : unit*TSUBO;
+  const total = rMode==="tsubo" ? unitTsubo*tsuboUsed : unit*area;
+
+  $("#landFormula").innerHTML = !on
+    ? `<span class="dim">画地補正は反映していません。</span>`
+    : (steps.length||adds.length)
+      ? steps.map(([n,v,d])=>`<div class="f">${esc(n)} <b>${v.toFixed(2)}</b> <s>${esc(d)}</s></div>`).join("")
+        + adds.map(([n,v])=>`<div class="f">${esc(n)} <b>+${v.toFixed(2)}</b></div>`).join("")
+        + (mudoro?`<div class="f">無道路地控除 <b>−${(mudoro*100).toFixed(0)}％</b></div>`:"")
+        + `<div class="f" style="border-top:1px solid rgba(138,90,27,.3);margin-top:5px;padding-top:5px">合計補正率 <b>${finalRate.toFixed(4)}</b> <s>（補正なしと比べ ${((finalRate-1)*100).toFixed(1)}％）</s></div>`
+      : `<span class="dim">間口・奥行を入れると補正率が計算されます。</span>`;
+
+  $("#landCalc").innerHTML = `
+    <div class="row"><span>基礎単価</span><b class="num">${yen(base)} /㎡</b></div>
+    <div class="row"><span>補正後単価</span><b class="num">${yen(unit)} /㎡　（${yen(unitTsubo)} /坪）</b></div>
+    <div class="row"><span>地積${rows.length>1?"（"+rows.length+"筆合計）":""}</span><b class="num">${area?area.toFixed(2)+"㎡（"+tsubo.toFixed(2)+"坪）":"—"}</b></div>
+    <div class="row total"><span>土地査定額</span><b class="num">${yen(total)}</b></div>`;
+
+  const w=[];
+  if(kiboNG) w.push("地積規模の大きな宅地："+kiboNG);
+  if(mag&&oku&&!seikei) w.push("想定整形地の地積を入れると不整形地補正も判定します。");
+  $("#landWarn").textContent = w.join("　/　");
+  return {base,unit,unitTsubo,rate:finalRate,total,area,tsubo,tsuboUsed,steps,adds,rows};
+}
+
+/* =======================================================================
+   建物
+   ======================================================================= */
+let bldgSeq = 0;
+
+function mainBldgHTML(i){
+  const kozoOpts   = KOZO.map((k,j)=>`<option value="${j}">${k[0]}（${k[1]}年）</option>`).join("");
+  const kutaiOpts  = KUTAI.map(k=>`<option value="${k[0]}">${k[1]}　${k[2]===k[3]?k[2]+"年程度":k[2]+"〜"+k[3]+"年"}</option>`).join("");
+  const inspectOpts= INSPECT.map(k=>`<option value="${k[0]}">${k[1]}</option>`).join("");
+  const useOpts    = YOUTO_TAIYO.map(u=>`<option value="${u[0]}">${u[1]}</option>`).join("");
+  const renoOpts   = RENO.map(r=>`<option value="${r[0]}">${r[1]}</option>`).join("");
+  const buiRows = BUI.filter(b=>b[3]).map(b=>`<tr>
+      <td>${b[1]}</td><td class="n" data-share="${b[0]}"></td>
+      <td><input type="number" data-f="cyc_${b[0]}" value="${b[3]}" step="1"></td>
+      <td><input type="number" data-f="upd_${b[0]}" placeholder="未更新" step="1" min="0"></td>
+      <td class="n" data-rem="${b[0]}"></td><td class="dim">${b[4]}</td></tr>`).join("");
+  return `<div class="card" data-b="${i}" data-kind="main">
+    <header><span>主たる建物</span><span class="sp"></span>
+      <button class="btn btn-sm btn-danger" data-del>削除</button></header>
+    <div class="in">
+      <div class="grid g4">
+        <label><span class="lb">家屋番号</span><input type="text" data-f="kaoku"></label>
+        <label><span class="lb">種類</span><input type="text" data-f="shurui" value="居宅"></label>
+        <label style="grid-column:span 2"><span class="lb">構造（登記の表記）</span><input type="text" data-f="kozoTxt"></label>
+      </div>
+      <div class="grid g3" style="margin-top:10px">
+        <label><span class="lb">構造区分 <i>自動</i></span><select data-f="kozo">${kozoOpts}</select></label>
+        <label><span class="lb">用途（法定耐用年数）<i>自動</i></span><select data-f="use">${useOpts}</select></label>
+        <label><span class="lb">延床面積 <em>㎡</em></span><input type="number" data-f="area" step="0.01"></label>
+      </div>
+      <div class="grid g3" style="margin-top:10px">
+        <label><span class="lb">新築年月 <em>西暦・月</em></span>
+          <span style="display:flex;gap:4px"><input type="number" data-f="y" step="1"><input type="number" data-f="m" step="1" min="1" max="12" style="width:60px"></span></label>
+        <label><span class="lb">間取り <em>住宅のみ</em></span><input type="text" data-f="madori"></label>
+        <label><span class="lb">法定耐用年数 <em>年</em> <i>自動</i></span><input type="text" class="auto" data-f="legalOut" disabled></label>
+      </div>
+
+      <div class="sub">建物の評価<span class="sp dim">現状のまま使えない建物は「価値なし」に</span></div>
+      <div class="grid g2">
+        <label><span class="lb">評価の扱い</span><select data-f="valuation">
+          <option value="normal">通常評価（残存価値を計算する）</option>
+          <option value="none">価値なし（評価額を付さない）</option></select></label>
+        <label><span class="lb">補足 <em>任意・査定書に印字</em></span><input type="text" data-f="rsnOther"></label>
+      </div>
+      <div data-only="none" style="display:none">
+        <div class="grid g2" style="margin-top:10px">
+          <label><span class="lb">評価額を付さない理由</span><select data-f="rsnType">
+            <option value="nen">法定耐用年数の大幅な超過（従来の書き方）</option>
+            <option value="son">劣化・損傷により使用が困難</option>
+            <option value="both">その両方</option></select></label>
+        </div>
+        <p class="hint" data-only="son" style="margin:8px 0 4px">該当する状態（複数可）</p>
+        <div class="grid g3" data-only="son" style="gap:4px 14px">
+          ${HASON.map(h=>`<label class="chk" style="padding-top:0"><input type="checkbox" data-f="rsn_${h[0]}"><span>${h[1]}</span></label>`).join("")}
+        </div>
+        <div class="why" data-why="none"></div>
+      </div>
+
+      <div data-only="normal">
+      <div class="sub">再調達原価<span class="sp dim">基本は自動。必要なら上書き</span></div>
+      <div class="grid g4">
+        <label><span class="lb">単価の根拠</span><select data-f="umode">
+          <option value="yamagata">建築着工統計2025・山形県</option>
+          <option value="zenkoku">建築着工統計2025・全国</option>
+          <option value="shiyo">国交省指針の仕様別単価</option>
+          <option value="manual">自社実績（手入力）</option></select></label>
+        <label><span class="lb">仕様グレード <i>自動</i></span><select data-f="grade">
+          <option value="auto">自動判定</option>
+          <option value="A">A仕様（上位）</option><option value="B">B仕様（標準）</option><option value="C">C仕様（普及）</option></select></label>
+        <label><span class="lb">基礎単価 <em>円/㎡</em> <i>自動</i></span><input type="number" class="auto" data-f="unit" step="1000"></label>
+        <label><span class="lb">再調達原価 <em>円</em> <i>自動</i></span><input type="text" class="auto" data-f="rcnOut" disabled></label>
+      </div>
+      <div class="why" data-why="rcn"></div>
+
+      <div class="sub">減価</div>
+      <div class="grid g4">
+        <label><span class="lb">評価方式</span><select data-f="dmode">
+          <option value="bui">部位別評価法（国交省指針）</option>
+          <option value="kanben">簡便法（従来のExcelと同じ）</option></select></label>
+        <label><span class="lb">リフォーム状況</span><select data-f="reno">${renoOpts}</select></label>
+        <label><span class="lb">リフォーム実施年 <em>西暦</em></span><input type="number" data-f="renoY" step="1"></label>
+        <label><span class="lb">改修加点 <em>円・任意</em></span><input type="number" data-f="renoAdd" step="10000" value="0"></label>
+      </div>
+      <div data-only="bui">
+        <div class="grid g4" style="margin-top:10px">
+          <label><span class="lb">劣化対策の水準 <i>自動</i></span><select data-f="kutai"><option value="auto">自動判定</option>${kutaiOpts}</select></label>
+          <label><span class="lb">躯体の耐用年数 <em>年</em> <i>自動</i></span><input type="number" class="auto" data-f="kutaiY" step="1"></label>
+          <label><span class="lb">現地確認の結果</span><select data-f="inspect">${inspectOpts}</select></label>
+          <label><span class="lb">評価上の経過年数 <em>年</em> <i>自動</i></span><input type="number" class="auto" data-f="effAge" step="1"></label>
+        </div>
+        <div class="why" data-why="kutai"></div>
+        <details style="margin-top:10px">
+          <summary class="hint" style="cursor:pointer">部位ごとの内訳を開く（通常は触らなくて大丈夫です）</summary>
+          <div class="scrollx"><table class="dt">
+            <thead><tr><th>部位</th><th>構成比</th><th>交換周期</th><th>更新後の経過年</th><th>残存率</th><th>公表レンジ</th></tr></thead>
+            <tbody>
+              <tr class="head"><td>基礎・躯体</td><td class="n" data-share="kiso"></td><td class="n" data-cyc="kiso"></td>
+                <td class="dim">—</td><td class="n" data-rem="kiso"></td><td class="dim">劣化対策の水準で設定</td></tr>
+              ${buiRows}
+            </tbody></table></div>
+        </details>
+      </div>
+      <div class="grid g2" style="margin-top:10px">
+        <label><span class="lb">機能／外部補正率</span><input type="number" data-f="corr" step="0.01" value="1.00"></label>
+        <label><span class="lb">下限残存率 <em>簡便法のみ</em></span><input type="number" data-f="floor" step="0.01" value="0.20"></label>
+      </div>
+      </div>
+      <div class="calc" data-out></div>
+    </div></div>`;
+}
+
+function subBldgHTML(i){
+  const fzOpts   = FUZOKU.map(f=>`<option value="${f[1]}">${f[0]}</option>`).join("");
+  const kozoOpts = KOZO.map((k,j)=>`<option value="${j}">${k[0]}</option>`).join("");
+  const useOpts  = YOUTO_TAIYO.map(u=>`<option value="${u[0]}"${u[0]==="kojo"?" selected":""}>${u[1]}</option>`).join("");
+  return `<div class="card sub-b" data-b="${i}" data-kind="sub">
+    <header><span>附属建物</span><span class="sp"></span>
+      <button class="btn btn-sm btn-danger" data-del>削除</button></header>
+    <div class="in">
+      <div class="grid g4">
+        <label><span class="lb">種類</span><select data-f="fz">${fzOpts}</select></label>
+        <label><span class="lb">構造</span><select data-f="kozo">${kozoOpts}</select></label>
+        <label><span class="lb">床面積 <em>㎡</em></span><input type="number" data-f="area" step="0.01"></label>
+        <label><span class="lb">新築年 <em>西暦</em></span><input type="number" data-f="y" step="1"></label>
+      </div>
+      <div class="grid g4" style="margin-top:10px">
+        <label><span class="lb">用途（法定耐用年数）</span><select data-f="use">${useOpts}</select></label>
+        <label><span class="lb">家屋番号 <em>任意</em></span><input type="text" data-f="kaoku"></label>
+        <label><span class="lb">㎡単価 <em>円</em> <i>自動</i></span><input type="number" class="auto" data-f="unit" step="1000"></label>
+        <label><span class="lb">建物価額 <em>円</em> <i>自動</i></span><input type="text" class="auto" data-f="valOut" disabled></label>
+      </div>
+      <div class="grid g2" style="margin-top:10px">
+        <label><span class="lb">評価の扱い</span><select data-f="valuation">
+          <option value="normal">通常評価</option>
+          <option value="none">価値なし（評価額を付さない）</option></select></label>
+        <label><span class="lb">補足 <em>任意</em></span><input type="text" data-f="rsnOther"></label>
+      </div>
+      <p class="hint" data-why="sub"></p>
+    </div></div>`;
+}
+
+const USE_NOUN = {jutaku:"住宅", jimusho:"事務所", kojo:"作業場・倉庫"};
+
+function reasonText(o){
+  const who = (o.name || "本件建物") + (o.area ? "（" + o.area.toFixed(2) + "㎡）" : "");
+  const out = [];
+  if(o.type === "nen" || o.type === "both"){
+    out.push(o.kozoShort + USE_NOUN[o.use] + "の法定耐用年数は" + o.legal + "年となっております。"
+      + "今回の物件は築" + o.age + "年と大幅に年数を経過しているため、査定価格は無しとなります。");
+  }
+  if(o.type === "son" || o.type === "both"){
+    const body = o.rs.length ? o.rs.join("、") + "が認められ、" : "";
+    out.push(who + "は、" + body + "現状のままでの使用が困難な状態にあります。"
+      + (o.other ? o.other.replace(/。$/,"") + "。" : "")
+      + "経年による劣化の程度に鑑み、評価額を付しておりません。");
+  } else if(o.other){
+    out.push(o.other.replace(/。$/,"") + "。");
+  }
+  return out.join("\n");
+}
+
+function calcMain(el){
+  const g = f => el.querySelector(`[data-f="${f}"]`);
+  const gv = f => { const e=g(f); const v=parseFloat(e&&e.value); return isFinite(v)?v:0; };
+  const area = gv("area");
+  const kozoTxt = g("kozoTxt").value;
+  if(kozoTxt && !g("kozo").dataset.touched) g("kozo").value = guessKozo(kozoTxt);
+  const kIdx = parseInt(g("kozo").value,10)||0;
+  const sKey = KOZO[kIdx][3];
+  const shurui = g("shurui").value;
+  if(shurui && !g("use").dataset.touched) g("use").value = guessUse(shurui);
+  const use = g("use").value;
+  const legal = legalYears(kIdx, use);
+  g("legalOut").value = legal + "年";
+  const isJutaku = use === "jutaku";
+
+  const y = parseInt(g("y").value,10), m = parseInt(g("m").value,10)||1;
+  const now = new Date($("#reportDate").value || Date.now());
+  let age = 0;
+  if(y){ age = now.getFullYear()-y; if(now.getMonth()+1 < m) age--; age = Math.max(age,0); }
+
+  // ---- グレード ----
+  const ag = autoGrade(kozoTxt, y);
+  const gSel = g("grade").value;
+  const grade = gSel === "auto" ? ag.grade : gSel;
+  const gi = {A:0,B:1,C:2}[grade];
+
+  // ---- 単価 ----
+  const umode = g("umode").value;
+  let base = umode==="yamagata" ? RCN_TOKEI[sKey].yamagata
+           : umode==="zenkoku"  ? RCN_TOKEI[sKey].zenkoku
+           : umode==="shiyo"    ? SHIYO_TOTAL[grade] : gv("unit");
+  const uEl=g("unit");
+  if(umode!=="manual"){ uEl.value=base; uEl.disabled=true; uEl.classList.add("auto"); }
+  else { uEl.disabled=false; uEl.classList.remove("auto"); }
+
+  const fGrade = umode==="shiyo" ? 1 : SHIYO_TOTAL[grade]/SHIYO_TOTAL.B;
+  const fixKeys=["dai","yoku","kyu","den"];
+  const fixRatio = BUI.filter(b=>fixKeys.indexOf(b[0])>=0).reduce((a,b)=>a+b[2][gi],0)/100;
+  const fSize = area>0 ? Math.min(1.25,Math.max(0.85,(1-fixRatio)+fixRatio*(111/area))) : 1;
+  const rcn = area*base*fGrade*fSize;
+  g("rcnOut").value = rcn ? yenR(rcn) : "";
+
+  let thenTxt="";
+  if(y && HYOJUN[sKey]){
+    const last=HYOJUN_FROM+HYOJUN[sKey].length-1;
+    const then=HYOJUN[sKey][Math.min(Math.max(y-HYOJUN_FROM,0),HYOJUN[sKey].length-1)]*1000;
+    thenTxt = `新築当時（${wareki(y,m)}${y>last?"／表の最終年で代用":""}）の全国平均は ${yenR(then)}円/㎡、いまの単価はその ${(base/then).toFixed(2)}倍。`;
+  }
+  const wr = el.querySelector('[data-why="rcn"]');
+  wr.innerHTML = `<b>築${age}年</b>　構造区分は「${esc(KOZO[kIdx][0])}」と判定`
+    + `<br>グレード：${esc(gSel==="auto" ? ag.why : grade+"仕様（手動）")}`
+    + `<br>規模補正 ${fSize.toFixed(3)}（設備の固定費 ${(fixRatio*100).toFixed(1)}％・標準111㎡）／グレード補正 ${fGrade.toFixed(2)}`
+    + (thenTxt?`<br>${esc(thenTxt)}`:"")
+    + (umode==="yamagata"&&sKey==="s" ? `<br><b style="color:var(--adjust)">⚠ 山形県の鉄骨造は統計の標本が少なく異常値です。全国値か自社実績に切り替えてください。</b>` : "")
+    + `<br>用途は「${esc((YOUTO_TAIYO.find(u=>u[0]===use)||YOUTO_TAIYO[0])[1])}」と判定（登記の種類より）。法定耐用年数 ${legal}年。`
+    + (!isJutaku ? `<br><b style="color:var(--adjust)">住宅以外の用途です。国交省指針の部位別評価法は中古戸建て住宅向けなので簡便法に切り替えました。また建築着工統計の単価は「住宅」の値なので、事務所・倉庫には合いません。自社の施工実績に切り替えてください。</b>` : "");
+
+  // ---- リフォーム状況 → 部位一括 ----
+  const rn = RENO.find(r=>r[0]===g("reno").value) || RENO[0];
+  const renoY = parseInt(g("renoY").value,10);
+  const passedReno = renoY ? Math.max(0, now.getFullYear()-renoY) : 0;
+  if(g("reno").dataset.dirty !== rn[0]+"|"+(renoY||"")){
+    BUI.filter(b=>b[3]).forEach(b=>{
+      const inp=g("upd_"+b[0]); if(!inp || inp.dataset.touched) return;
+      inp.value = rn[2].indexOf(b[0])>=0 ? passedReno : "";
+    });
+    g("reno").dataset.dirty = rn[0]+"|"+(renoY||"");
+  }
+
+  // ---- 減価 ----
+  // ---- 価値なしの判定 ----
+  const noVal = g("valuation").value === "none";
+  el.querySelectorAll('[data-only="normal"]').forEach(x=>x.style.display=noVal?"none":"");
+  el.querySelectorAll('[data-only="none"]').forEach(x=>x.style.display=noVal?"":"none");
+  const hd=el.querySelector("header span");
+  if(hd) hd.innerHTML = "主たる建物" + (noVal?' <b style="color:var(--alert)">／評価額を付さず</b>':"");
+  if(noVal){
+    const rType=g("rsnType").value;
+    el.querySelectorAll('[data-only="son"]').forEach(x=>x.style.display=(rType==="son"||rType==="both")?"":"none");
+    const rs=HASON.filter(h=>g("rsn_"+h[0]).checked).map(h=>h[1]);
+    const other=g("rsnOther").value.trim();
+    const txt = reasonText({name:shurui,area,rs,other,type:rType,use,legal,age,kozoShort:KOZO[kIdx][2]});
+    el.querySelector('[data-why="none"]').innerHTML = txt
+      ? "査定書にはこう印字されます：<br>" + esc(txt).replace(/\n/g,"<br>")
+      : '<b style="color:var(--adjust)">理由が空です。該当する状態にチェックを入れてください。</b>';
+    el.querySelector("[data-out]").innerHTML =
+      '<div class="row total"><span>建物価額</span><b class="num">評価額を付さず</b></div>';
+    return {kind:"main",area,kIdx,legal,use,useLabel:"",y,m,age,unit:0,rcn:0,rem:0,corr:1,reno:0,val:0,
+      dmode:"none",grade:"",fSize:1,fGrade:1,noVal:true,reasons:rs,rsnOther:other,rsnType:rType,breakdown:txt,
+      madori:g("madori").value,renoLabel:"",renoY:null,
+      kaoku:g("kaoku").value,shurui:shurui,kozoTxt};
+  }
+
+  const dSel=g("dmode");
+  if(!isJutaku && dSel.value==="bui" && !dSel.dataset.touched) dSel.value="kanben";
+  const dmode=dSel.value;
+  const box=el.querySelector('[data-only="bui"]'); if(box) box.style.display = dmode==="bui"?"":"none";
+  const corr=gv("corr")||1, renoAdd=gv("renoAdd");
+  let rem=0, detail=[], breakdown="";
+
+  if(dmode==="kanben"){
+    const fl=gv("floor");
+    const est = age>=legal ? Math.max(Math.floor(legal*0.2),2) : (legal-age)+age*0.2;
+    const eco = age+est, lin = eco<=0?0:1-age/eco;
+    rem = Math.max(lin,fl);
+    detail=[["法定耐用年数 / 築年数",legal+"年 / "+age+"年"],["経済的耐用年数",eco.toFixed(1)+"年"],
+            ["採用残存率",(rem*100).toFixed(1)+"％"+(lin<fl?"（下限適用）":"")]];
+    breakdown="簡便法。法定耐用年数"+legal+"年、築"+age+"年、採用残存率"+(rem*100).toFixed(1)+"％。";
+  } else {
+    const ak = autoKutai(y);
+    const kSel=g("kutai"), kyEl=g("kutaiY");
+    const lvKey = kSel.value==="auto" ? ak.lv : kSel.value;
+    const lv = KUTAI.find(k=>k[0]===lvKey) || KUTAI[0];
+    if(!kyEl.dataset.touched) kyEl.value = kSel.value==="auto" ? ak.y : lv[4];
+    kyEl.min=lv[2]; kyEl.max=lv[3];
+    kyEl.disabled = false; kyEl.classList.toggle("auto", !kyEl.dataset.touched);
+    const kutaiY = gv("kutaiY") || lv[4];
+
+    const ins = INSPECT.find(k=>k[0]===g("inspect").value) || INSPECT[0];
+    const dead = ins[2]===null;
+    const capped = ins[2]==="cap";
+    const eaEl=g("effAge");
+    if(!eaEl.dataset.touched)
+      eaEl.value = dead ? "" : (capped ? Math.min(age, Math.round(kutaiY*0.9)) : Math.round(age*ins[2]));
+    eaEl.disabled = dead;
+    const effAge = dead ? kutaiY : (gv("effAge")||age);
+
+    const wk=el.querySelector('[data-why="kutai"]');
+    wk.innerHTML = dead
+      ? `<b style="color:var(--alert)">躯体の最低限の安全性が確認できないため、建物価額はゼロになります。</b>内外装・設備がどれだけ新しくても住宅全体の使用価値には反映しない、というのが指針の考え方です。`
+      : (kSel.value==="auto" ? esc(ak.why) : esc(lv[1]+"（手動）"))
+        + `　指針の定めは ${lv[2]===lv[3]?lv[2]+"年程度":lv[2]+"〜"+lv[3]+"年"}。`
+        + (effAge!==age ? `<br>現地確認により評価上の経過年数を築${age}年→${effAge}年に${effAge<age?"短縮":"設定"}。`
+            + (capped ? `指針は「最低限の安全性が担保されている以上は一定の価値があるとみなし、耐用年数経過後であっても評価上の経過年数は耐用年数期間内のいずれかの時点におく」としています（耐用年数の90％に設定。この割合は当社の運用値）。`
+                      : `短縮率${ins[2]}は指針に数値の定めがなく、当社の運用値です。`) : "")
+        + (age>=kutaiY && ins[0]==="none" ? `<br><b style="color:var(--adjust)">築年数が耐用年数に達しているため、このままでは躯体の価値がゼロになります。現地で最低限の安全性を確認できるなら「③」を選んでください。</b>` : "");
+
+    const total=BUI.reduce((a,b)=>a+b[2][gi],0), shares={};
+    BUI.forEach(b=>{ shares[b[0]]=b[2][gi]/total; });
+    const setTd=(s,k,t)=>{ const e=el.querySelector("[data-"+s+'="'+k+'"]'); if(e) e.textContent=t; };
+    const remK = dead?0:Math.max(0,1-effAge/kutaiY);
+    let sum = shares.kiso*remK;
+    setTd("share","kiso",(shares.kiso*100).toFixed(1)+"％");
+    setTd("cyc","kiso",kutaiY+"年");
+    setTd("rem","kiso",(remK*100).toFixed(1)+"％"+(effAge!==age&&!dead?" ↓短縮":""));
+    const updated=[];
+    BUI.filter(b=>b[3]).forEach(b=>{
+      const cyc=gv("cyc_"+b[0])||b[3];
+      const raw=g("upd_"+b[0]).value;
+      const passed = raw===""?age:Math.max(0,parseFloat(raw)||0);
+      const r=Math.max(0,1-passed/cyc);
+      sum += shares[b[0]]*r;
+      if(raw!=="") updated.push(b[1]);
+      setTd("share",b[0],(shares[b[0]]*100).toFixed(1)+"％");
+      setTd("rem",b[0],(r*100).toFixed(1)+"％"+(raw!==""?" ↑更新":""));
+    });
+    rem = dead?0:sum;
+    detail=[["基礎・躯体（耐用 "+kutaiY+"年）", dead?"機能喪失":(remK*100).toFixed(1)+"％ × 構成比 "+(shares.kiso*100).toFixed(1)+"％"],
+            ["内外装・設備の寄与",((sum-shares.kiso*remK)*100).toFixed(1)+"％"],
+            ["建物全体の残存率",(rem*100).toFixed(1)+"％"]];
+    breakdown = dead
+      ? "部位別評価法。基礎・躯体の最低限の安全性が確認できないため、建物の使用価値はゼロと評価しました。"
+      : "部位別評価法。基礎・躯体の劣化対策は"+lv[1]+"と判断し耐用年数"+kutaiY+"年"
+        + (effAge!==age?"、現地確認により評価上の経過年数を築"+age+"年から"+effAge+"年に短縮":"")
+        + "（躯体の残存率"+(remK*100).toFixed(1)+"％）。建物全体の残存率は"+(rem*100).toFixed(1)+"％。"
+        + (updated.length?"更新済みの部位："+updated.join("、")+"。":"");
+  }
+
+  const val = rcn*rem*corr + renoAdd;
+  el.querySelector("[data-out]").innerHTML =
+    '<div class="row"><span>再調達原価</span><b class="num">'+yen(rcn)+'</b></div>'
+    + detail.map(d=>'<div class="row"><span>'+esc(d[0])+'</span><b class="num">'+esc(d[1])+'</b></div>').join("")
+    + (renoAdd?'<div class="row"><span>改修加点</span><b class="num">＋'+yen(renoAdd)+'</b></div>':"")
+    + '<div class="row total"><span>建物価額</span><b class="num">'+yen(val)+'</b></div>';
+
+  return {kind:"main",area,kIdx,legal,use,useLabel:(YOUTO_TAIYO.find(u=>u[0]===use)||YOUTO_TAIYO[0])[1],y,m,age,unit:base,rcn,rem,corr,reno:renoAdd,val,dmode,grade,fSize,fGrade,breakdown,
+    madori:g("madori").value, renoLabel:rn[1], renoY:renoY||null,
+    kaoku:g("kaoku").value, shurui:g("shurui").value, kozoTxt};
+}
+
+function calcSub(el, mainUnit){
+  const g=f=>el.querySelector(`[data-f="${f}"]`);
+  const gv=f=>{const v=parseFloat(g(f).value); return isFinite(v)?v:0;};
+  const area=gv("area"), kIdx=parseInt(g("kozo").value,10)||0;
+  const legal=legalYears(kIdx, g("use").value);
+  const ratio=parseFloat(g("fz").value)||0.35;
+  const fzName=g("fz").selectedOptions[0].textContent;
+  const y=parseInt(g("y").value,10);
+  const age = y ? Math.max(0, nowYear()-y) : 0;
+  if(g("valuation").value==="none"){
+    const other=g("rsnOther").value.trim();
+    const txt=reasonText({name:"附属建物（"+fzName+"）",area,rs:[],other,type:"son",use:g("use").value,legal,age,kozoShort:KOZO[kIdx][2]});
+    g("valOut").value="—";
+    el.querySelector('[data-why="sub"]').textContent=txt;
+    const hs=el.querySelector("header span");
+    if(hs) hs.innerHTML='附属建物 <b style="color:var(--alert)">／評価額を付さず</b>';
+    return {kind:"sub",area,kIdx,legal,y,age,unit:0,rcn:0,rem:0,val:0,noVal:true,reasons:[],rsnOther:other,
+      shurui:fzName,kozoTxt:KOZO[kIdx][2],kaoku:g("kaoku").value,madori:"",breakdown:txt};
+  }
+  const uEl=g("unit");
+  if(!uEl.dataset.touched){ uEl.value=Math.round((mainUnit||RCN_TOKEI.moku.yamagata)*ratio); uEl.classList.add("auto"); }
+  else uEl.classList.remove("auto");
+  const unit=gv("unit");
+  const rcn=area*unit;
+  const est = age>=legal ? Math.max(Math.floor(legal*0.2),2) : (legal-age)+age*0.2;
+  const eco=age+est, lin=eco<=0?0:1-age/eco;
+  const rem=Math.max(lin,0.20);
+  const val=rcn*rem;
+  g("valOut").value = val?yenR(val):"";
+  el.querySelector('[data-why="sub"]').textContent =
+    `主たる建物の単価 × ${ratio}（${fzName}の目安）＝ ${yenR(unit)}円/㎡。築${age}年、法定耐用年数${legal}年、残存率${(rem*100).toFixed(1)}％で簡便法評価。掛け率は自社の施工単価に合わせて上書きできます。`;
+  return {kind:"sub",area,kIdx,legal,y,age,unit,rcn,rem,val,shurui:fzName,kozoTxt:KOZO[kIdx][2],
+    kaoku:g("kaoku").value, madori:"", breakdown:`附属建物（${fzName}）：築${age}年、残存率${(rem*100).toFixed(1)}％。`};
+}
+
+function addBldg(kind){
+  const d=document.createElement("div");
+  d.innerHTML = kind==="sub" ? subBldgHTML(bldgSeq++) : mainBldgHTML(bldgSeq++);
+  $("#bldgs").appendChild(d.firstElementChild);
+  recalc();
+  return $("#bldgs").lastElementChild;
+}
+
+/* =======================================================================
+   周辺物件リスト
+   ======================================================================= */
+function cmpRowHTML(v){
+  v = v || {};
+  return `<tr data-cmp>
+    <td class="n dim" data-no></td>
+    <td><input type="text" data-c="price" value="${esc(v.price||"")}"></td>
+    <td><input type="text" data-c="addr" value="${esc(v.addr||"")}"></td>
+    <td><input type="text" data-c="age" value="${esc(v.age||"")}"></td>
+    <td><input type="text" data-c="land" value="${esc(v.land||"")}"></td>
+    <td><input type="text" data-c="bldg" value="${esc(v.bldg||"")}"></td>
+    <td><input type="text" data-c="madori" value="${esc(v.madori||"")}"></td>
+    <td><input type="text" data-c="reno" value="${esc(v.reno||"")}"></td>
+    <td><button class="btn btn-sm btn-danger" data-cdel>×</button></td></tr>`;
+}
+function addCmp(v){
+  const t=document.createElement("tbody"); t.innerHTML=cmpRowHTML(v);
+  $("#cmps").appendChild(t.firstElementChild); renumberCmp();
+}
+function renumberCmp(){ $$("#cmps [data-cmp]").forEach((tr,i)=>{ tr.querySelector("[data-no]").textContent=i+1; }); }
+function cmpRows(){
+  return $$("#cmps [data-cmp]").map(tr=>{
+    const g=k=>tr.querySelector(`[data-c="${k}"]`).value.trim();
+    return {price:g("price"),addr:g("addr"),age:g("age"),land:g("land"),bldg:g("bldg"),madori:g("madori"),reno:g("reno")};
+  }).filter(r=>r.price||r.addr);
+}
+function calcCmp(){
+  const rows=cmpRows();
+  const yens=rows.map(r=>{
+    const mm=String(r.price).replace(/[,\s]/g,"").match(/([\d.]+)\s*万/);
+    return mm?parseFloat(mm[1])*10000:0;
+  }).filter(x=>x>0).sort((a,b)=>a-b);
+  if(!yens.length){
+    $("#cmpCalc").innerHTML=`<div class="dim" style="font-size:12.5px">上のボタンで近隣の売出し物件を検索するか、手入力で追加してください。査定額が売出し相場のどのあたりに位置するか自動で示します。</div>`;
+    return {rows,med:0};
+  }
+  const med = yens.length%2 ? yens[(yens.length-1)/2] : (yens[yens.length/2-1]+yens[yens.length/2])/2;
+  const t = LAST.total||0;
+  const below = yens.filter(x=>x<t).length;
+  $("#cmpCalc").innerHTML=`
+    <div class="row"><span>比較物件</span><b>${yens.length}件　${man(yens[0])} 〜 ${man(yens[yens.length-1])}</b></div>
+    <div class="row"><span>売出し価格の中央値</span><b class="num">${man(med)}</b></div>
+    <div class="row total"><span>本査定額の位置</span><b class="num">${t?man(t)+"（安い方から"+(below+1)+"番目／"+(yens.length+1)+"件中）":"—"}</b></div>`;
+  return {rows,med};
+}
+
+async function callClaude(body, statusEl){
+  const key = $("#apiKey").value.trim();
+  const headers = {"Content-Type":"application/json"};
+  if(key){ headers["x-api-key"]=key; headers["anthropic-version"]="2023-06-01"; headers["anthropic-dangerous-direct-browser-access"]="true"; }
+  const res = await fetch("https://api.anthropic.com/v1/messages", {method:"POST", headers, body:JSON.stringify(body)});
+  const txt = await res.text();
+  if(!res.ok) throw new Error("HTTP "+res.status+"\n"+txt.slice(0,400));
+  let data; try{ data=JSON.parse(txt); }catch(e){ throw new Error("応答を解釈できません\n"+txt.slice(0,300)); }
+  return data;
+}
+function pickJSON(data){
+  const t = (data.content||[]).filter(x=>x.type==="text").map(x=>x.text).join("");
+  const m = t.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+  if(!m) throw new Error("JSONが見つかりません\n"+t.slice(0,300));
+  return JSON.parse(m[0]);
+}
+
+async function searchCmp(){
+  const st=$("#searchStatus");
+  const addr=$("#address").value.trim() || ($$("#lands [data-l='chiban']")[0]?.value||"");
+  if(!addr){ st.className="status ng"; st.textContent="先に所在地を入力してください。"; return; }
+  st.className="status run"; st.textContent="SUUMO・アットホーム・LIFULL HOME'S・goo住宅・ハトマークサイトと地元業者サイトを検索しています…（1分ほどかかります）";
+  try{
+    const asOf=$("#asOf").value || (nowYear()+"."+(new Date().getMonth()+1)+"."+new Date().getDate()+"時点");
+    const data = await callClaude({
+      model:"claude-sonnet-4-6", max_tokens:1000,
+      tools:[{type:"web_search_20250305", name:"web_search"}],
+      messages:[{role:"user", content:
+`「${addr}」の周辺で売り出し中の中古一戸建てを探し、JSONだけを返してください。前置き・コードフェンスは不要です。
+
+検索先：SUUMO、アットホーム、LIFULL HOME'S、goo住宅・不動産、ハトマークサイト、および米沢の地元不動産会社（イエステーション/後藤組、三陽不動産、青山不動産、マルトモ不動産、アイワ不動産、大東不動産、西山不動産、福栄不動産など）。
+
+条件：
+- 同一町名を最優先、足りなければ徒歩圏の隣接町名まで広げる
+- 実際に掲載を確認できた物件のみ。推測で埋めない。確認できなければ件数が少なくてよい
+- 価格の安い順に最大6件
+
+{"list":[{"price":"380万円","addr":"山形県米沢市○○2丁目","age":"築48年（1976年10月）","land":"168.74㎡\\n(51.04坪)","bldg":"90.45㎡\\n(27.36坪)","madori":"3K","reno":"未実施"}]}
+reno は「未実施」か「実施済\\n（2024年9月リフォーム完了）」の形式。築年月・面積が不明な項目は空文字にしてください。`}]});
+    const j = pickJSON(data);
+    const list = j.list || j;
+    if(!Array.isArray(list) || !list.length) throw new Error("該当する物件が見つかりませんでした");
+    $("#cmps").innerHTML=""; list.forEach(addCmp); renumberCmp();
+    if(!$("#asOf").value) $("#asOf").value = asOf;
+    st.className="status ok";
+    st.textContent=list.length+"件を取り込みました。掲載元で必ず現物を確認してから査定書に載せてください。";
+    recalc();
+  }catch(e){
+    st.className="status ng";
+    st.textContent="検索できませんでした。\n"+e.message+"\n\nClaudeの会話で「この住所の周辺物件リストをJSONで」と頼み、①の「読み取りが動かないとき」の欄に貼り付けても取り込めます。";
+  }
+}
+
+/* =======================================================================
+   敷地条件・統合
+   ======================================================================= */
+function calcParking(){
+  const have=parseInt($("#pkCnt").value,10);
+  const short=Math.max(0,2-have);
+  const unit=num("#pkUnit");
+  const pave=$("#pkPave").value;
+  const paveCost = pave==="done" ? 0 : num("#pkPaveCost");
+  const cut=short*unit+paveCost;
+  const parts=[];
+  if(short) parts.push(`<div class="row"><span>駐車 ${short}台分の不足 × ${yenR(unit)}円</span><b class="num">− ${yen(short*unit)}</b></div>`);
+  if(paveCost) parts.push(`<div class="row"><span>${pave==="none"?"未舗装":"一部舗装"}・舗装工事費</span><b class="num">− ${yen(paveCost)}</b></div>`);
+  $("#pkCalc").innerHTML = cut
+    ? parts.join("")+`<div class="row total"><span>敷地条件による減価</span><b class="num">− ${yen(cut)}</b></div>`
+    : `<div class="dim" style="font-size:12.5px">2台以上停められて舗装済みのため、減価はありません。</div>`;
+  $("#pkPaveCost").disabled = pave==="done";
+  return {cut,short,paveCost,pave};
+}
+
+function calcCosts(bl, gross){
+  const noValArea = bl.filter(b=>b.noVal).reduce((a,b)=>a+(b.area||0),0);
+  const allArea   = bl.reduce((a,b)=>a+(b.area||0),0);
+
+  // --- 解体処分費 ---
+  const dM=$("#demoMode").value;
+  $("#demoArea").value = noValArea ? noValArea.toFixed(2)+" ㎡" : "0 ㎡";
+  let demo=0;
+  if(dM==="auto") demo = noValArea*Math.abs(num("#demoUnit"));
+  else if(dM==="manual") demo = Math.abs(num("#demoAmt"));
+  $("#demoUnit").disabled = dM!=="auto";
+  $("#demoAmt").disabled  = dM!=="manual";
+  if(dM==="manual" && num("#demoAmt")<0) $("#demoAmt").value=Math.abs(num("#demoAmt"));
+  if(dM==="auto") $("#demoAmt").value = demo?Math.round(demo):"";
+  if(dM==="no"){ $("#demoAmt").value=""; }
+
+  // --- 残置物処分費 ---
+  const zM=$("#zanMode").value;
+  const zArea = noValArea || allArea;
+  $("#zanArea").value = zArea ? zArea.toFixed(2)+" ㎡" : "0 ㎡";
+  let zan=0;
+  if(zM==="auto") zan = zArea*Math.abs(num("#zanUnit"));
+  else if(zM==="manual") zan = Math.abs(num("#zanAmt"));
+  $("#zanUnit").disabled = zM!=="auto";
+  $("#zanAmt").disabled  = zM!=="manual";
+  if(zM==="manual" && num("#zanAmt")<0) $("#zanAmt").value=Math.abs(num("#zanAmt"));
+  if(zM==="auto") $("#zanAmt").value = zan?Math.round(zan):"";
+  if(zM==="no"){ $("#zanAmt").value=""; }
+
+  // --- 仲介手数料（査定額が確定してから計算する） ---
+  const cM=$("#chuMode").value;
+  const deductChu = cM!=="no" && $("#chuDeduct").value==="hikaku";
+  const net = Math.max(0, gross - demo - zan);
+  const base = deductChu ? net : net;   // 手数料の算定基礎は諸費用控除後の査定額
+  let chu=0, basis="";
+  if(cM==="auto"){ const r=chukaiMax(base); chu=r.amt; basis=r.basis; }
+  else if(cM==="manual") chu=Math.abs(num("#chuAmt"));
+  $("#chuAmt").disabled = cM!=="manual";
+  if(cM==="manual" && num("#chuAmt")<0) $("#chuAmt").value=Math.abs(num("#chuAmt"));
+  if(cM==="auto") $("#chuAmt").value = chu?chu:"";
+  if(cM==="no"){ $("#chuAmt").value=""; }
+  $("#chuDeduct").disabled = cM==="no";
+  $("#chuNote").textContent = cM==="auto"
+    ? (base?`査定額 ${yenR(base)}円 に対する上限：${basis}`:"査定額が出ると自動計算します。")
+    : cM==="manual" ? "実際に取り決めた金額を入れてください。" : "";
+
+  const total = Math.max(0, net - (deductChu?chu:0));
+  const tedori = Math.max(0, net - chu);
+
+  const rows=[];
+  if(demo) rows.push(`<div class="row"><span>解体処分費${dM==="auto"?"（"+noValArea.toFixed(2)+"㎡ × "+yenR(num("#demoUnit"))+"円）":""}</span><b class="num">− ${yen(demo)}</b></div>`);
+  if(zan)  rows.push(`<div class="row"><span>残置物処分費${zM==="auto"?"（"+zArea.toFixed(2)+"㎡ × "+yenR(num("#zanUnit"))+"円）":""}</span><b class="num">− ${yen(zan)}</b></div>`);
+  if(chu)  rows.push(`<div class="row"><span>仲介手数料（税込）${deductChu?"":"　※手取り計算のみ"}</span><b class="num">− ${yen(chu)}</b></div>`);
+  $("#costCalc").innerHTML = rows.length
+    ? rows.join("")
+      + `<div class="row total"><span>査定額</span><b class="num">${yen(total)}</b></div>`
+      + (chu?`<div class="row"><span>手取り概算</span><b class="num">${yen(tedori)}</b></div>`:"")
+    : `<div class="dim" style="font-size:12.5px">解体処分費・残置物処分費・仲介手数料を入力すると、査定書に項目が追加され、その分が差し引かれます。</div>`;
+
+  return {demo,zan,chu,basis,deductChu,total,tedori,noValArea,zArea,
+          demoUnit:num("#demoUnit"), zanUnit:num("#zanUnit"), dM,zM,cM};
+}
+
+let LAST={};
+function recalc(){
+  const land=calcLand();
+  const mains=$$('#bldgs [data-kind="main"]').map(calcMain);
+  const mainUnit = mains.length?mains[0].unit:0;
+  const subs=$$('#bldgs [data-kind="sub"]').map(el=>calcSub(el,mainUnit));
+  const bl=mains.concat(subs);
+  const bTotal=bl.reduce((s,b)=>s+b.val,0);
+  const pk=calcParking();
+  const gross=Math.max(0,land.total+bTotal-pk.cut);
+  const cost=calcCosts(bl,gross);
+  const total=cost.total;
+  const rate=(num("#kaitoriRate")||0)/100;
+
+  $("#sTochi").textContent=yen(land.total);
+  $("#sTatemono").textContent=bTotal?yen(bTotal):"—";
+  $("#sPark").textContent=pk.cut?"− "+yen(pk.cut):"—";
+  $("#sPark").parentElement.style.display=pk.cut?"":"none";
+  $("#sDemo").textContent=cost.demo?"− "+yen(cost.demo):"—";
+  $("#sDemo").parentElement.style.display=cost.demo?"":"none";
+  $("#sZan").textContent=cost.zan?"− "+yen(cost.zan):"—";
+  $("#sZan").parentElement.style.display=cost.zan?"":"none";
+  $("#sChu").textContent=cost.chu?"− "+yen(cost.chu):"—";
+  $("#sChuRow").style.display=cost.chu?"":"none";
+  $("#sTedori").textContent=yen(cost.tedori);
+  $("#sTedoriRow").style.display=cost.chu?"":"none";
+  $("#sTotal").textContent=yen(total);
+  const kOn=$("#doKaitori").checked;
+  $("#kaitoriBox").style.display=kOn?"":"none";
+  $("#sKaitori").textContent=yen(total*rate);
+
+  LAST={land,bl,mains,subs,bTotal,pk,cost,gross,total,kaitori:kOn?total*rate:null};
+  LAST.cmp=calcCmp();
+  runChecks();
+}
+
+function runChecks(){
+  const c=[];
+  const ok=t=>`<div style="color:var(--accent)">✓ ${t}</div>`;
+  const ng=t=>`<div style="color:var(--adjust)">! ${t}</div>`;
+  const youto=$("#youto").value, y=YOUTO[youto];
+  if(y) c.push(ok(`${youto}：建蔽率${y.k}％／容積率${y.y}％`));
+  if(num("#kenpei")!==y?.k||num("#yoseki")!==y?.y) c.push(ng("建蔽率・容積率が米沢市の公表値と異なります"));
+  if(!$("#rosenkaSozoku").value&&!$("#rosenkaKotei").value) c.push(ng("路線価が未入力です"));
+  if(!LAST.land?.area) c.push(ng("地積が未入力です"));
+  if(!$("#maguchi").value||!$("#okuyuki").value) c.push(ng("間口・奥行が未入力（画地補正が効きません）"));
+  const cap=num("#ageCap");
+  if(cap){
+    (LAST.bl||[]).filter(b=>!b.noVal && b.age>cap).forEach(b=>
+      c.push(ng(`${b.shurui||"建物"}は築${b.age}年（法定耐用年数${b.legal}年）。上限${cap}年を超えています。「価値なし」の検討を`)));
+  }
+  const nv=(LAST.bl||[]).filter(b=>b.noVal);
+  if(nv.length){
+    c.push(ok(`建物${nv.length}棟を「評価額を付さず」で処理`));
+    if(nv.some(b=>!b.reasons?.length&&!b.rsnOther))
+      c.push(ng("価値なしの理由が未選択です（査定書の文面が空になります）"));
+    if($("#demoMode").value==="auto"&&!num("#demoUnit"))
+      c.push(ng("解体単価が未入力のため控除されていません"));
+    if($("#demoMode").value==="no")
+      c.push(ng("価値なしの建物があります。解体処分費の計上を検討してください"));
+  }
+  const m0=$$('#bldgs [data-kind="main"]').find(el=>el.querySelector('[data-f="valuation"]').value!=="none");
+  if(m0){
+    if(!m0.querySelector('[data-f="kozoTxt"]').value) c.push(ng("構造の登記表記が空欄です（グレード自動判定が効きません）"));
+    const dm=m0.querySelector('[data-f="dmode"]').value;
+    c.push(ok(dm==="bui"?"建物は部位別評価法（国交省指針）":"建物は簡便法（従来Excel互換）"));
+    if(dm==="bui"&&m0.querySelector('[data-f="inspect"]').value==="none")
+      c.push(ng("現地確認の結果が未選択です（築年数をそのまま使用）"));
+    const b0=LAST.mains&&LAST.mains[0];
+    if(b0&&b0.dmode==="bui"&&b0.rem===0)
+      c.push(ng("建物価額がゼロです。現地確認の結果を「③」にすると指針の考え方で価値が残せます"));
+  } else if(!nv.length && $("#propType").value.includes("建物")) c.push(ng("建物が登録されていません"));
+  if(LAST.cmp?.med && LAST.total){
+    const d=(LAST.total-LAST.cmp.med)/LAST.cmp.med*100;
+    c.push(Math.abs(d)>40?ng(`売出し中央値との乖離 ${d>0?"+":""}${d.toFixed(0)}％`):ok("周辺の売出し相場とおおむね整合"));
+  }
+  const C=LAST.cost||{};
+  if(C.cM==="auto"&&C.chu) c.push(ok(`仲介手数料 ${yenR(C.chu)}円（${C.basis}）`));
+  if(C.cM==="manual"&&C.chu&&LAST.total){
+    const mx=chukaiMax(LAST.total).amt;
+    if(C.chu>mx) c.push(ng(`仲介手数料が法定上限 ${yenR(mx)}円 を超えています`));
+  }
+  if(C.zM==="auto"&&!num("#zanUnit")) c.push(ng("残置物単価が未入力のため控除されていません"));
+  if(!$("#applyAdj").checked) c.push(ng("画地補正が反映されていません"));
+  $("#checks").innerHTML=c.length?c.join(""):`<span class="dim">入力を進めると検証結果が出ます。</span>`;
+}
+
+/* =======================================================================
+   査定報告書
+   ======================================================================= */
+function propTypeTxt(){ const v=$("#propType").value; return v==="__other" ? $("#propTypeOther").value : v; }
+
+function autoNote(){
+  const d=new Date($("#reportDate").value||Date.now());
+  const fyw=reiwaFY(parseInt($("#fyYear").value||d.getFullYear(),10));
+  const L=LAST.land||{}, rS=num("#rosenkaSozoku"), rK=num("#rosenkaKotei");
+  const lines=[];
+  lines.push("【土地】");
+  const modeTxt={avg:"それらを平均した金額",sozoku:"相続税路線価",kotei:"固定資産税路線価",manual:"個別に判断した金額"}[$("#unitMode").value];
+  lines.push(`土地評価の前提：${fyw}分財産評価基準書山形県路線価図、${fyw}度固定資産税路線価等を参考にし、${modeTxt}で査定いたしました。`);
+  lines.push("※路線価図は時価評価相当額の約80％、固定資産税路線価等は時価評価相当額の約70％と言われていますので、それぞれの数値を割り戻した金額を時価評価相当額として計算しています。");
+  if(rS||rK) lines.push("");
+  if(rS) lines.push(`＜${fyw}分財産評価基準書山形県路線価図＞\n　本物件の路線価：${yenR(rS)}円／㎡（${yenR(rS*TSUBO)}円／坪）`);
+  if(rK) lines.push(`＜${fyw}度固定資産税路線価等＞\n　本物件の路線価：${yenR(rK)}円／㎡（${yenR(rK*TSUBO)}円／坪）`);
+  if($("#showBreak").checked && L.steps?.length){
+    lines.push("");
+    lines.push("＜画地条件による補正（国税庁 財産評価基本通達 付表）＞");
+    L.steps.forEach(([n,v,dd])=>lines.push(`　${n}　${v.toFixed(2)}　（${dd}）`));
+    (L.adds||[]).forEach(([n,v])=>lines.push(`　${n}　＋${v.toFixed(2)}`));
+    lines.push(`　合計補正率　${L.rate.toFixed(4)}`);
+  }
+  const mains=LAST.mains||[];
+  const noVals=(LAST.bl||[]).filter(b=>b.noVal);
+  if(noVals.length){
+    lines.push(""); lines.push("【建物】");
+    noVals.forEach(b=>lines.push(b.breakdown));
+  }
+  const C=LAST.cost||{};
+  if(C.demo||C.zan||C.chu){
+    lines.push(""); lines.push("【諸費用】");
+    if(!$("#costPrint").checked){
+      lines.push("解体・除却、残置物の処分等に要する費用を査定額に反映していますが、内訳の記載は省略しています。");
+    } else {
+    if(C.demo) lines.push(C.dM==="auto"
+      ? `解体処分費：現状のままでの活用が困難なため、解体・除却を前提として、対象延床面積${C.noValArea.toFixed(2)}㎡に㎡単価${yenR(C.demoUnit)}円を乗じた${yenR(C.demo)}円を査定額から控除しています。`
+      : `解体処分費：解体・除却に要する費用として${yenR(C.demo)}円を査定額から控除しています。`);
+    if(C.zan) lines.push(C.zM==="auto"
+      ? `残置物処分費：家財・什器等の撤去費用として、対象延床面積${C.zArea.toFixed(2)}㎡に㎡単価${yenR(C.zanUnit)}円を乗じた${yenR(C.zan)}円を査定額から控除しています。`
+      : `残置物処分費：家財・什器等の撤去費用として${yenR(C.zan)}円を査定額から控除しています。`);
+    if(C.chu) lines.push(C.cM==="auto"
+      ? `仲介手数料：宅地建物取引業法に基づく報酬の上限額（${C.basis}）として${yenR(C.chu)}円を計上しています。`
+        + (C.deductChu?"この金額は査定額から控除しています。":"この金額は査定額には含めず、手取り概算の算出にのみ用いています。")
+      : `仲介手数料：${yenR(C.chu)}円を計上しています。`
+        + (C.deductChu?"この金額は査定額から控除しています。":"この金額は査定額には含めず、手取り概算の算出にのみ用いています。"));
+    }
+  }
+  const val0=mains.filter(b=>!b.noVal);
+  if(val0.length){
+    const b=val0[0];
+    lines.push(""); if(!noVals.length) lines.push("【建物】");
+    const src={yamagata:"建築着工統計（国土交通省）2025年の山形県の住宅工事費",
+               zenkoku:"建築着工統計（国土交通省）2025年の全国の住宅工事費",
+               shiyo:"国土交通省「中古戸建て住宅に係る建物評価の改善に向けた指針」附属データ集の部位別再調達原価",
+               manual:"当社の施工実績"}[$$('#bldgs [data-kind="main"]').find(el=>el.querySelector('[data-f="valuation"]').value!=="none").querySelector('[data-f="umode"]').value];
+    lines.push(`再調達原価の前提：${src}をもとに㎡単価 ${yenR(b.unit)}円／㎡ を採用し、規模補正率 ${b.fSize.toFixed(3)}、グレード補正率 ${b.fGrade.toFixed(2)}（${b.grade}仕様）を乗じています。`);
+    if(b.dmode==="bui"){
+      lines.push("減価の前提：国土交通省の上記指針に沿い、住宅を「基礎・躯体」と「内外装・設備」に分け、部位ごとの耐用年数で減価しました。");
+      lines.push("　"+b.breakdown);
+      lines.push("※基礎・躯体の機能が保たれている限り、内外装・設備は補修により価値が回復するという考え方に基づいています。築年数のみで一律に価値をゼロとする従来の慣行とは異なります。");
+    } else {
+      lines.push(`減価の前提：${KOZO[b.kIdx][0]}（${b.useLabel}）の法定耐用年数は${b.legal}年です。築${b.age}年で${b.age>=b.legal?"法定耐用年数を超過していますが、":""}課税実務の残存価格下限（概ね20％）を参考に、再調達原価×残存率×外部補正率で評価しました。`);
+    }
+    (LAST.subs||[]).filter(x=>!x.noVal).forEach(x=>lines.push("　"+x.breakdown));
+  }
+  const pk=LAST.pk||{};
+  if(pk.cut){
+    lines.push(""); lines.push("【敷地条件】");
+    if(pk.short) lines.push(`敷地内の駐車スペースが${pk.short}台分不足しています。近隣で借りた場合の賃料を還元した金額を減価としました。`);
+    if(pk.paveCost) lines.push(`駐車スペースが${pk.pave==="none"?"未舗装":"一部未舗装"}のため、舗装工事費相当額を減価しました。`);
+  }
+  if(LAST.cmp?.rows?.length && $("#showCmp").checked){
+    lines.push(""); lines.push("【周辺の売出し状況】");
+    lines.push(`同一エリアの売出し中物件${LAST.cmp.rows.length}件を比較表に掲載しています。売出し価格であり成約価格ではない点、リフォーム状況・接道条件等が個別に異なる点にご留意ください。`);
+  }
+  lines.push("");
+  lines.push("■本評価は提示資料・現地確認・一般的市場データに基づくものであり、隠れた瑕疵・重大な劣化等が判明した場合には再計算の対象となります。");
+  lines.push("■画地補正率は相続税評価のために国税庁が定めた率を、実勢価格の査定に準用したものです。");
+  if((LAST.mains||[]).some(b=>b.dmode==="bui"))
+    lines.push("■建物の部位別評価は、現地確認および提示資料に基づく想定であり、インスペクション（建物状況調査）に代わるものではありません。");
+  if(noVals.length)
+    lines.push("■建物に評価額を付さない旨の記載は、現況における使用価値に基づく判断であり、建物の存在そのものを否定するものではありません。解体・除却の要否および費用は、別途お見積りいたします。");
+  lines.push("■固定資産税の家屋評価額は課税目的の評価であり、本査定結果と一致しない場合があります。");
+  if((LAST.cost||{}).chu)
+    lines.push("■仲介手数料は宅地建物取引業法に基づく上限額であり、実際の報酬額は媒介契約により定まります。また売却に伴う印紙税・登記費用・測量費等は含まれておりません。");
+  if($("#doKaitori").checked)
+    lines.push("■上記はあくまでも査定価格であり、弊社買取を希望する場合の価格は諸経費等考慮した金額となります。");
+  lines.push("■本査定書に記載された内容は、その後の法令や市場動向により変化する可能性があります。");
+  return lines.join("\n");
+}
+
+function buildReport(){
+  recalc();
+  const d=new Date($("#reportDate").value||Date.now());
+  const L=LAST.land, bl=LAST.bl;
+  const nm=$("#ownerName").value||"＿＿＿＿", hon=$("#ownerHon").value;
+  const nl = s => esc(s).replace(/\n/g,"<br>");
+
+  const landRows = `<table class="rep" data-units>
+    <colgroup><col style="width:72px"><col><col style="width:48px"><col style="width:66px"><col style="width:48px"><col style="width:33%"></colgroup>
+    ${L.rows.filter(r=>r.chiban||r.area).map((r,i)=>`<tr>
+      <th class="nw">地番${L.rows.length>1?" "+(i+1):""}</th><td>${esc(r.chiban)}</td>
+      <th class="nw">地目</th><td>${esc(r.chimoku)}</td>
+      <th class="nw">地積</th><td class="n nw">${r.area?r.area.toFixed(2)+" ㎡（"+(r.area/TSUBO).toFixed(2)+" 坪）":""}</td></tr>`).join("")}
+    ${L.rows.length>1?`<tr><th class="nw">地積 合計</th><td colspan="4"></td><td class="n nw">${L.area.toFixed(2)} ㎡（約 ${L.tsubo.toFixed(2)} 坪）</td></tr>`:""}
+    <tr><th class="nw">用途地域</th><td colspan="3">${esc($("#youto").value)}</td>
+        <th class="nw">建蔽率<br>容積率</th><td class="n nw">${num("#kenpei")}％ / ${num("#yoseki")}％</td></tr>
+  </table>`;
+
+  const bldgRows = bl.map((b,i)=>`<table class="rep">
+      <colgroup><col style="width:82px"><col><col style="width:70px"><col style="width:38%"></colgroup>
+      <tr><th class="nw">${b.kind==="sub"?"附属建物":"家屋番号"}</th><td colspan="3">${esc(b.kaoku)||"—"}</td></tr>
+      <tr><th class="nw">種類・構造</th><td colspan="3">${esc(b.shurui)}　／　${esc(b.kozoTxt||KOZO[b.kIdx][2])}</td></tr>
+      <tr><th class="nw">床面積</th><td class="n nw">${b.area?b.area.toFixed(2)+" ㎡（約 "+(b.area/TSUBO).toFixed(2)+" 坪）":""}</td>
+          <th class="nw">築年数</th><td class="n nw">築 ${b.age} 年${b.y?"（"+wareki(b.y,b.m)+(b.m||1)+"月新築）":""}${b.madori?"　"+esc(b.madori):""}</td></tr>
+    </table>`).join("");
+
+  const priceRows = `<table class="rep" data-units>
+    <colgroup><col style="width:88px"><col style="width:96px"><col><col style="width:132px"></colgroup>
+    <tr><th>土地</th>
+        <td class="n">${L.area?(Number.isInteger(L.tsuboUsed)?L.tsuboUsed:L.tsuboUsed.toFixed(L.tsuboUsed%1?1:0)):"—"} 坪</td>
+        <td class="n">× ${yenR(L.unitTsubo)} 円／坪</td>
+        <td class="n nw">${yenR(L.total)} 円</td></tr>
+    ${bl.map((b,i)=>`<tr><th class="nw">${b.kind==="sub"?esc(b.shurui):"建物"+(LAST.mains.length>1?" "+(i+1):"")}</th>
+        <td colspan="2">${b.kind==="sub"?"":esc(b.shurui)+"　"}${b.area?b.area.toFixed(2)+"㎡":""}　${b.noVal?"経年劣化により評価額を付さず":"残存率 "+(b.rem*100).toFixed(1)+"％"}</td>
+        <td class="n nw">${b.noVal?($("#noValDisp").value==="zero"?"0 円":"—"):yenR(b.val)+" 円"}</td></tr>`).join("")}
+    ${(LAST.cost.demo&&$("#costPrint").checked)?`<tr><th class="nw">解体処分費</th><td colspan="2">${LAST.cost.dM==="auto"?LAST.cost.noValArea.toFixed(2)+"㎡ × "+yenR(LAST.cost.demoUnit)+"円／㎡":"一式"}</td>
+        <td class="n nw">△ ${yenR(LAST.cost.demo)} 円</td></tr>`:""}
+    ${(LAST.cost.zan&&$("#costPrint").checked)?`<tr><th class="nw">残置物処分費</th><td colspan="2">${LAST.cost.zM==="auto"?LAST.cost.zArea.toFixed(2)+"㎡ × "+yenR(LAST.cost.zanUnit)+"円／㎡":"一式"}</td>
+        <td class="n nw">△ ${yenR(LAST.cost.zan)} 円</td></tr>`:""}
+    ${(LAST.cost.chu&&LAST.cost.deductChu&&$("#costPrint").checked)?`<tr><th class="nw">仲介手数料</th><td colspan="2">宅地建物取引業法に基づく上限額（税込）</td>
+        <td class="n nw">△ ${yenR(LAST.cost.chu)} 円</td></tr>`:""}
+    ${LAST.pk.cut?`<tr><th class="k">敷地条件</th><td colspan="2">${LAST.pk.short?"駐車"+LAST.pk.short+"台分の不足":""}${LAST.pk.short&&LAST.pk.paveCost?"／":""}${LAST.pk.paveCost?"舗装工事費相当":""}</td>
+        <td class="n">△ ${yenR(LAST.pk.cut)} 円</td></tr>`:""}
+  </table>
+  <div class="rep-total"><span class="lb">査定額 合計</span><span class="v">${yenR(LAST.total)}<small>円</small></span></div>`;
+
+  const C=LAST.cost;
+  const tedoriSec = (C.chu && !C.deductChu && $("#tedoriPrint").checked) ? `
+    <div class="rep-sec blk"><h3><span>ご参考　手取り概算</span></h3>
+      <table class="rep">
+        <colgroup><col style="width:88px"><col><col style="width:132px"></colgroup>
+        <tr><th class="nw">査定額</th><td></td><td class="n nw">${yenR(LAST.total)} 円</td></tr>
+        <tr><th class="nw">仲介手数料</th><td>宅地建物取引業法に基づく上限額（税込）</td><td class="n nw">△ ${yenR(C.chu)} 円</td></tr>
+        <tr class="sum"><th class="nw">手取り概算</th><td></td><td class="n nw">${yenR(C.tedori)} 円</td></tr>
+      </table>
+      <div class="rep-cap">印紙税・登記費用・測量費・譲渡所得税等は含んでおりません。</div>
+    </div>` : "";
+
+  // 周辺物件（本物件の行を先頭に）
+  const m0=LAST.mains[0];
+  const selfRow = {
+    price:"—", addr:$("#address").value,
+    age:m0&&m0.y?`築${m0.age}年（${m0.y}年${m0.m||1}月）`:"",
+    land:L.area?L.area.toFixed(2)+"㎡\n("+L.tsubo.toFixed(2)+"坪)":"",
+    bldg:m0&&m0.area?m0.area.toFixed(2)+"㎡\n("+(m0.area/TSUBO).toFixed(2)+"坪)":"",
+    madori:m0?m0.madori:"",
+    reno:m0?(m0.renoLabel==="未実施"?"未実施":"実施済"+(m0.renoY?"\n（"+m0.renoY+"年"+m0.renoLabel+"）":"")):""
+  };
+  const cmpHead=`<tr class="hd"><th style="width:9mm">#</th><th>価格</th><th>所在地（住所）</th><th>築年数（築年月）</th><th>土地面積</th><th>建物面積</th><th>間取り</th><th>リフォーム状況</th></tr>`;
+  const cmpSec = (LAST.cmp.rows.length && $("#showCmp").checked) ? `
+    <div class="rep-sec blk"><h3><span>周辺物件との比較</span></h3>
+      <table class="rep cmp" data-units>${cmpHead}
+        <tr class="self"><th class="nw">本件</th><td class="n">${esc(selfRow.price)}</td><td>${esc(selfRow.addr)}</td><td>${nl(selfRow.age)}</td>
+          <td class="n">${nl(selfRow.land)}</td><td class="n">${nl(selfRow.bldg)}</td><td>${esc(selfRow.madori)}</td><td>${nl(selfRow.reno)}</td></tr>
+        ${LAST.cmp.rows.map((r,i)=>`<tr><td class="n nw">${i+1}</td><td class="n">${esc(r.price)}</td><td>${esc(r.addr)}</td><td>${nl(r.age)}</td>
+          <td class="n">${nl(r.land)}</td><td class="n">${nl(r.bldg)}</td><td>${esc(r.madori)}</td><td>${nl(r.reno)}</td></tr>`).join("")}
+      </table>
+      <div class="rep-cap">
+        ${esc($("#asOf").value||"")}　各不動産ポータルサイトおよび地元不動産会社の公開情報より。売出し価格であり成約価格ではありません。</div>
+    </div>` : "";
+
+  const note=($("#notes").value.trim()||autoNote());
+  // 備考は1行ずつの単位にする（ページをまたぐときに行の途中で切らないため）。【土地】などは太字の小見出し。
+  const noteLines = note.split("\n").map(t=>
+    !t.trim() ? `<div class="ln sp"></div>`
+    : /^【[^】]+】\s*$/.test(t.trim()) ? `<div class="ln nh">${esc(t.trim())}</div>`
+    : `<div class="ln">${esc(t)}</div>`).join("");
+
+  // 査定書は「ブロック」の並びとして組み、repPaginate() がA4に流し込む。
+  // 入りきらない表・備考は行の単位で次のページへ送る（縮小も削除もしない）。
+  const sec=(title,body,split)=>`<div class="rep-sec blk"><h3><span>${title}</span></h3>${body}</div>`;
+  const blocks=[
+    {html:`<div class="ph">${repHeader(false)}
+      <div class="rep-title">不動産査定報告書</div>
+      <div class="rep-meta"><div class="rep-to">${esc(nm)}　${esc(hon)}</div>
+        <div class="rep-date">作成日：${d.getFullYear()} 年 ${d.getMonth()+1} 月 ${d.getDate()} 日</div></div></div>`},
+    {html:sec("物件概要",`<table class="rep"><colgroup><col style="width:82px"><col></colgroup>
+        <tr><th class="nw">所在地</th><td>${esc($("#address").value)}</td></tr>
+        <tr><th class="nw">種類</th><td>${esc(propTypeTxt())}</td></tr></table>`)},
+    {html:sec("土地",landRows)},
+    ...(bl.length?[{html:sec("建物",`<div class="bl-wrap" data-units>${bldgRows}</div>`)}]:[]),
+    {html:sec("価格査定",priceRows)},
+    ...(tedoriSec?[{html:tedoriSec}]:[]),
+    ...(cmpSec?[{html:cmpSec}]:[]),
+    {newPage:true, html:sec("備考",`<div class="rep-note" data-units>${noteLines}</div>
+      <div class="rep-foot">本書は売買の参考に供する査定書であり、不動産鑑定評価書ではありません。</div>`)}
+  ];
+  repPaginate(blocks);
+}
+
+/* 査定書のヘッダー（1ページ目は大きく、2ページ目以降は小さく） */
+function repHeader(small){
+  const logo = $("#coLogo")?.checked!==false ? `<img class="logo" alt="AJIRO" src="data:image/png;base64,${AJIRO_LOGO_B64}">` : "";
+  const tel = $("#coTel").value ? "　TEL "+esc($("#coTel").value) : "";
+  return `<div class="rep-h${small?" sm":""}">${logo}
+    <div class="co${logo?"":" nologo"}"><div class="nm">${esc($("#coName").value)}</div><div class="ad">${esc($("#coAddr").value)}${tel}</div></div>
+    ${small?`<div class="rt">不動産査定報告書</div>`:""}</div>`;
+}
+
+/* ブロックをA4ページに流し込む。
+   ・ページに入らないブロックは次のページへ。
+   ・data-units を持つ表／備考は、行の単位で分けて次のページに続ける（見出しに「（続き）」）。
+   ・表の見出し行（tr.hd）は続きのページにも付ける。
+   ・単位の後ろにある要素（査定額 合計、注記、免責）は最後の行と一緒に動く。 */
+function repPaginate(blocks){
+  const host=$("#report"); host.innerHTML="";
+  const pages=[];
+  const newPage=first=>{
+    const p=document.createElement("div"); p.className="page";
+    p.innerHTML=`<div class="pg-body">${first?"":`<div class="ph">${repHeader(true)}</div>`}</div><div class="pg-foot"><span class="pno"></span></div>`;
+    host.appendChild(p); pages.push(p); return p.firstElementChild;
+  };
+  const over=b=>b.scrollHeight>b.clientHeight+1;
+  const frag=html=>{ const t=document.createElement("div"); t.innerHTML=html.trim(); return t.firstElementChild; };
+  const units=box=>box.tagName==="TABLE" ? [...box.rows].filter(r=>!r.classList.contains("hd")) : [...box.children];
+
+  // el の後ろ側を切り出して返す。切り出せないときは null
+  const splitOff=(el,body)=>{
+    const box=el.querySelector("[data-units]"); if(!box) return null;
+    const alone = body.querySelectorAll(".blk").length===1;   // このページに el しかない
+    if(units(box).length<=1) return null;
+    const rest=el.cloneNode(true), rbox=rest.querySelector("[data-units]");
+    units(rbox).forEach(n=>n.remove());
+    // 単位より後ろの要素は「続き」側だけに残す
+    for(let s=box.nextElementSibling;s;){ const n=s.nextElementSibling; s.remove(); s=n; }
+    const target = rbox.tagName==="TABLE" ? (rbox.tBodies[rbox.tBodies.length-1]||rbox) : rbox;
+    let anchor=null, moved=0;
+    const moveOne=()=>{ const u=units(box); const last=u[u.length-1]; target.insertBefore(last,anchor); anchor=last; moved++; };
+    do{ moveOne(); } while(over(body) && units(box).length>(alone?1:0));
+    // 小見出し・空行がページの最後に取り残されないようにする
+    for(let u=units(box); u.length>(alone?1:0) && /\b(nh|sp)\b/.test(u[u.length-1].className); u=units(box)) moveOne();
+    // 続きの先頭の空行は詰める
+    for(let u=units(rbox); u.length && u[0].classList.contains("sp"); u=units(rbox)) u[0].remove();
+    const span=rest.querySelector("h3>span"), span0=el.querySelector("h3>span");
+    if(!units(box).length){ el.remove(); }                 // 丸ごと移った → 見出しはそのまま
+    else if(span && !/（続き）$/.test(span.textContent)) span.textContent=span0.textContent+"（続き）";
+    return rest;
+  };
+
+  let body=newPage(true);
+  for(const b of blocks){
+    if(b.newPage && body.querySelector(".blk")) body=newPage(false);
+    let el=frag(b.html); body.appendChild(el);
+    for(let guard=0; over(body) && guard<60; guard++){
+      const rest=splitOff(el,body);
+      if(rest){ body=newPage(false); body.appendChild(rest); el=rest; continue; }
+      if(body.querySelectorAll(".blk").length<=1 && el.classList.contains("blk")) break;  // 1ブロックで1ページを超える（通常は起きない）
+      el.remove(); body=newPage(false); body.appendChild(el);
+    }
+  }
+  pages.forEach((p,i)=>{ p.querySelector(".pno").textContent=(i+1)+" / "+pages.length; });
+}
+
+/* =======================================================================
+   登記の読み取り
+   ======================================================================= */
+const FILES=[];
+const fileSize=n=>n<1048576?(n/1024).toFixed(0)+" KB":(n/1048576).toFixed(1)+" MB";
+function renderFiles(){
+  $("#fileList").innerHTML=FILES.map((f,i)=>
+    `<li><span class="nm">${esc(f.name)}</span><span class="sz">${fileSize(f.size)}</span>
+     <button class="btn btn-sm btn-danger" data-rm="${i}">×</button></li>`).join("");
+}
+const toB64=f=>new Promise((res,rej)=>{const r=new FileReader();
+  r.onload=()=>res(r.result.split(",")[1]); r.onerror=()=>rej(new Error("読み込み失敗")); r.readAsDataURL(f);});
+
+async function readTouki(){
+  const st=$("#readStatus");
+  if(!FILES.length){ st.className="status ng"; st.textContent="先に登記のPDFまたは画像を追加してください。"; return; }
+  if(location.protocol==="file:" && !$("#apiKey").value.trim()){
+    st.className="status ng";
+    st.textContent="このファイルをPCに保存して直接開いているため、ブラウザが外部との通信をブロックしています。\n上の「読み取りが動かないとき」を開いて、方法A（Claudeの会話でJSONにして貼り付け）をお使いください。キーも費用も不要です。";
+    $("#pasteWrap").open=true;
+    return;
+  }
+  st.className="status run"; st.textContent="登記を読み取っています…";
+  try{
+    const content=[];
+    for(const f of FILES.slice(0,5)){
+      const b64=await toB64(f);
+      content.push(f.type==="application/pdf"
+        ? {type:"document",source:{type:"base64",media_type:"application/pdf",data:b64}}
+        : {type:"image",source:{type:"base64",media_type:f.type||"image/jpeg",data:b64}});
+    }
+    content.push({type:"text",text:
+`添付は土地および建物の登記事項証明書です。表題部から読み取り、JSONだけを返してください。前置き・コードフェンスは不要です。
+読み取れない項目はnull、数値は数値型で単位や桁区切りなし。
+
+{"address":"所在（市町村・字・丁目まで）",
+ "lands":[{"chiban":"地番","chimoku":"地目","area":地積の平方メートル数}],
+ "buildings":[{"kaoku":"家屋番号","shurui":"種類","kozoTxt":"構造（登記の表記そのまま。屋根材まで含める）","area":床面積の合計平方メートル数,"year":新築の西暦年,"month":新築の月,"sub":false}]}
+
+・土地が複数筆あれば lands に全部入れてください。
+・建物の床面積が階ごとに分かれている場合は合計してください。
+・「附属建物の表示」にある車庫・物置などは buildings の別要素にし、"sub":true にしてください。主たる建物は "sub":false です。
+・構造は「木造亜鉛メッキ鋼板葺2階建」のように屋根材まで含めて原文どおり書いてください。仕様グレードの判定に使います。`});
+
+    const data=await callClaude({model:"claude-sonnet-4-6",max_tokens:1000,messages:[{role:"user",content}]});
+    applyTouki(pickJSON(data));
+    st.className="status ok";
+    st.textContent="読み取りました。原本と数値を必ず突き合わせてください（特に地積・床面積・新築年月）。";
+  }catch(e){
+    st.className="status ng";
+    st.textContent="読み取れませんでした。\n"+e.message+"\n\n上の「読み取りが動かないとき」を開いて、方法Aで取り込んでください。";
+  }
+}
+
+function applyTouki(j){
+    if(j.address && !$("#address").value) $("#address").value=j.address;
+    if(Array.isArray(j.lands) && j.lands.length){
+      $("#lands").innerHTML="";
+      j.lands.forEach(l=>addLand({chiban:l.chiban||"",chimoku:l.chimoku||"宅地",area:l.area||""}));
+    }
+    if(Array.isArray(j.buildings) && j.buildings.length){
+      $("#bldgs").innerHTML=""; bldgSeq=0;
+      j.buildings.forEach(b=>{
+        const el=addBldg(b.sub?"sub":"main");
+        const g=f=>el.querySelector(`[data-f="${f}"]`);
+        if(b.kaoku&&g("kaoku")) g("kaoku").value=b.kaoku;
+        if(b.area&&g("area")) g("area").value=b.area;
+        if(b.year&&g("y")) g("y").value=b.year;
+        if(b.month&&g("m")) g("m").value=b.month;
+        if(b.sub){
+          const t=String(b.shurui||"")+String(b.kozoTxt||"");
+          const hit=FUZOKU.find(f=>t.indexOf(f[0])>=0);
+          if(hit) g("fz").value=hit[1];
+          g("kozo").value=guessKozo(b.kozoTxt);
+        } else {
+          if(b.shurui) g("shurui").value=b.shurui;
+          if(b.kozoTxt){ g("kozoTxt").value=b.kozoTxt; g("kozo").value=guessKozo(b.kozoTxt); }
+        }
+      });
+    }
+    recalc();
+}
+
+function applyJSON(j){
+  if(j && j.type==="satei-archive"){ return [arcImportAll(j)]; } // 「一覧をまとめて書き出す」の形式
+  if(j && j.f){ restore(j); return ["保存した査定データ"]; }   // 「保存」で書き出した形式
+  const done=[];
+  if(j.address||j.lands||j.buildings){ applyTouki(j); done.push("物件情報"); }
+  const list = j.list || (Array.isArray(j)?j:null);
+  if(Array.isArray(list)&&list.length&&(list[0].price!==undefined||list[0].addr!==undefined)){
+    $("#cmps").innerHTML=""; list.forEach(addCmp); renumberCmp();
+    done.push("周辺物件"+list.length+"件");
+  }
+  return done;
+}
+
+function importText(raw, st){
+  if(!raw||!raw.trim()){ st.className="status ng"; st.textContent="取り込む内容がありません。"; return; }
+  let j;
+  try{
+    const m=raw.match(/\{[\s\S]*\}|\[[\s\S]*\]/);
+    j=JSON.parse(m?m[0]:raw);
+  }catch(e){
+    st.className="status ng";
+    st.textContent="JSONとして読めませんでした。\n"+e.message+"\n\nコードブロックの中身だけを、{ から } まで貼ってください。";
+    return;
+  }
+  try{
+    const done=applyJSON(j);
+    if(!done.length){
+      st.className="status ng";
+      st.textContent="取り込める項目が見つかりませんでした。address / lands / buildings / list のいずれかを含むJSONにしてください。";
+      return;
+    }
+    recalc();
+    st.className="status ok";
+    st.textContent=done.join("・")+"を取り込みました。原本と数値を必ず突き合わせてください（特に地積・床面積・新築年月）。";
+  }catch(e){
+    st.className="status ng"; st.textContent="取り込みでエラーが出ました。\n"+e.message;
+  }
+}
+function pasteImport(){ importText($("#pasteBox").value, $("#pasteStatus")); }
+function fileImport(file, st){
+  const r=new FileReader();
+  r.onload=()=>importText(String(r.result), st);
+  r.onerror=()=>{ st.className="status ng"; st.textContent="ファイルを読めませんでした。"; };
+  r.readAsText(file);
+}
+
+
+/* =======================================================================
+   PDF / HTML 書き出し
+   ======================================================================= */
+/* AJIROロゴ（黒・横組み）。デスクトップの AJIRO-logo-P-base.png の形をそのまま黒にして横に並べたもの。元画像は assets/ にある */
+const AJIRO_LOGO_B64="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";
+
+/* 査定書の見た目（Skill「AJIRO 不動産査定報告書・フォーマルデザイン」準拠）
+   画面プレビュー・PDF直生成・印刷・HTML書き出しのすべてがこの1か所を使う。
+   配色は黒・チャコール・薄いグレー・白のみ。斜めの切り替え・グラデーション・角丸・影は使わない。 */
+const REP_FONT='"Hiragino Kaku Gothic ProN","Hiragino Sans","Yu Gothic Medium","Yu Gothic","YuGothic","Meiryo",sans-serif';
+const REP_CSS=`
+.page{box-sizing:border-box;width:210mm;height:297mm;padding:12mm 14mm 9mm;margin:0 auto 14px;background:#fff;color:#000;
+ display:flex;flex-direction:column;overflow:hidden;font-family:${REP_FONT};font-size:10pt;line-height:1.5;text-align:left;
+ -webkit-print-color-adjust:exact;print-color-adjust:exact}
+.page *{box-sizing:border-box}
+.pg-body{flex:1 1 auto;min-height:0;overflow:hidden}
+.pg-foot{flex:none;height:6mm;display:flex;align-items:flex-end;justify-content:flex-end;font-size:8pt;color:#555;letter-spacing:.06em}
+.rep-h{display:flex;align-items:center;padding-bottom:3.2mm;border-bottom:1.4px solid #303234}
+.rep-h .logo{height:10mm;width:auto;display:block;flex:none}
+.rep-h .co{margin-left:5mm;padding-left:5mm;border-left:1px solid #303234;line-height:1.45}
+.rep-h .co.nologo{margin-left:0;padding-left:0;border-left:0}
+.rep-h .co .nm{font-size:13pt;font-weight:700;letter-spacing:.08em}
+.rep-h .co .ad{font-size:9pt;letter-spacing:.04em}
+.rep-h .rt{margin-left:auto;font-size:9pt;letter-spacing:.2em;color:#303234}
+.rep-h.sm{padding-bottom:2.2mm}
+.rep-h.sm .logo{height:6.5mm}
+.rep-h.sm .co{margin-left:4mm;padding-left:4mm}
+.rep-h.sm .co .nm{font-size:10pt}
+.rep-h.sm .co .ad{font-size:7.5pt}
+.ph{margin-bottom:4.5mm}
+.rep-title{margin:6mm 0 4.5mm;font-size:23pt;font-weight:700;letter-spacing:.32em;line-height:1.2}
+.rep-meta{display:flex;justify-content:space-between;align-items:flex-end}
+.rep-to{font-size:15pt;letter-spacing:.1em;border-bottom:1px solid #000;padding:0 30px 2px 4px;min-width:62mm}
+.rep-date{font-size:10pt}
+.rep-sec{margin-top:4.5mm}
+.ph+.rep-sec{margin-top:0}
+.rep-sec>h3{display:flex;align-items:stretch;height:8mm;margin:0 0 2mm;padding:0;background:#DFE1E3;font-size:12pt;font-weight:700}
+.rep-sec>h3>span{flex:none;min-width:45mm;display:flex;align-items:center;padding:0 5mm 0 4mm;background:#303234;color:#fff;
+ letter-spacing:.2em;border-right:1.5px solid #fff;white-space:nowrap}
+table.rep{width:100%;border-collapse:collapse;table-layout:fixed;font-size:10pt;line-height:1.4}
+table.rep th,table.rep td{border:.75pt solid #5E6063;padding:.95mm 2mm;vertical-align:middle;word-break:normal;overflow-wrap:break-word;line-break:strict}
+table.rep th{background:#F1F2F3;font-weight:700;text-align:left;white-space:nowrap}
+table.rep td.n{text-align:right;font-variant-numeric:tabular-nums}
+table.rep td.nw,table.rep th.nw{white-space:nowrap;word-break:keep-all;overflow-wrap:normal}
+table.rep tr.sum th,table.rep tr.sum td{background:#F1F2F3;font-weight:700;font-size:11pt}
+table.rep.cmp{font-size:8.4pt}
+table.rep.cmp th,table.rep.cmp td{padding:.8mm 1.3mm}
+table.rep.cmp tr.hd th{text-align:center}
+table.rep.cmp tr.self td,table.rep.cmp tr.self th{background:#E6E7E9;font-weight:700}
+.bl-wrap>table+table{margin-top:2.2mm}
+.rep-total{display:flex;align-items:stretch;height:13mm;margin-top:2.5mm;background:#DFE1E3}
+.rep-total .lb{flex:none;min-width:45mm;display:flex;align-items:center;padding:0 5mm 0 4mm;background:#303234;color:#fff;
+ font-size:14pt;font-weight:700;letter-spacing:.14em;border-right:1.5px solid #fff;white-space:nowrap}
+.rep-total .v{margin-left:auto;align-self:center;padding-right:4mm;font-size:21pt;font-weight:700;font-variant-numeric:tabular-nums;letter-spacing:.02em;white-space:nowrap}
+.rep-total .v small{font-size:13pt;margin-left:1.5mm}
+.rep-cap{font-size:8pt;margin-top:1.2mm;color:#444}
+.rep-note{border:.75pt solid #5E6063;padding:3.5mm 4.5mm;font-size:9.5pt;line-height:1.85}
+.rep-note .ln{white-space:pre-wrap;overflow-wrap:break-word;line-break:strict}
+.rep-note .ln.sp{height:.8em}
+.rep-note .ln.nh{font-weight:700}
+.rep-foot{margin-top:4mm;padding-top:2mm;font-size:9pt;color:#444;border-top:.75pt solid #9A9CA0}
+@media print{
+ .page{width:210mm;height:296mm;margin:0;break-after:page;page-break-after:always}
+ .page:last-child{break-after:auto;page-break-after:auto}
+}`;
+function reportCSS(){
+  return `@page{size:A4;margin:0}
+*{box-sizing:border-box}
+body{margin:0;background:#fff;color:#000;font-family:${REP_FONT};-webkit-print-color-adjust:exact;print-color-adjust:exact}
+${REP_CSS}`;
+}
+function reportTitle(){
+  const d=$("#reportDate").value||new Date().toISOString().slice(0,10);
+  const nm=($("#ownerName").value||$("#address").value||"無題").replace(/[\\\\\/:*?"<>|\s]/g,"_").slice(0,40);
+  return d.replace(/-/g,"")+"_不動産査定報告書_"+nm;
+}
+function reportHTML(){
+  return "<!DOCTYPE html>\n<html lang=\"ja\"><head><meta charset=\"utf-8\">"
+    + "<title>"+esc(reportTitle())+"</title><style>"+reportCSS()+"</style></head><body>"
+    + $("#report").innerHTML + "</body></html>";
+}
+function download(name, text, mime){
+  const url=URL.createObjectURL(new Blob([text],{type:mime||"text/plain;charset=utf-8"}));
+  const a=document.createElement("a");
+  a.href=url; a.download=name; a.rel="noopener"; a.style.display="none";
+  document.body.appendChild(a); a.click();
+  setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); },4000);
+}
+function printGuide(cls, html){
+  const g=$("#pdfGuide");
+  g.className="status "+cls; g.style.display=""; g.innerHTML=html;
+  clearTimeout(printGuide.t);
+  printGuide.t=setTimeout(()=>{ g.style.display="none"; }, 20000);
+}
+/* 査定書だけの綺麗なページを新しいタブで開いて、そこから印刷する。
+   アプリ画面ごと印刷するより確実で、PDFのファイル名も査定書の名前になる。 */
+function savePDF(){
+  buildReport();
+  const name=reportTitle();
+  let w=null;
+  try{ w=window.open("","_blank"); }catch(e){}
+  if(!w){
+    printGuide("ng",
+      'ポップアップがブロックされたため、この画面から印刷します。'
+      +'<br><b>「送信先」または「プリンター」で「PDFに保存」を選び、「保存」を押してください。</b>'
+      +'<br>アドレスバーの右端に出るポップアップ許可のアイコンから許可すると、次回から査定書だけのページが開きます。');
+    setTimeout(()=>window.print(),400);
+    return;
+  }
+  w.document.open();
+  w.document.write(reportHTML());
+  w.document.close();
+  printGuide("run",
+    '査定書だけのタブを開きました。そちらで印刷ダイアログが出ます。'
+    +'<br><b>「送信先」または「プリンター」で「PDFに保存」を選び、「保存」を押してください。</b>'
+    +'　保存名は <b>'+esc(name)+'.pdf</b> になります。'
+    +'<br>ダイアログが出ないときは、そのタブで <b>Ctrl+P</b> を押してください。うまくいかない場合は「HTMLで保存」で保存してから開いて印刷しても同じものが作れます。');
+  const go=()=>{ try{ w.focus(); w.print(); }catch(e){} };
+  if(w.document.readyState==="complete") setTimeout(go,350);
+  else w.addEventListener("load",()=>setTimeout(go,250));
+}
+function saveReportHTML(){
+  buildReport();
+  download(reportTitle()+".html", reportHTML(), "text/html;charset=utf-8");
+}
+
+/* =======================================================================
+   自動保存（閉じても入力内容が残る）
+   ======================================================================= */
+const AUTO_KEY="satei.autosave.v1";
+let autoTimer=null, autoOn=false;
+function autoSave(){
+  if(!autoOn) return;
+  clearTimeout(autoTimer);
+  autoTimer=setTimeout(()=>{
+    try{
+      localStorage.setItem(AUTO_KEY, JSON.stringify({
+        at:new Date().toISOString(), label:arcLabel(),
+        owner:$("#ownerName").value.trim(), total:LAST.total||0, data:snapshot()
+      }));
+    }catch(e){}
+  }, 800);
+}
+function autoClear(){ try{ localStorage.removeItem(AUTO_KEY); }catch(e){} }
+function autoOffer(){
+  let r=null;
+  try{ r=JSON.parse(localStorage.getItem(AUTO_KEY)||"null"); }catch(e){}
+  if(!r||!r.data){ autoOn=true; return; }
+  const d=new Date(r.at);
+  const dt=(d.getMonth()+1)+"月"+d.getDate()+"日 "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+  $("#resumeTxt").innerHTML="前回の入力が残っています　<b>"+esc(r.label||"無題")+"</b>"
+    + (r.owner?"（"+esc(r.owner)+" 様）":"") + (r.total?"　査定額 "+yenR(r.total)+"円":"") + "　— "+dt+"に自動保存";
+  $("#resumeBar").style.display="flex";
+  $("#btnResume").onclick=()=>{ restore(r.data); $("#resumeBar").style.display="none"; autoOn=true; };
+  $("#btnFresh").onclick=()=>{ autoClear(); $("#resumeBar").style.display="none"; autoOn=true; };
+}
+
+
+/* =======================================================================
+   PDFを直接つくる（印刷ダイアログを使わない）
+   ・査定書の各ページをSVG foreignObjectで画像化し、PDFに詰めて保存する
+   ・外部ライブラリもインターネットも不要
+   ======================================================================= */
+const A4W_PT=595.28, A4H_PT=841.89, MM=96/25.4;
+
+function u8(str){ const a=new Uint8Array(str.length); for(let i=0;i<str.length;i++) a[i]=str.charCodeAt(i)&0xff; return a; }
+function b64ToU8(b64){
+  const bin=atob(b64); const a=new Uint8Array(bin.length);
+  for(let i=0;i<bin.length;i++) a[i]=bin.charCodeAt(i);
+  return a;
+}
+/* JPEG画像を並べただけの最小構成のPDFを組み立てる */
+function makePDF(pages){
+  const chunks=[]; let len=0;
+  const put=x=>{ const a=(typeof x==="string")?u8(x):x; chunks.push(a); len+=a.length; };
+  const offs=[];
+  const obj=(n,body,bin)=>{ offs[n]=len; put(n+" 0 obj\n"+body); if(bin){ put("stream\n"); put(bin); put("\nendstream\n"); } put("endobj\n"); };
+
+  put("%PDF-1.4\n%\xE2\xE3\xCF\xD3\n");
+  const kids=pages.map((_,i)=>(3+i*3)+" 0 R").join(" ");
+  obj(1,"<</Type/Catalog/Pages 2 0 R>>\n");
+  obj(2,"<</Type/Pages/Kids["+kids+"]/Count "+pages.length+">>\n");
+  pages.forEach((pg,i)=>{
+    const pN=3+i*3, cN=pN+1, iN=pN+2;
+    const content="q "+A4W_PT.toFixed(2)+" 0 0 "+A4H_PT.toFixed(2)+" 0 0 cm /I"+i+" Do Q\n";
+    obj(pN,"<</Type/Page/Parent 2 0 R/MediaBox[0 0 "+A4W_PT.toFixed(2)+" "+A4H_PT.toFixed(2)+"]"
+      +"/Resources<</XObject<</I"+i+" "+iN+" 0 R>>>>/Contents "+cN+" 0 R>>\n");
+    obj(cN,"<</Length "+content.length+">>\n",u8(content));
+    obj(iN,"<</Type/XObject/Subtype/Image/Width "+pg.w+"/Height "+pg.h
+      +"/ColorSpace/DeviceRGB/BitsPerComponent 8/Filter/DCTDecode/Length "+pg.jpg.length+">>\n",pg.jpg);
+  });
+  const xref=len;
+  const maxObj=2+pages.length*3;      // 使った最大のオブジェクト番号
+  const size=maxObj+1;                // 0番（空きオブジェクト）を含めた総数
+  let x="xref\n0 "+size+"\n0000000000 65535 f \n";
+  for(let n=1;n<=maxObj;n++) x+=String(offs[n]).padStart(10,"0")+" 00000 n \n";
+  put(x);
+  put("trailer\n<</Size "+size+"/Root 1 0 R>>\nstartxref\n"+xref+"\n%%EOF\n");
+
+  const out=new Uint8Array(len); let o=0;
+  for(const c of chunks){ out.set(c,o); o+=c.length; }
+  return out;
+}
+/* 1ページ分のDOMを画像にする。
+   ページ（.page）は余白込みのA4で組んであり、repPaginate() で中身がはみ出さないよう
+   分けてあるので、縮小せずにそのまま画像にする。 */
+function pageToJPEG(el, scale){
+  return new Promise((res,rej)=>{
+    const W=Math.round(210*MM), H=Math.round(297*MM);
+
+    const box=document.createElement("div");
+    box.setAttribute("xmlns","http://www.w3.org/1999/xhtml");
+    box.style.cssText="width:"+W+"px;height:"+H+"px;background:#fff;overflow:hidden;"
+      +"padding:0;box-sizing:border-box;position:fixed;left:-20000px;top:0;z-index:-1";
+    const st=document.createElement("style");
+    st.textContent=reportCSS().replace(/@page\{[^}]*\}/g,"");
+    const holder=document.createElement("div");
+    holder.style.cssText="width:"+W+"px";
+    const inner=el.cloneNode(true);
+    inner.style.cssText="width:"+W+"px;height:"+H+"px;margin:0";
+    holder.appendChild(inner);
+    box.appendChild(st); box.appendChild(holder);
+    document.body.appendChild(box);
+
+    let xhtml;
+    try{ box.style.position=""; box.style.left=""; box.style.top=""; box.style.zIndex="";
+         xhtml=new XMLSerializer().serializeToString(box); }
+    catch(e){ box.remove(); rej(new Error("査定書の内容を変換できませんでした")); return; }
+    box.remove();
+
+    const svg='<svg xmlns="http://www.w3.org/2000/svg" width="'+W+'" height="'+H+'">'
+      +'<foreignObject x="0" y="0" width="'+W+'" height="'+H+'">'+xhtml+'</foreignObject></svg>';
+
+    const img=new Image();
+    img.onload=()=>{
+      try{
+        const cv=document.createElement("canvas");
+        cv.width=Math.round(W*scale); cv.height=Math.round(H*scale);
+        const cx=cv.getContext("2d");
+        cx.fillStyle="#fff"; cx.fillRect(0,0,cv.width,cv.height);
+        cx.drawImage(img,0,0,cv.width,cv.height);
+        const url=cv.toDataURL("image/jpeg",0.92);
+        res({jpg:b64ToU8(url.split(",")[1]), w:cv.width, h:cv.height});
+      }catch(e){ rej(e); }
+    };
+    img.onerror=()=>rej(new Error("画像化に失敗しました"));
+    img.src="data:image/svg+xml;charset=utf-8,"+encodeURIComponent(svg);
+  });
+}
+async function makeReportPDF(){
+  buildReport();
+  const els=$$("#report .page");
+  if(!els.length) throw new Error("査定書がまだ作られていません");
+  const pages=[];
+  for(const el of els) pages.push(await pageToJPEG(el,2));
+  return makePDF(pages);
+}
+async function savePDFDirect(){
+  printGuide("run","PDFを作成しています…");
+  try{
+    const bytes=await makeReportPDF();
+    const url=URL.createObjectURL(new Blob([bytes],{type:"application/pdf"}));
+    const a=document.createElement("a");
+    a.href=url; a.download=reportTitle()+".pdf"; a.style.display="none";
+    document.body.appendChild(a); a.click();
+    setTimeout(()=>{ a.remove(); URL.revokeObjectURL(url); },4000);
+    printGuide("ok","<b>"+esc(reportTitle())+".pdf</b> をダウンロードしました。"
+      +"ブラウザのダウンロード欄をご確認ください。（印刷ダイアログは使っていません）");
+  }catch(e){
+    printGuide("ng","PDFを作れませんでした："+esc(e.message)
+      +"<br>「別タブで開く」から Ctrl+P で保存するか、「HTMLで保存」をお試しください。");
+  }
+}
+
+/* =======================================================================
+   案件アーカイブ
+   ======================================================================= */
+const ARC_KEY="satei.archive.v1";
+function arcAvailable(){
+  try{ localStorage.setItem("__t","1"); localStorage.removeItem("__t"); return true; }catch(e){ return false; }
+}
+function arcLoad(){
+  try{ return JSON.parse(localStorage.getItem(ARC_KEY)||"[]"); }catch(e){ return []; }
+}
+function arcSave(list){
+  try{ localStorage.setItem(ARC_KEY, JSON.stringify(list)); return true; }catch(e){ return false; }
+}
+function arcLabel(){
+  const a=$("#address").value.trim();
+  const c=$$("#lands [data-l='chiban']").map(e=>e.value.trim()).filter(Boolean);
+  return a || (c.length?c[0]:"") || "無題";
+}
+function arcPut(status){
+  const st=$("#arcStatus");
+  recalc(); buildReport();
+  const rec={
+    id:"a"+Date.now(),
+    status, label:arcLabel(), owner:$("#ownerName").value.trim(),
+    total:LAST.total||0, savedAt:new Date().toISOString(),
+    data:snapshot()
+  };
+  if(!arcAvailable()){
+    st.className="status ng";
+    st.textContent="このブラウザでは一覧に保存できません（ファイルを直接開いているため）。ファイルとして書き出しました。";
+    download(reportTitle()+(status==="done"?"_完成":"_作業中")+".json", JSON.stringify(rec.data,null,2), "application/json");
+    if(status==="done") saveReportHTML();
+    return;
+  }
+  const list=arcLoad();
+  const same=list.findIndex(x=>x.label===rec.label && x.owner===rec.owner);
+  if(same>=0 && confirm("同じ物件が保存されています。上書きしますか？\n（キャンセルすると別件として追加します）")) list[same]=rec;
+  else list.unshift(rec);
+  if(!arcSave(list.slice(0,60))){
+    st.className="status ng";
+    st.textContent="ブラウザの保存容量がいっぱいです。一覧から不要な案件を削除するか、「ファイルに書き出す」で保存してください。";
+    return;
+  }
+  arcRender();
+  st.className="status ok";
+  st.textContent=(status==="done"?"完成品として":"作業中として")+"保存しました：「"+rec.label+"」"
+    + (status==="done"?"　査定書のHTMLもダウンロードしました。":"　続きはいつでもこの一覧から開けます。");
+  if(status==="done") saveReportHTML();
+}
+function arcRender(){
+  const tb=$("#arcs"), note=$("#arcNote");
+  if(!arcAvailable()){
+    tb.innerHTML='<tr><td colspan="6" class="dim">このブラウザでは一覧を保存できません（HTMLファイルを直接開いているため）。'
+      +'「ファイルに書き出す」でJSONを保存し、「ファイルから読み込む」で再開してください。</td></tr>';
+    note.textContent="";
+    return;
+  }
+  const list=arcLoad();
+  tb.innerHTML = list.length ? list.map(r=>{
+    const d=new Date(r.savedAt);
+    const dt=d.getFullYear()+"/"+(d.getMonth()+1)+"/"+d.getDate()+" "+String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");
+    return `<tr data-arc="${r.id}">
+      <td><span class="tag ${r.status}">${r.status==="done"?"完成":"作業中"}</span></td>
+      <td>${esc(r.label)}</td><td>${esc(r.owner)||"—"}</td>
+      <td class="n">${r.total?yenR(r.total)+"円":"—"}</td>
+      <td class="dim">${dt}</td>
+      <td><button class="btn btn-sm" data-arc-open>開く</button>
+          <button class="btn btn-sm" data-arc-dl>書出</button>
+          <button class="btn btn-sm btn-danger" data-arc-del>削除</button></td></tr>`;
+  }).join("") : '<tr><td colspan="6" class="dim">まだ保存されていません。作業の途中でも「作業中として保存」で残せます。</td></tr>';
+  note.textContent = list.length
+    ? list.length+"件を保存中。このブラウザの中に保存しているため、PCを変えると引き継げません。大事な案件は「書出」でファイルにも残してください。"
+    : "";
+}
+/* 一覧（＋自動保存の途中データ）を1つのJSONにまとめて書き出す。
+   別のPCや、サイトに載せた版へ引っ越すときに使う。読み込みは「ファイルから読み込む」でよい。 */
+function arcExportAll(){
+  const st=$("#arcStatus");
+  if(!arcAvailable()){ st.className="status ng"; st.textContent="このブラウザでは一覧を使えないため、まとめて書き出す案件がありません。"; return; }
+  const items=arcLoad();
+  let auto=null; try{ auto=JSON.parse(localStorage.getItem(AUTO_KEY)||"null"); }catch(e){}
+  if(!items.length && !auto){ st.className="status ng"; st.textContent="一覧に保存された案件がありません。"; return; }
+  const d=new Date(), ymd=d.getFullYear()+String(d.getMonth()+1).padStart(2,"0")+String(d.getDate()).padStart(2,"0");
+  download(ymd+"_査定アーカイブ_"+items.length+"件.json",
+    JSON.stringify({type:"satei-archive",v:1,exportedAt:d.toISOString(),items,autosave:auto},null,2),"application/json");
+  st.className="status ok";
+  st.textContent=items.length+"件"+(auto?"（＋自動保存の途中データ）":"")+"を1つのファイルに書き出しました。引っ越し先では「ファイルから読み込む」で取り込めます。";
+}
+/* まとめ書き出しファイルを一覧に戻す。同じidは上書きせずスキップする */
+function arcImportAll(j){
+  if(!arcAvailable()) throw new Error("このブラウザでは一覧を使えません（ファイルを直接開いているため）。");
+  const list=arcLoad(), have=new Set(list.map(x=>x.id));
+  const add=(j.items||[]).filter(x=>x&&x.id&&x.data&&!have.has(x.id));
+  const merged=[...add,...list].sort((a,b)=>String(b.savedAt).localeCompare(String(a.savedAt)));
+  const cut=Math.max(0,merged.length-60);
+  if(!arcSave(merged.slice(0,60))) throw new Error("ブラウザの保存容量がいっぱいです。");
+  arcRender();
+  return "案件アーカイブ"+add.length+"件"+((j.items||[]).length-add.length?"（既にある"+((j.items||[]).length-add.length)+"件は省略）":"")
+    +(cut?"　※上限60件を超えた古い"+cut+"件は取り込めませんでした":"");
+}
+function arcOpen(id){
+  const r=arcLoad().find(x=>x.id===id); if(!r) return;
+  restore(r.data);
+  $("#arcStatus").className="status ok";
+  $("#arcStatus").textContent="「"+r.label+"」を読み込みました。";
+  window.scrollTo({top:0,behavior:"smooth"});
+}
+
+/* =======================================================================
+   保存
+   ======================================================================= */
+function snapshot(){
+  const o={v:2,f:{},lands:[],b:[],c:[]};
+  $$("input[id],select[id],textarea[id]").forEach(el=>{
+    if(el.type==="file"||el.dataset.nosave) return;
+    o.f[el.id]= el.type==="checkbox"?el.checked:el.value;
+  });
+  o.lands=landRows();
+  $$("#bldgs .card").forEach(el=>{
+    const r={__kind:el.dataset.kind};
+    el.querySelectorAll("[data-f]").forEach(i=>{ if(i.type==="file") return;
+      r[i.dataset.f] = i.type==="checkbox" ? i.checked : i.value; });
+    o.b.push(r);
+  });
+  o.c=cmpRows();
+  return o;
+}
+function restore(o){
+  Object.entries(o.f||{}).forEach(([k,v])=>{
+    const el=document.getElementById(k); if(!el||el.dataset.nosave) return;
+    if(el.type==="checkbox") el.checked=v; else el.value=v;
+  });
+  $("#lands").innerHTML=""; (o.lands||[]).forEach(addLand); if(!$("#lands").children.length) addLand();
+  $("#bldgs").innerHTML=""; bldgSeq=0;
+  (o.b||[]).forEach(r=>{
+    const el=addBldg(r.__kind==="sub"?"sub":"main");
+    Object.entries(r).forEach(([k,v])=>{ if(k==="__kind")return;
+      const i=el.querySelector(`[data-f="${k}"]`); if(!i) return;
+      if(i.type==="checkbox"){ i.checked=!!v; return; }
+      if(v!==""){ i.value=v; if(["kutaiY","effAge","unit","kozo","use","dmode"].indexOf(k)>=0) i.dataset.touched="1"; } });
+  });
+  if(!$("#bldgs").children.length) addBldg("main");
+  $("#cmps").innerHTML=""; (o.c||[]).forEach(addCmp); renumberCmp();
+  const yy=YOUTO[$("#youto").value];
+  if(yy){
+    if(num("#kenpei")!==yy.k) $("#kenpei").dataset.touched="1"; else delete $("#kenpei").dataset.touched;
+    if(num("#yoseki")!==yy.y) $("#yoseki").dataset.touched="1"; else delete $("#yoseki").dataset.touched;
+  }
+  onPropType(); syncYouto(false); recalc(); buildReport();
+}
+function exportJSON(){
+  download(reportTitle()+".json", JSON.stringify(snapshot(),null,2), "application/json");
+}
+
+/* =======================================================================
+   init
+   ======================================================================= */
+function syncYouto(force){
+  const y=YOUTO[$("#youto").value]; if(!y) return;
+  if(force||!$("#kenpei").dataset.touched) $("#kenpei").value=y.k;
+  if(force||!$("#yoseki").dataset.touched) $("#yoseki").value=y.y;
+  $("#youtoNote").textContent="米沢市の公表値：建蔽率 "+y.k+"％／容積率 "+y.y+"％。"+(y.note?y.note+"。":"")
+    +"米沢市の都市計画区域は全域が区域区分非設定（市街化区域・調整区域の指定なし、地区計画の指定なし）。";
+}
+function onPropType(){
+  const other=$("#propType").value==="__other";
+  $("#propTypeOtherBox").hidden=!other;
+}
+function syncPortalLinks(){
+  const a=$("#address").value.trim();
+  const q=encodeURIComponent(a||"米沢市");
+  const map={
+    gmap: a?"https://www.google.com/maps/search/?api=1&query="+q:"#",
+    suumo:"https://suumo.jp/jj/bukken/ichiran/JJ012FC001/?ar=030&bs=021&ta=06&sc=06202",
+    athome:"https://www.athome.co.jp/kodate/yamagata/yonezawa-city/list/",
+    homes:"https://www.homes.co.jp/kodate/chuko/yamagata/yonezawa-city/list/",
+    goo:"https://house.goo.ne.jp/buy/hu/area_yamagata/06202.html"
+  };
+  Object.entries(map).forEach(([k,href])=>{
+    $$('a[data-p="'+k+'"],a[data-k="'+k+'"]').forEach(el=>{
+      el.href=href; el.setAttribute("aria-disabled", href==="#"?"true":"false");
+    });
+  });
+}
+
+(function init(){
+  { const st=document.createElement("style"); st.id="repcss"; st.textContent=REP_CSS; document.head.appendChild(st); }
+  CHIKU.forEach(([v,l])=>$("#chiku").insertAdjacentHTML("beforeend",`<option value="${v}">${l}</option>`));
+  Object.keys(YOUTO).forEach(k=>$("#youto").insertAdjacentHTML("beforeend",`<option>${k}</option>`));
+  const ty=new Date().getFullYear();
+  for(let y=ty;y>=ty-6;y--) $("#fyYear").insertAdjacentHTML("beforeend",`<option value="${y}">${reiwaFY(y)}分（${y}）</option>`);
+  const today=new Date();
+  $("#reportDate").value=today.toISOString().slice(0,10);
+  $("#asOf").value=`${today.getFullYear()}.${today.getMonth()+1}.${today.getDate()}時点`;
+  $("#youto").value="第一種住居地域"; syncYouto(true);
+  addLand(); addBldg("main"); syncPortalLinks(); onPropType();
+
+  ["#kenpei","#yoseki"].forEach(s=>$(s).addEventListener("input",e=>e.target.dataset.touched="1"));
+  $("#propType").addEventListener("change",()=>{ onPropType(); recalc(); });
+  $("#address").addEventListener("input",syncPortalLinks);
+  $("#youto").addEventListener("change",()=>{ syncYouto(true); recalc(); });
+
+  $("#bldgs").addEventListener("input",e=>{
+    const f=e.target.dataset.f;
+    if(["kutaiY","effAge","unit"].indexOf(f)>=0) e.target.dataset.touched="1";
+    if(f&&f.indexOf("upd_")===0) e.target.dataset.touched="1";
+  });
+  $("#bldgs").addEventListener("change",e=>{
+    const f=e.target.dataset.f, card=e.target.closest(".card"); if(!card) return;
+    if(f==="kozo"||f==="use"||f==="dmode"||f==="valuation"||f==="rsnType") e.target.dataset.touched="1";
+    if(f==="kutai"||f==="grade") delete card.querySelector('[data-f="kutaiY"]')?.dataset.touched;
+    if(f==="inspect") delete card.querySelector('[data-f="effAge"]')?.dataset.touched;
+    if(f==="reno"||f==="renoY"){
+      card.querySelectorAll('[data-f^="upd_"]').forEach(i=>delete i.dataset.touched);
+      delete card.querySelector('[data-f="reno"]').dataset.dirty;
+    }
+    if(f==="umode") delete card.querySelector('[data-f="unit"]')?.dataset.touched;
+  });
+
+  document.addEventListener("input",e=>{ if(e.target.closest(".wrap")){ recalc(); autoSave(); } });
+  document.addEventListener("change",e=>{ if(e.target.closest(".wrap")){ recalc(); autoSave(); } });
+
+  $("#btnAddLand").onclick=()=>{ addLand(); recalc(); };
+  $("#lands").addEventListener("click",e=>{
+    if(!e.target.closest("[data-ldel]")) return;
+    if($$("#lands [data-land]").length<=1){ alert("地番は最低1件必要です。"); return; }
+    e.target.closest("tr").remove(); recalc();
+  });
+  $("#btnAddBldg").onclick=()=>addBldg("main");
+  $("#btnAddSub").onclick=()=>addBldg("sub");
+  $("#bldgs").addEventListener("click",e=>{
+    if(!e.target.closest("[data-del]")) return;
+    e.target.closest(".card").remove(); recalc();
+  });
+  $("#btnAddCmp").onclick=()=>{ addCmp(); recalc(); };
+  $("#cmps").addEventListener("click",e=>{
+    if(!e.target.closest("[data-cdel]")) return;
+    e.target.closest("tr").remove(); renumberCmp(); recalc();
+  });
+  $("#btnSearch").onclick=searchCmp;
+
+  $("#btnBuild").onclick=buildReport;
+  $("#btnPdf").onclick=savePDFDirect;
+  $("#btnPrint").onclick=savePDF;
+  $("#btnHtml").onclick=saveReportHTML;
+  $("#btnOpen").onclick=()=>{
+    buildReport();
+    const w=window.open("","_blank");
+    if(!w){ printGuide("ng","ポップアップがブロックされています。アドレスバー右端のアイコンから許可してください。"); return; }
+    w.document.open(); w.document.write(reportHTML()); w.document.close();
+    printGuide("ok","査定書だけのタブを開きました。そのタブで Ctrl+P からPDFに保存できます。");
+  };
+  $("#btnSaveWip").onclick=$("#btnSaveWip2").onclick=()=>arcPut("wip");
+  $("#btnSaveDone").onclick=$("#btnSaveDone2").onclick=()=>arcPut("done");
+  $("#btnClearAll").onclick=()=>{
+    if(!arcLoad().length) return;
+    if(confirm("保存した案件の一覧をすべて削除します。元に戻せません。よろしいですか？")){ arcSave([]); arcRender(); }
+  };
+  $("#arcs").addEventListener("click",e=>{
+    const tr=e.target.closest("[data-arc]"); if(!tr) return;
+    const id=tr.dataset.arc;
+    if(e.target.closest("[data-arc-open]")) arcOpen(id);
+    else if(e.target.closest("[data-arc-dl]")){
+      const r=arcLoad().find(x=>x.id===id); if(r) download(
+        (r.label||"査定").replace(/[\\\/:*?"<>|\s]/g,"_").slice(0,40)+".json", JSON.stringify(r.data,null,2), "application/json");
+    }
+    else if(e.target.closest("[data-arc-del]")){
+      if(!confirm("この案件を一覧から削除します。よろしいですか？")) return;
+      arcSave(arcLoad().filter(x=>x.id!==id)); arcRender();
+    }
+  });
+  arcRender();
+  $("#btnBuild2").onclick=()=>{ buildReport(); $("#reportPanel").scrollIntoView({behavior:"smooth"}); };
+  document.addEventListener("keydown",e=>{
+    if((e.ctrlKey||e.metaKey)&&e.key==="s"){ e.preventDefault(); arcPut("wip"); }
+    if((e.ctrlKey||e.metaKey)&&e.key==="p"){ e.preventDefault(); savePDFDirect(); }
+  });
+
+  $("#btnGenNote").onclick=()=>{ recalc(); $("#notes").value=autoNote(); };
+  $("#btnExport").onclick=exportJSON;
+  $("#btnArcAll").onclick=arcExportAll;
+  $("#btnImport").onclick=()=>$("#jsonIn").click();
+  $("#jsonIn").onchange=e=>{ const f=e.target.files[0]; if(!f) return;
+    $("#pasteWrap").open=true;
+    fileImport(f, $("#pasteStatus"));
+    e.target.value="";
+    $("#pasteWrap").scrollIntoView({behavior:"smooth",block:"center"}); };
+
+  const drop=$("#drop"), fi=$("#fileIn");
+  drop.onclick=()=>fi.click();
+  fi.onchange=e=>{ FILES.push(...e.target.files); renderFiles(); fi.value=""; };
+  ["dragenter","dragover"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.add("on");}));
+  ["dragleave","drop"].forEach(ev=>drop.addEventListener(ev,e=>{e.preventDefault();drop.classList.remove("on");}));
+  drop.addEventListener("drop",e=>{ FILES.push(...e.dataTransfer.files); renderFiles(); });
+  $("#fileList").addEventListener("click",e=>{ const b=e.target.closest("[data-rm]"); if(!b) return;
+    FILES.splice(+b.dataset.rm,1); renderFiles(); });
+  $("#btnRead").onclick=readTouki;
+  $("#btnPaste").onclick=pasteImport;
+  $("#btnPasteFile").onclick=()=>$("#jsonIn").click();
+  $("#btnCopyPrompt").onclick=()=>{
+    const t=$("#promptTxt"); t.select(); t.setSelectionRange(0,999);
+    try{ navigator.clipboard.writeText(t.value); }catch(_){ document.execCommand("copy"); }
+    $("#btnCopyPrompt").textContent="コピーしました"; setTimeout(()=>$("#btnCopyPrompt").textContent="コピー",1500);
+  };
+
+  autoOffer();
+  let dirty=false;
+  document.addEventListener("input",e=>{ if(e.target.closest(".wrap")&&!e.target.dataset.nosave) dirty=true; });
+  window.addEventListener("beforeunload",e=>{ if(dirty){ e.preventDefault(); e.returnValue=""; } });
+  ["#btnSaveWip","#btnSaveWip2","#btnSaveDone","#btnSaveDone2","#btnExport"].forEach(sel=>{
+    const el=$(sel); if(el) el.addEventListener("click",()=>setTimeout(()=>{dirty=false;autoClear();},120));
+  });
+
+  recalc(); buildReport();
+})();
+</script>
+</body>
+</html>
